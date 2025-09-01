@@ -1,11 +1,12 @@
-import { getRemainingAllowance, getLogsForUser, USERS } from '@/services/consumption-log-service';
+import { getRemainingAllowance, getLogsForUser } from '@/services/consumption-log-service';
+import { USERS } from '@/lib/constants';
 import { redirect } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, Gift } from 'lucide-react';
-import type { User } from '@/services/consumption-log-service';
+import type { User } from '@/lib/constants';
 
 export default async function UserDashboard({ params }: { params: { user: string } }) {
   const { user } = params;

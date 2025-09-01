@@ -1,7 +1,8 @@
-import { getRemainingAllowance, MONTHLY_ALLOWANCE, USERS } from '@/services/consumption-log-service';
+import { getRemainingAllowance } from '@/services/consumption-log-service';
+import { MONTHLY_ALLOWANCE, USERS } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { AdminDashboard } from '@/components/admin-dashboard';
-import type { User } from '@/services/consumption-log-service';
+import type { User } from '@/lib/constants';
 import { Progress } from '@/components/ui/progress';
 
 export default async function AdminPage() {

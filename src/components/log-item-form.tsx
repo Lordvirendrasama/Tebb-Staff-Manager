@@ -6,12 +6,12 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FOOD_ITEMS, User } from '@/services/consumption-log-service';
+import { FOOD_ITEMS } from '@/lib/constants';
+import type { User, FoodItem } from '@/lib/constants';
 import { logItemAction } from '@/app/actions';
 import { useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import type { FoodItem } from '@/services/consumption-log-service';
 
 const FormSchema = z.object({
   itemName: z.enum(FOOD_ITEMS, {

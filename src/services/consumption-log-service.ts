@@ -1,21 +1,10 @@
 'use server';
 
+import type { User, FoodItem, ConsumptionLog } from '@/lib/constants';
+import { MONTHLY_ALLOWANCE } from '@/lib/constants';
+
 // In-memory store for consumption logs
-export interface ConsumptionLog {
-  employeeName: string;
-  itemName: string;
-  dateTimeLogged: Date;
-}
-
-let consumptionLogs: ConsumptionLog[] = [];
-
-export const USERS = ['Abbas', 'Musaib'] as const;
-export type User = (typeof USERS)[number];
-
-export const FOOD_ITEMS = ['Coffee', 'Cooler', 'Milkshake', 'Maggie', 'Fries', 'Pasta'] as const;
-export type FoodItem = (typeof FOOD_ITEMS)[number];
-
-export const MONTHLY_ALLOWANCE = 6;
+const consumptionLogs: ConsumptionLog[] = [];
 
 // This function is required by the GenAI flow.
 export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {

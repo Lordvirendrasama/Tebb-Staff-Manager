@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { ConsumptionLog } from '@/services/consumption-log-service';
+import type { ConsumptionLog } from '@/lib/constants';
 import { format } from 'date-fns';
 import { Coffee, GlassWater, Milk, Soup, UtensilsCrossed } from 'lucide-react';
 import type { FC, SVGProps } from 'react';

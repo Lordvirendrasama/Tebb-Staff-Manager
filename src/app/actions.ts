@@ -1,6 +1,7 @@
 'use server';
 
-import { logConsumption, User, FoodItem } from '@/services/consumption-log-service';
+import { logConsumption } from '@/services/consumption-log-service';
+import type { User, FoodItem } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 
 export async function logItemAction(user: User, itemName: FoodItem) {
