@@ -8,7 +8,14 @@ export interface ConsumptionLog {
 export const USERS = ['Abbas', 'Musaib'] as const;
 export type User = (typeof USERS)[number];
 
-export const FOOD_ITEMS = ['Coffee', 'Cooler', 'Milkshake', 'Maggie', 'Fries', 'Pasta'] as const;
-export type FoodItem = (typeof FOOD_ITEMS)[number];
+export const DRINK_ITEMS = ['Coffee', 'Cooler', 'Milkshake'] as const;
+export type DrinkItem = (typeof DRINK_ITEMS)[number];
 
-export const MONTHLY_ALLOWANCE = 6;
+export const MEAL_ITEMS = ['Maggie', 'Fries', 'Pasta'] as const;
+export type MealItem = (typeof MEAL_ITEMS)[number];
+
+export const ALL_ITEMS = [...DRINK_ITEMS, ...MEAL_ITEMS] as const;
+export type ConsumableItem = (typeof ALL_ITEMS)[number];
+
+export const MONTHLY_DRINK_ALLOWANCE = 6;
+export const MONTHLY_MEAL_ALLOWANCE = 6;

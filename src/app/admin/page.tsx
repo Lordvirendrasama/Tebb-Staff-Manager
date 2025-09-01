@@ -1,5 +1,6 @@
-import { getRemainingAllowance } from '@/services/consumption-log-service';
-import { MONTHLY_ALLOWANCE, USERS } from '@/lib/constants';
+
+import { getRemainingAllowances } from '@/services/consumption-log-service';
+import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { AdminDashboard } from '@/components/admin-dashboard';
 import type { User } from '@/lib/constants';
@@ -9,7 +10,7 @@ export default async function AdminPage() {
   const allowanceData = await Promise.all(
     USERS.map(async (user) => ({
       user,
-      allowance: await getRemainingAllowance(user as User),
+      allowances: await getRemainingAllowances(user as User),
     }))
   );
 
@@ -24,15 +25,27 @@ export default async function AdminPage() {
             <CardDescription>Remaining monthly allowance for each user.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {allowanceData.map(({ user, allowance }) => (
-              <div key={user}>
-                <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{user}</span>
-                    <span className="text-sm text-muted-foreground">
-                        <span className="font-bold text-foreground">{allowance}</span> / {MONTHLY_ALLOWANCE} left
-                    </span>
+            {allowanceData.map(({ user, allowances }) => (
+              <div key={user} className="space-y-3">
+                <p className="font-medium">{user}</p>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-muted-foreground">Drinks</span>
+                      <span className="text-sm text-muted-foreground">
+                          <span className="font-bold text-foreground">{allowances.drinks}</span> / {MONTHLY_DRINK_ALLOWANCE} left
+                      </span>
+                  </div>
+                  <Progress value={(allowances.drinks / MONTHLY_DRINK_ALLOWANCE) * 100} className="h-2" />
                 </div>
-                <Progress value={(allowance / MONTHLY_ALLOWANCE) * 100} className="h-2" />
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-muted-foreground">Meals</span>
+                      <span className="text-sm text-muted-foreground">
+                          <span className="font-bold text-foreground">{allowances.meals}</span> / {MONTHLY_MEAL_ALLOWANCE} left
+                      </span>
+                  </div>
+                  <Progress value={(allowances.meals / MONTHLY_MEAL_ALLOWANCE) * 100} className="h-2" />
+                </div>
               </div>
             ))}
           </CardContent>

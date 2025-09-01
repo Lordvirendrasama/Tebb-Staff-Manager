@@ -1,11 +1,12 @@
-import { getRemainingAllowance, getLogsForUser } from '@/services/consumption-log-service';
+
+import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
 import { USERS } from '@/lib/constants';
 import { redirect } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Ban, Gift } from 'lucide-react';
+import { Ban, Gift, Utensils, GlassWater } from 'lucide-react';
 import type { User } from '@/lib/constants';
 
 export default async function UserDashboard({ params }: { params: { user: string } }) {
@@ -17,12 +18,13 @@ export default async function UserDashboard({ params }: { params: { user: string
 
   const validUser = user as User;
 
-  const [allowance, logs] = await Promise.all([
-    getRemainingAllowance(validUser),
+  const [allowances, logs] = await Promise.all([
+    getRemainingAllowances(validUser),
     getLogsForUser(validUser),
   ]);
 
   const recentLogs = logs.slice(0, 5);
+  const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;
 
   return (
     <div className="space-y-8">
@@ -36,15 +38,24 @@ export default async function UserDashboard({ params }: { params: { user: string
             <CardHeader>
               <CardTitle>Monthly Allowance</CardTitle>
             </CardHeader>
-            <CardContent>
-              {allowance > 0 ? (
-                <div className="flex items-center gap-4">
-                  <Gift className="h-10 w-10 text-primary" />
-                  <div>
-                    <p className="text-4xl font-bold">{allowance}</p>
-                    <p className="text-sm text-muted-foreground">free items left</p>
+            <CardContent className="space-y-6">
+              {hasAllowance ? (
+                <>
+                  <div className="flex items-center gap-4">
+                    <GlassWater className="h-8 w-8 text-primary" />
+                    <div>
+                      <p className="text-2xl font-bold">{allowances.drinks}</p>
+                      <p className="text-sm text-muted-foreground">drinks left</p>
+                    </div>
                   </div>
-                </div>
+                   <div className="flex items-center gap-4">
+                    <Utensils className="h-8 w-8 text-primary" />
+                    <div>
+                      <p className="text-2xl font-bold">{allowances.meals}</p>
+                      <p className="text-sm text-muted-foreground">meals left</p>
+                    </div>
+                  </div>
+                </>
               ) : (
                 <Alert variant="destructive">
                   <Ban className="h-4 w-4" />
@@ -63,7 +74,7 @@ export default async function UserDashboard({ params }: { params: { user: string
               <CardDescription>Select an item you've consumed.</CardDescription>
             </CardHeader>
             <CardContent>
-              <LogItemForm user={validUser} allowance={allowance} />
+              <LogItemForm user={validUser} allowances={allowances} />
             </CardContent>
           </Card>
         </div>

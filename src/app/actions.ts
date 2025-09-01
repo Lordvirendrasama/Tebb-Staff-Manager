@@ -1,10 +1,11 @@
+
 'use server';
 
 import { logConsumption } from '@/services/consumption-log-service';
-import type { User, FoodItem } from '@/lib/constants';
+import type { User, ConsumableItem } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 
-export async function logItemAction(user: User, itemName: FoodItem) {
+export async function logItemAction(user: User, itemName: ConsumableItem) {
   try {
     await logConsumption(user, itemName);
     revalidatePath(`/dashboard/${user}`);
