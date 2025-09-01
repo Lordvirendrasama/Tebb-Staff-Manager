@@ -6,8 +6,8 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
       <div className="text-center mb-16">
-        <h1 className="text-5xl md:text-6xl font-bold font-headline text-foreground">TrackEat</h1>
-        <p className="text-muted-foreground mt-2 text-lg">A simple way to track staff meals.</p>
+        <h1 className="text-4xl md:text-5xl font-bold font-headline text-foreground leading-relaxed">The 8 Bit Bistro<br/>Staff Manager</h1>
+        <p className="text-muted-foreground mt-4 text-sm">A simple way to track staff meals.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
         <Link href="/dashboard/Abbas" className="block">
