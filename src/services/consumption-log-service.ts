@@ -5,7 +5,15 @@ import type { User, ConsumableItem, ConsumptionLog } from '@/lib/constants';
 import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, DRINK_ITEMS, MEAL_ITEMS } from '@/lib/constants';
 
 // In-memory store for consumption logs
-const consumptionLogs: ConsumptionLog[] = [];
+// Using a global variable to persist data across requests in development.
+// In a real app, this would be a database.
+const globalForLogs = globalThis as unknown as {
+  consumptionLogs: ConsumptionLog[] | undefined;
+};
+
+const consumptionLogs = globalForLogs.consumptionLogs ?? [];
+if (process.env.NODE_ENV !== 'production') globalForLogs.consumptionLogs = consumptionLogs;
+
 
 // This function is required by the GenAI flow.
 export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {
