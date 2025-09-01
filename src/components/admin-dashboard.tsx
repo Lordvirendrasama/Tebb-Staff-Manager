@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { generateConsumptionReport } from '@/ai/flows/generate-consumption-report';
 import { generateAttendanceReport } from '@/ai/flows/generate-attendance-report';
@@ -12,7 +13,7 @@ type ReportType = 'consumption' | 'attendance' | 'leave';
 
 export function AdminDashboard() {
   const [isPending, startTransition] = useTransition();
-  const [activeReport, setActiveReport] = React.useState<ReportType | null>(null);
+  const [activeReport, setActiveReport] = useState<ReportType | null>(null);
   const { toast } = useToast();
 
   const handleExport = (reportType: ReportType) => {
