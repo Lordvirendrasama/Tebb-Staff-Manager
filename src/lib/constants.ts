@@ -19,3 +19,23 @@ export type ConsumableItem = (typeof ALL_ITEMS)[number];
 
 export const MONTHLY_DRINK_ALLOWANCE = 6;
 export const MONTHLY_MEAL_ALLOWANCE = 6;
+
+export interface AttendanceLog {
+  employeeName: User;
+  clockIn: Date;
+  clockOut?: Date;
+}
+
+export type AttendanceStatus = {
+    status: 'Clocked Out';
+} | {
+    status: 'Clocked In';
+    clockInTime: Date;
+};
+
+export interface LeaveRequest {
+  employeeName: User;
+  leaveDate: Date;
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+}

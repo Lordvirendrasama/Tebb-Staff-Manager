@@ -1,13 +1,16 @@
 
 import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
+import { getAttendanceStatus, getAttendanceHistory, getLeaveRequests } from '@/services/attendance-service';
 import { USERS } from '@/lib/constants';
 import { redirect } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Ban, Gift, Utensils, GlassWater } from 'lucide-react';
+import { Ban, GlassWater, Utensils } from 'lucide-react';
 import type { User } from '@/lib/constants';
+import { AttendanceTracker } from '@/components/attendance-tracker';
+import { LeaveTracker } from '@/components/leave-tracker';
 
 export default async function UserDashboard({ params }: { params: { user: string } }) {
   const { user } = params;
@@ -18,9 +21,18 @@ export default async function UserDashboard({ params }: { params: { user: string
 
   const validUser = user as User;
 
-  const [allowances, logs] = await Promise.all([
+  const [
+    allowances, 
+    logs, 
+    attendanceStatus,
+    attendanceHistory,
+    leaveRequests
+  ] = await Promise.all([
     getRemainingAllowances(validUser),
     getLogsForUser(validUser),
+    getAttendanceStatus(validUser),
+    getAttendanceHistory(validUser),
+    getLeaveRequests(validUser),
   ]);
 
   const recentLogs = logs.slice(0, 5);
@@ -33,7 +45,18 @@ export default async function UserDashboard({ params }: { params: { user: string
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
+        {/* Column 1 */}
         <div className="md:col-span-1 space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Attendance</CardTitle>
+              <CardDescription>Clock in and out for your shift.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AttendanceTracker user={validUser} status={attendanceStatus} history={attendanceHistory} />
+            </CardContent>
+          </Card>
+          
           <Card>
             <CardHeader>
               <CardTitle>Monthly Allowance</CardTitle>
@@ -67,27 +90,41 @@ export default async function UserDashboard({ params }: { params: { user: string
               )}
             </CardContent>
           </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Log an Item</CardTitle>
-              <CardDescription>Select an item you've consumed.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LogItemForm user={validUser} allowances={allowances} />
-            </CardContent>
-          </Card>
         </div>
         
-        <div className="md:col-span-2">
+        {/* Column 2 */}
+        <div className="md:col-span-1 space-y-8">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Log an Item</CardTitle>
+                    <CardDescription>Select an item you've consumed.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <LogItemForm user={validUser} allowances={allowances} />
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Leave Tracker</CardTitle>
+                    <CardDescription>Request time off and see your history.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <LeaveTracker user={validUser} leaveRequests={leaveRequests} />
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* Column 3 */}
+        <div className="md:col-span-1">
             <Card className="h-full">
-            <CardHeader>
-                <CardTitle>Consumption History</CardTitle>
-                <CardDescription>Your last 5 logged items this month.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ConsumptionHistory logs={recentLogs} />
-            </CardContent>
+                <CardHeader>
+                    <CardTitle>Consumption History</CardTitle>
+                    <CardDescription>Your last 5 logged items this month.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ConsumptionHistory logs={recentLogs} />
+                </CardContent>
             </Card>
         </div>
       </div>
