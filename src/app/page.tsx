@@ -1,9 +1,10 @@
+
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Trophy } from 'lucide-react';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { getEmployeeOfTheWeek } from '@/services/awards-service';
-import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 export default async function Home() {
   const [abbasStatus, musaibStatus, employeeOfTheWeek] = await Promise.all([
@@ -19,24 +20,9 @@ export default async function Home() {
         <p className="text-muted-foreground mt-4 text-sm">A simple way to track staff meals.</p>
       </div>
 
-      {employeeOfTheWeek && (
-        <div className="mb-12 w-full max-w-md">
-            <Card className="bg-primary/10 border-primary/20 shadow-lg animate-in fade-in zoom-in-95">
-                <CardHeader className="text-center items-center">
-                    <Trophy className="h-12 w-12 text-yellow-400 drop-shadow-lg"/>
-                    <CardTitle className="text-2xl font-semibold mt-4">Employee of the Week</CardTitle>
-                    <p className="text-4xl font-bold text-primary mt-2">{employeeOfTheWeek.employeeName}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Awarded {formatDistanceToNow(new Date(employeeOfTheWeek.awardedAt), { addSuffix: true })}
-                    </p>
-                </CardHeader>
-            </Card>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
         <Link href="/dashboard/Abbas" className="block">
-          <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1">
+          <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1 h-full">
             <CardHeader className="text-center items-center py-10">
               <div className="p-4 bg-primary/10 rounded-full mb-4">
                 <Users className="h-10 w-10 text-primary" />
@@ -44,6 +30,12 @@ export default async function Home() {
               <CardTitle className="text-2xl font-semibold flex items-center gap-2">
                 Abbas
               </CardTitle>
+              {employeeOfTheWeek?.employeeName === 'Abbas' && (
+                <Badge variant="secondary" className="mt-2 bg-yellow-400/10 text-yellow-300 border-yellow-400/20">
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Employee of the Week
+                </Badge>
+              )}
               {abbasStatus.status === 'Clocked In' && (
                 <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
                   <span className="relative flex h-2 w-2">
@@ -57,7 +49,7 @@ export default async function Home() {
           </Card>
         </Link>
         <Link href="/dashboard/Musaib" className="block">
-          <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1">
+          <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1 h-full">
             <CardHeader className="text-center items-center py-10">
               <div className="p-4 bg-primary/10 rounded-full mb-4">
                 <Users className="h-10 w-10 text-primary" />
@@ -65,6 +57,12 @@ export default async function Home() {
               <CardTitle className="text-2xl font-semibold flex items-center gap-2">
                 Musaib
               </CardTitle>
+              {employeeOfTheWeek?.employeeName === 'Musaib' && (
+                <Badge variant="secondary" className="mt-2 bg-yellow-400/10 text-yellow-300 border-yellow-400/20">
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Employee of the Week
+                </Badge>
+              )}
               {musaibStatus.status === 'Clocked In' && (
                  <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
                   <span className="relative flex h-2 w-2">
@@ -78,7 +76,7 @@ export default async function Home() {
           </Card>
         </Link>
         <Link href="/admin" className="block">
-          <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1">
+          <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1 h-full">
             <CardHeader className="text-center items-center py-10">
               <div className="p-4 bg-primary/10 rounded-full mb-4">
                 <UserCog className="h-10 w-10 text-primary" />
