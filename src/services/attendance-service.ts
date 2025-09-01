@@ -60,6 +60,10 @@ export async function getAttendanceHistory(employeeName: User): Promise<Attendan
         .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime());
 }
 
+export async function getAllAttendanceLogs(): Promise<AttendanceLog[]> {
+    return attendanceLogs.sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime());
+}
+
 export async function requestLeave(employeeName: User, leaveDate: Date, reason: string): Promise<LeaveRequest> {
     const newRequest: LeaveRequest = {
         employeeName,
@@ -75,4 +79,8 @@ export async function getLeaveRequests(employeeName: User): Promise<LeaveRequest
     return leaveRequests
         .filter(req => req.employeeName === employeeName)
         .sort((a,b) => b.leaveDate.getTime() - a.leaveDate.getTime());
+}
+
+export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
+    return leaveRequests.sort((a,b) => b.leaveDate.getTime() - a.leaveDate.getTime());
 }
