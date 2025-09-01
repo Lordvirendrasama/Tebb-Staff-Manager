@@ -1,12 +1,14 @@
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, UserCog } from 'lucide-react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, UserCog, Trophy } from 'lucide-react';
 import { getAttendanceStatus } from '@/services/attendance-service';
+import { getEmployeeOfTheWeek } from '@/services/awards-service';
 
 export default async function Home() {
-  const [abbasStatus, musaibStatus] = await Promise.all([
+  const [abbasStatus, musaibStatus, employeeOfTheWeek] = await Promise.all([
     getAttendanceStatus('Abbas'),
     getAttendanceStatus('Musaib'),
+    getEmployeeOfTheWeek(),
   ]);
 
   return (
@@ -22,7 +24,12 @@ export default async function Home() {
               <div className="p-4 bg-primary/10 rounded-full mb-4">
                 <Users className="h-10 w-10 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-semibold">Abbas</CardTitle>
+              <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                Abbas
+                {employeeOfTheWeek?.employeeName === 'Abbas' && (
+                  <Trophy className="h-6 w-6 text-yellow-400" title="Employee of the Week"/>
+                )}
+              </CardTitle>
               {abbasStatus.status === 'Clocked In' && (
                 <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
                   <span className="relative flex h-2 w-2">
@@ -41,7 +48,12 @@ export default async function Home() {
               <div className="p-4 bg-primary/10 rounded-full mb-4">
                 <Users className="h-10 w-10 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-semibold">Musaib</CardTitle>
+              <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                Musaib
+                 {employeeOfTheWeek?.employeeName === 'Musaib' && (
+                  <Trophy className="h-6 w-6 text-yellow-400" title="Employee of the Week"/>
+                )}
+              </CardTitle>
               {musaibStatus.status === 'Clocked In' && (
                  <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
                   <span className="relative flex h-2 w-2">
