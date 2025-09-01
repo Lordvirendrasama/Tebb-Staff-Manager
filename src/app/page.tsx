@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Trophy } from 'lucide-react';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { formatDistanceToNow } from 'date-fns';
 
 export default async function Home() {
   const [abbasStatus, musaibStatus, employeeOfTheWeek] = await Promise.all([
@@ -13,10 +14,26 @@ export default async function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-      <div className="text-center mb-16">
+      <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold font-headline text-foreground leading-relaxed">The 8 Bit Bistro<br/>Staff Manager</h1>
         <p className="text-muted-foreground mt-4 text-sm">A simple way to track staff meals.</p>
       </div>
+
+      {employeeOfTheWeek && (
+        <div className="mb-12 w-full max-w-md">
+            <Card className="bg-primary/10 border-primary/20 shadow-lg animate-in fade-in zoom-in-95">
+                <CardHeader className="text-center items-center">
+                    <Trophy className="h-12 w-12 text-yellow-400 drop-shadow-lg"/>
+                    <CardTitle className="text-2xl font-semibold mt-4">Employee of the Week</CardTitle>
+                    <p className="text-4xl font-bold text-primary mt-2">{employeeOfTheWeek.employeeName}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Awarded {formatDistanceToNow(new Date(employeeOfTheWeek.awardedAt), { addSuffix: true })}
+                    </p>
+                </CardHeader>
+            </Card>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
         <Link href="/dashboard/Abbas" className="block">
           <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1">
@@ -26,9 +43,6 @@ export default async function Home() {
               </div>
               <CardTitle className="text-2xl font-semibold flex items-center gap-2">
                 Abbas
-                {employeeOfTheWeek?.employeeName === 'Abbas' && (
-                  <Trophy className="h-6 w-6 text-yellow-400" title="Employee of the Week"/>
-                )}
               </CardTitle>
               {abbasStatus.status === 'Clocked In' && (
                 <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
@@ -50,9 +64,6 @@ export default async function Home() {
               </div>
               <CardTitle className="text-2xl font-semibold flex items-center gap-2">
                 Musaib
-                 {employeeOfTheWeek?.employeeName === 'Musaib' && (
-                  <Trophy className="h-6 w-6 text-yellow-400" title="Employee of the Week"/>
-                )}
               </CardTitle>
               {musaibStatus.status === 'Clocked In' && (
                  <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
