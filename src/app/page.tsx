@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Users, UserCog } from 'lucide-react';
+import { getAttendanceStatus } from '@/services/attendance-service';
 
-export default function Home() {
+export default async function Home() {
+  const [abbasStatus, musaibStatus] = await Promise.all([
+    getAttendanceStatus('Abbas'),
+    getAttendanceStatus('Musaib'),
+  ]);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
       <div className="text-center mb-16">
@@ -17,6 +23,15 @@ export default function Home() {
                 <Users className="h-10 w-10 text-primary" />
               </div>
               <CardTitle className="text-2xl font-semibold">Abbas</CardTitle>
+              {abbasStatus.status === 'Clocked In' && (
+                <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  Clocked In
+                </div>
+              )}
             </CardHeader>
           </Card>
         </Link>
@@ -27,6 +42,15 @@ export default function Home() {
                 <Users className="h-10 w-10 text-primary" />
               </div>
               <CardTitle className="text-2xl font-semibold">Musaib</CardTitle>
+              {musaibStatus.status === 'Clocked In' && (
+                 <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  Clocked In
+                </div>
+              )}
             </CardHeader>
           </Card>
         </Link>
