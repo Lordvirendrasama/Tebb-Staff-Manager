@@ -5,7 +5,7 @@
  *
  * - generateLeaveReport - A function that generates the leave report.
  * - GenerateLeaveReportInput - The input type for the generateLeaveReport function (currently empty).
- * - GenerateLeaveReportOutput - The return type for the generateLeaveReport function, a string in CSV format.
+ * - GenerateLeaveReportOutput - The return type for the generateLeaveReport function, a string in XML format.
  */
 
 import {ai} from '@/ai/genkit';
@@ -30,7 +30,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateLeaveReportOutputSchema},
   prompt: `You are an expert report generator. You take in leave request data and output a formatted report.
 
-       The report should be in CSV format with the following columns: Employee Name, Leave Date, Reason, Status.
+       The report should be in XML format. The root element should be <leaveRequests>, and each entry should be a <request> element with <employeeName>, <leaveDate>, <reason>, and <status> child elements.
 
        Here is the leave data:
        {{{leaveData}}}`,

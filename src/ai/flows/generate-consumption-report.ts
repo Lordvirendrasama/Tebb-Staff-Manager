@@ -5,7 +5,7 @@
  *
  * - generateConsumptionReport - A function that generates the consumption report.
  * - GenerateConsumptionReportInput - The input type for the generateConsumptionReport function (currently empty).
- * - GenerateConsumptionReportOutput - The return type for the generateConsumptionReport function, a string in CSV format.
+ * - GenerateConsumptionReportOutput - The return type for the generateConsumptionReport function, a string in XML format.
  */
 
 import {ai} from '@/ai/genkit';
@@ -26,14 +26,14 @@ export async function generateConsumptionReport(
 
 const prompt = ai.definePrompt({
   name: 'generateConsumptionReportPrompt',
-  input: {schema: GenerateConsumptionReportInputSchema},
+  input: {schema: z.object({ consumptionData: z.string() })},
   output: {schema: GenerateConsumptionReportOutputSchema},
   prompt: `You are an expert report generator. You take in consumption data and output a formatted report.
 
-       The report should be in CSV format with the following columns: Employee Name, Item Name, Date & Time Logged.
+       The report should be in XML format. The root element should be <consumptionLogs>, and each entry should be a <log> element with <employeeName>, <itemName>, and <dateTimeLogged> child elements.
 
        Here is the consumption data:
-       {{consumptionData}}`,
+       {{{consumptionData}}}`,
 });
 
 const generateConsumptionReportFlow = ai.defineFlow(

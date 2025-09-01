@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useTransition, useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { generateConsumptionReport } from '@/ai/flows/generate-consumption-report';
 import { generateAttendanceReport } from '@/ai/flows/generate-attendance-report';
@@ -29,9 +29,9 @@ export function AdminDashboard() {
 
         const zip = new JSZip();
         const date = new Date().toISOString().split('T')[0];
-        zip.file(`consumption-report-${date}.csv`, consumptionData);
-        zip.file(`attendance-report-${date}.csv`, attendanceData);
-        zip.file(`leave-report-${date}.csv`, leaveData);
+        zip.file(`consumption-report-${date}.xml`, consumptionData);
+        zip.file(`attendance-report-${date}.xml`, attendanceData);
+        zip.file(`leave-report-${date}.xml`, leaveData);
 
         const content = await zip.generateAsync({ type: 'blob' });
         
@@ -69,28 +69,28 @@ export function AdminDashboard() {
     startTransition(async () => {
       setActiveReport(reportType);
       try {
-        let csvData: string;
+        let xmlData: string;
         let fileName: string;
         const date = new Date().toISOString().split('T')[0];
 
         switch (reportType) {
           case 'consumption':
-            csvData = await generateConsumptionReport({});
-            fileName = `consumption-report-${date}.csv`;
+            xmlData = await generateConsumptionReport({});
+            fileName = `consumption-report-${date}.xml`;
             break;
           case 'attendance':
-            csvData = await generateAttendanceReport({});
-            fileName = `attendance-report-${date}.csv`;
+            xmlData = await generateAttendanceReport({});
+            fileName = `attendance-report-${date}.xml`;
             break;
           case 'leave':
-            csvData = await generateLeaveReport({});
-            fileName = `leave-report-${date}.csv`;
+            xmlData = await generateLeaveReport({});
+            fileName = `leave-report-${date}.xml`;
             break;
           default:
             throw new Error('Invalid report type');
         }
         
-        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([xmlData], { type: 'application/xml;charset=utf-8;' });
         const link = document.createElement('a');
         if (link.download !== undefined) {
           const url = URL.createObjectURL(blob);
