@@ -9,6 +9,7 @@ import { generateLeaveReport } from '@/ai/flows/generate-leave-report';
 import { useToast } from '@/hooks/use-toast';
 import { Download, Loader2, Utensils, Clock, CalendarOff, Package } from 'lucide-react';
 import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 type ReportType = 'consumption' | 'attendance' | 'leave' | 'all';
 
@@ -34,15 +35,7 @@ export function AdminDashboard() {
         zip.file(`leave-report-${date}.xml`, leaveData);
 
         const content = await zip.generateAsync({ type: 'blob' });
-        
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(content);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `all-reports-${date}.zip`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        saveAs(content, `all-reports-${date}.zip`);
 
         toast({
           title: 'Export Successful',
@@ -91,16 +84,7 @@ export function AdminDashboard() {
         }
         
         const blob = new Blob([xmlData], { type: 'application/xml;charset=utf-8;' });
-        const link = document.createElement('a');
-        if (link.download !== undefined) {
-          const url = URL.createObjectURL(blob);
-          link.setAttribute('href', url);
-          link.setAttribute('download', fileName);
-          link.style.visibility = 'hidden';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
+        saveAs(blob, fileName);
         
         toast({
           title: 'Export Successful',
