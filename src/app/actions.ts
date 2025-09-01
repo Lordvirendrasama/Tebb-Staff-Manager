@@ -8,7 +8,8 @@ import { revalidatePath } from 'next/cache';
 export async function logItemAction(user: User, itemName: ConsumableItem) {
   try {
     await logConsumption(user, itemName);
-    revalidatePath(`/dashboard/${user}`);
+    revalidatePath('/dashboard/Abbas');
+    revalidatePath('/dashboard/Musaib');
     revalidatePath('/admin');
     return { success: true, message: `${itemName} logged successfully.` };
   } catch (error) {
