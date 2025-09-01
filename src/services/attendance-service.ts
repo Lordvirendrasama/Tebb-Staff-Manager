@@ -2,85 +2,138 @@
 'use server';
 
 import type { User, AttendanceLog, AttendanceStatus, LeaveRequest } from '@/lib/constants';
-
-// In-memory store for attendance logs
-const globalForAttendance = globalThis as unknown as {
-  attendanceLogs: AttendanceLog[] | undefined;
-  leaveRequests: LeaveRequest[] | undefined;
-};
-
-const attendanceLogs: AttendanceLog[] = globalForAttendance.attendanceLogs ?? [];
-if (process.env.NODE_ENV !== 'production') globalForAttendance.attendanceLogs = attendanceLogs;
-
-const leaveRequests: LeaveRequest[] = globalForAttendance.leaveRequests ?? [];
-if (process.env.NODE_ENV !== 'production') globalForAttendance.leaveRequests = leaveRequests;
+import { db } from '@/lib/firebase';
+import { collection, getDocs, addDoc, query, where, updateDoc, doc, Timestamp, orderBy, limit } from 'firebase/firestore';
 
 
-export async function clockIn(employeeName: User): Promise<AttendanceLog> {
-  const existingEntry = attendanceLogs.find(
-    log => log.employeeName === employeeName && !log.clockOut
+export async function clockIn(employeeName: User): Promise<void> {
+  const q = query(
+    collection(db, 'attendanceLogs'), 
+    where('employeeName', '==', employeeName), 
+    where('clockOut', '==', null)
   );
-  if (existingEntry) {
+  const existingEntry = await getDocs(q);
+
+  if (!existingEntry.empty) {
     throw new Error('You are already clocked in.');
   }
-  const newLog: AttendanceLog = {
+
+  await addDoc(collection(db, 'attendanceLogs'), {
     employeeName,
     clockIn: new Date(),
-  };
-  attendanceLogs.push(newLog);
-  return newLog;
+    clockOut: null,
+  });
 }
 
-export async function clockOut(employeeName: User): Promise<AttendanceLog> {
-  const logToUpdate = attendanceLogs.find(
-    log => log.employeeName === employeeName && !log.clockOut
-  );
-  if (!logToUpdate) {
-    throw new Error('You are not clocked in.');
-  }
-  logToUpdate.clockOut = new Date();
-  return logToUpdate;
+export async function clockOut(employeeName: User): Promise<void> {
+    const q = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employeeName),
+        where('clockOut', '==', null),
+        orderBy('clockIn', 'desc'),
+        limit(1)
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        throw new Error('You are not clocked in.');
+    }
+    const logDoc = snapshot.docs[0];
+    await updateDoc(doc(db, 'attendanceLogs', logDoc.id), {
+        clockOut: new Date()
+    });
 }
 
 export async function getAttendanceStatus(employeeName: User): Promise<AttendanceStatus> {
-    const lastLog = attendanceLogs
-      .filter(log => log.employeeName === employeeName)
-      .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())[0];
+    const q = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employeeName),
+        orderBy('clockIn', 'desc'),
+        limit(1)
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        return { status: 'Clocked Out' };
+    }
+
+    const lastLog = snapshot.docs[0].data();
   
     if (lastLog && !lastLog.clockOut) {
-      return { status: 'Clocked In', clockInTime: lastLog.clockIn };
+      return { status: 'Clocked In', clockInTime: (lastLog.clockIn as Timestamp).toDate() };
     }
   
     return { status: 'Clocked Out' };
 }
   
 export async function getAttendanceHistory(employeeName: User): Promise<AttendanceLog[]> {
-    return attendanceLogs
-        .filter(log => log.employeeName === employeeName)
-        .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime());
+    const q = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employeeName),
+        orderBy('clockIn', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            employeeName: data.employeeName,
+            clockIn: (data.clockIn as Timestamp).toDate(),
+            clockOut: data.clockOut ? (data.clockOut as Timestamp).toDate() : undefined,
+        }
+    });
 }
 
 export async function getAllAttendanceLogs(): Promise<AttendanceLog[]> {
-    return attendanceLogs.sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime());
+    const q = query(collection(db, 'attendanceLogs'), orderBy('clockIn', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => {
+         const data = doc.data();
+        return {
+            employeeName: data.employeeName,
+            clockIn: (data.clockIn as Timestamp).toDate(),
+            clockOut: data.clockOut ? (data.clockOut as Timestamp).toDate() : undefined,
+        }
+    });
 }
 
-export async function requestLeave(employeeName: User, leaveDate: Date, reason: string): Promise<LeaveRequest> {
-    const newRequest: LeaveRequest = {
+export async function requestLeave(employeeName: User, leaveDate: Date, reason: string): Promise<void> {
+    await addDoc(collection(db, 'leaveRequests'), {
         employeeName,
         leaveDate,
         reason,
         status: 'Pending',
-    };
-    leaveRequests.push(newRequest);
-    return newRequest;
+    });
 }
 
 export async function getLeaveRequests(employeeName: User): Promise<LeaveRequest[]> {
-    return leaveRequests
-        .filter(req => req.employeeName === employeeName)
-        .sort((a,b) => b.leaveDate.getTime() - a.leaveDate.getTime());
+    const q = query(
+        collection(db, 'leaveRequests'), 
+        where('employeeName', '==', employeeName),
+        orderBy('leaveDate', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            employeeName: data.employeeName,
+            leaveDate: (data.leaveDate as Timestamp).toDate(),
+            reason: data.reason,
+            status: data.status,
+        }
+    });
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
-    return leaveRequests.sort((a,b) => b.leaveDate.getTime() - a.leaveDate.getTime());
+    const q = query(collection(db, 'leaveRequests'), orderBy('leaveDate', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            employeeName: data.employeeName,
+            leaveDate: (data.leaveDate as Timestamp).toDate(),
+            reason: data.reason,
+            status: data.status,
+        }
+    });
 }

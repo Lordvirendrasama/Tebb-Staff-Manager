@@ -3,29 +3,34 @@
 
 import type { User, ConsumableItem, ConsumptionLog } from '@/lib/constants';
 import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, DRINK_ITEMS, MEAL_ITEMS } from '@/lib/constants';
-
-// In-memory store for consumption logs
-// Using a global variable to persist data across requests in development.
-// In a real app, this would be a database.
-const globalForLogs = globalThis as unknown as {
-  consumptionLogs: ConsumptionLog[] | undefined;
-};
-
-const consumptionLogs = globalForLogs.consumptionLogs ?? [];
-if (process.env.NODE_ENV !== 'production') globalForLogs.consumptionLogs = consumptionLogs;
-
+import { db } from '@/lib/firebase';
+import { collection, getDocs, addDoc, query, where, Timestamp } from 'firebase/firestore';
 
 // This function is required by the GenAI flow.
 export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {
-  // In a real app, you would fetch this from a database.
-  return Promise.resolve(consumptionLogs);
+    const consumptionCol = collection(db, 'consumptionLogs');
+    const snapshot = await getDocs(consumptionCol);
+    const logs = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        dateTimeLogged: (data.dateTimeLogged as Timestamp).toDate(),
+      } as ConsumptionLog;
+    });
+    return logs;
 }
 
 export async function getLogsForUser(employeeName: User): Promise<ConsumptionLog[]> {
-  const allLogs = await getAllConsumptionLogs();
-  return allLogs
-    .filter(log => log.employeeName === employeeName)
-    .sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
+  const q = query(collection(db, 'consumptionLogs'), where('employeeName', '==', employeeName));
+  const snapshot = await getDocs(q);
+  const logs = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        dateTimeLogged: (data.dateTimeLogged as Timestamp).toDate(),
+      } as ConsumptionLog;
+  });
+  return logs.sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
 }
 
 export async function getRemainingAllowances(employeeName: User): Promise<{ drinks: number; meals: number }> {
@@ -63,10 +68,9 @@ export async function logConsumption(employeeName: User, itemName: ConsumableIte
         throw new Error('No meal allowance left to log item.');
     }
 
-    consumptionLogs.push({
+    await addDoc(collection(db, 'consumptionLogs'), {
         employeeName,
         itemName,
         dateTimeLogged: new Date(),
     });
-    return Promise.resolve();
 }
