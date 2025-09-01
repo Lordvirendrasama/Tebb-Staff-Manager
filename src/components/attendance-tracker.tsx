@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { clockInAction, clockOutAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,12 @@ import { ScrollArea } from './ui/scroll-area';
 export function AttendanceTracker({ user, status, history }: { user: User; status: AttendanceStatus, history: AttendanceLog[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const handleClockIn = () => {
     startTransition(async () => {
@@ -52,9 +58,9 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
             <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
                 <p className="text-sm font-medium">
-                    {isClockedIn 
+                    {isClockedIn && isClient
                         ? `Clocked in at ${format(new Date(status.clockInTime), 'p')}`
-                        : "You are currently clocked out."
+                        : isClockedIn ? "Clocked in" : "You are currently clocked out."
                     }
                 </p>
             </div>
@@ -88,8 +94,8 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
                     {history.slice(0, 5).map((log, index) => (
                         <TableRow key={index}>
                             <TableCell>{format(new Date(log.clockIn), 'MMM d')}</TableCell>
-                            <TableCell>{format(new Date(log.clockIn), 'p')}</TableCell>
-                            <TableCell>{log.clockOut ? format(new Date(log.clockOut), 'p') : '...'}</TableCell>
+                            <TableCell>{isClient ? format(new Date(log.clockIn), 'p') : '...'}</TableCell>
+                            <TableCell>{log.clockOut && isClient ? format(new Date(log.clockOut), 'p') : '...'}</TableCell>
                         </TableRow>
                     ))}
                     </TableBody>
