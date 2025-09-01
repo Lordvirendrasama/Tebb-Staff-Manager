@@ -14,24 +14,31 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// Client-side app
 let app: App;
-let db: Firestore | AdminFirestore;
-
-if (typeof window === 'undefined') {
-  // Server-side
-  if (admin.apps.length === 0) {
-    const serviceAccount = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string
-    );
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  }
-  db = getAdminFirestore();
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
 } else {
-  // Client-side
-  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  db = getFirestore(app);
+  app = getApp();
+}
+export const db = getFirestore(app);
+
+
+// Server-side admin app
+let adminApp: admin.App | undefined;
+const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+if (serviceAccountKey && !admin.apps.length) {
+    try {
+        const serviceAccount = JSON.parse(serviceAccountKey);
+        adminApp = admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+    } catch (error) {
+        console.error("Failed to parse or initialize Firebase Admin SDK:", error);
+    }
+} else if (admin.apps.length > 0) {
+    adminApp = admin.app();
 }
 
-export { db };
+export const adminDb: AdminFirestore | undefined = adminApp ? getAdminFirestore(adminApp) : undefined;

@@ -3,11 +3,22 @@
 
 import type { User, ConsumableItem, ConsumptionLog } from '@/lib/constants';
 import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, DRINK_ITEMS, MEAL_ITEMS } from '@/lib/constants';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, Timestamp } from 'firebase/firestore';
+
+async function getDb() {
+    if (!adminDb) {
+        // Return null instead of throwing an error if the admin SDK is not initialized.
+        return null;
+    }
+    return adminDb;
+}
 
 // This function is required by the GenAI flow.
 export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {
+    const db = await getDb();
+    if (!db) return [];
+
     const consumptionCol = collection(db, 'consumptionLogs');
     const snapshot = await getDocs(consumptionCol);
     const logs = snapshot.docs.map(doc => {
@@ -21,6 +32,9 @@ export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {
 }
 
 export async function getLogsForUser(employeeName: User): Promise<ConsumptionLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+
   const q = query(collection(db, 'consumptionLogs'), where('employeeName', '==', employeeName));
   const snapshot = await getDocs(q);
   const logs = snapshot.docs.map(doc => {
@@ -34,6 +48,9 @@ export async function getLogsForUser(employeeName: User): Promise<ConsumptionLog
 }
 
 export async function getRemainingAllowances(employeeName: User): Promise<{ drinks: number; meals: number }> {
+    const db = await getDb();
+    if (!db) return { drinks: MONTHLY_DRINK_ALLOWANCE, meals: MONTHLY_MEAL_ALLOWANCE };
+
     const userLogs = await getLogsForUser(employeeName);
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -58,6 +75,9 @@ export async function getRemainingAllowances(employeeName: User): Promise<{ drin
 
 
 export async function logConsumption(employeeName: User, itemName: ConsumableItem): Promise<void> {
+    const db = await getDb();
+    if (!db) throw new Error('Database not available.');
+
     const allowances = await getRemainingAllowances(employeeName);
     const isDrink = (DRINK_ITEMS as readonly string[]).includes(itemName);
 

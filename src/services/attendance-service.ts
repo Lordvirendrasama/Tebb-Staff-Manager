@@ -2,11 +2,21 @@
 'use server';
 
 import type { User, AttendanceLog, AttendanceStatus, LeaveRequest } from '@/lib/constants';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, updateDoc, doc, Timestamp, orderBy, limit } from 'firebase/firestore';
 
+async function getDb() {
+    if (!adminDb) {
+        // Return null instead of throwing an error if the admin SDK is not initialized.
+        return null;
+    }
+    return adminDb;
+}
 
 export async function clockIn(employeeName: User): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
   const q = query(
     collection(db, 'attendanceLogs'), 
     where('employeeName', '==', employeeName), 
@@ -26,6 +36,9 @@ export async function clockIn(employeeName: User): Promise<void> {
 }
 
 export async function clockOut(employeeName: User): Promise<void> {
+    const db = await getDb();
+    if (!db) return;
+
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', employeeName),
@@ -45,6 +58,9 @@ export async function clockOut(employeeName: User): Promise<void> {
 }
 
 export async function getAttendanceStatus(employeeName: User): Promise<AttendanceStatus> {
+    const db = await getDb();
+    if (!db) return { status: 'Clocked Out' };
+
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', employeeName),
@@ -67,6 +83,9 @@ export async function getAttendanceStatus(employeeName: User): Promise<Attendanc
 }
   
 export async function getAttendanceHistory(employeeName: User): Promise<AttendanceLog[]> {
+    const db = await getDb();
+    if (!db) return [];
+
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', employeeName),
@@ -85,6 +104,9 @@ export async function getAttendanceHistory(employeeName: User): Promise<Attendan
 }
 
 export async function getAllAttendanceLogs(): Promise<AttendanceLog[]> {
+    const db = await getDb();
+    if (!db) return [];
+
     const q = query(collection(db, 'attendanceLogs'), orderBy('clockIn', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => {
@@ -98,6 +120,9 @@ export async function getAllAttendanceLogs(): Promise<AttendanceLog[]> {
 }
 
 export async function requestLeave(employeeName: User, leaveDate: Date, reason: string): Promise<void> {
+    const db = await getDb();
+    if (!db) return;
+
     await addDoc(collection(db, 'leaveRequests'), {
         employeeName,
         leaveDate,
@@ -107,6 +132,9 @@ export async function requestLeave(employeeName: User, leaveDate: Date, reason: 
 }
 
 export async function getLeaveRequests(employeeName: User): Promise<LeaveRequest[]> {
+    const db = await getDb();
+    if (!db) return [];
+
     const q = query(
         collection(db, 'leaveRequests'), 
         where('employeeName', '==', employeeName),
@@ -125,6 +153,9 @@ export async function getLeaveRequests(employeeName: User): Promise<LeaveRequest
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
+    const db = await getDb();
+    if (!db) return [];
+    
     const q = query(collection(db, 'leaveRequests'), orderBy('leaveDate', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => {
