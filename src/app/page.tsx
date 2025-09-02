@@ -1,13 +1,16 @@
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCog } from 'lucide-react';
+import { Users, UserCog, Trophy } from 'lucide-react';
 import { getAttendanceStatus } from '@/services/attendance-service';
+import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { Badge } from '@/components/ui/badge';
 
 export default async function Home() {
-  const [abbasStatus, musaibStatus] = await Promise.all([
+  const [abbasStatus, musaibStatus, employeeOfTheWeek] = await Promise.all([
     getAttendanceStatus('Abbas'),
     getAttendanceStatus('Musaib'),
+    getEmployeeOfTheWeek(),
   ]);
 
   return (
@@ -36,6 +39,12 @@ export default async function Home() {
                   Clocked In
                 </div>
               )}
+               {employeeOfTheWeek === 'Abbas' && (
+                <Badge variant="secondary" className="mt-2 border-yellow-400 text-yellow-400">
+                  <Trophy className="mr-2 h-4 w-4" />
+                  Employee of the Week
+                </Badge>
+              )}
             </CardHeader>
           </Card>
         </Link>
@@ -56,6 +65,12 @@ export default async function Home() {
                   </span>
                   Clocked In
                 </div>
+              )}
+               {employeeOfTheWeek === 'Musaib' && (
+                <Badge variant="secondary" className="mt-2 border-yellow-400 text-yellow-400">
+                  <Trophy className="mr-2 h-4 w-4" />
+                  Employee of the Week
+                </Badge>
               )}
             </CardHeader>
           </Card>

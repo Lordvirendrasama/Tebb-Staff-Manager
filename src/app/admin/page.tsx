@@ -5,14 +5,19 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { AdminDashboard } from '@/components/admin-dashboard';
 import type { User } from '@/lib/constants';
 import { Progress } from '@/components/ui/progress';
+import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
 
 export default async function AdminPage() {
-  const allowanceData = await Promise.all(
-    USERS.map(async (user) => ({
-      user,
-      allowances: await getRemainingAllowances(user as User),
-    }))
-  );
+  const [allowanceData, employeeOfTheWeek] = await Promise.all([
+    Promise.all(
+      USERS.map(async (user) => ({
+        user,
+        allowances: await getRemainingAllowances(user as User),
+      }))
+    ),
+    getEmployeeOfTheWeek()
+  ]);
 
   return (
     <div className="space-y-8">
@@ -49,6 +54,15 @@ export default async function AdminPage() {
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader>
+              <CardTitle>Employee of the Week</CardTitle>
+              <CardDescription>Set the employee of the week.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmployeeOfTheWeekManager currentEmployee={employeeOfTheWeek} />
             </CardContent>
           </Card>
         </div>
