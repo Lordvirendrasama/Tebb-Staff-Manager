@@ -1,29 +1,24 @@
 
 import { getRemainingAllowances } from '@/services/consumption-log-service';
-import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { AdminDashboard } from '@/components/admin-dashboard';
-import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
 import type { User } from '@/lib/constants';
 import { Progress } from '@/components/ui/progress';
 
 export default async function AdminPage() {
-  const [allowanceData, employeeOfTheWeek] = await Promise.all([
-    Promise.all(
-      USERS.map(async (user) => ({
-        user,
-        allowances: await getRemainingAllowances(user as User),
-      }))
-    ),
-    getEmployeeOfTheWeek()
-  ]);
+  const allowanceData = await Promise.all(
+    USERS.map(async (user) => ({
+      user,
+      allowances: await getRemainingAllowances(user as User),
+    }))
+  );
 
   return (
     <div className="space-y-8">
       <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
       
-      <div className="grid gap-8 md:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-2">
         <div className="md:col-span-1 space-y-8">
           <Card>
             <CardHeader>
@@ -67,18 +62,6 @@ export default async function AdminPage() {
             <CardContent>
                 <AdminDashboard />
             </CardContent>
-            </Card>
-        </div>
-
-        <div className="md:col-span-1 space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Employee of the Week</CardTitle>
-                    <CardDescription>Select the employee of the week.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <EmployeeOfTheWeekManager employeeOfTheWeek={employeeOfTheWeek} />
-                </CardContent>
             </Card>
         </div>
       </div>
