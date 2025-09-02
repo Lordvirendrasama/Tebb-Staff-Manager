@@ -14,8 +14,9 @@ async function getDb() {
 export async function setEmployeeOfTheWeek(employeeName: User): Promise<void> {
   const db = await getDb();
   if (!db) {
-    console.error('Firebase Admin SDK is not initialized. Cannot set Employee of the Week.');
-    throw new Error('Database not available.');
+    const errorMessage = 'Firebase Admin SDK is not initialized. Cannot set Employee of the Week.';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
 
   const awardRef = doc(db, 'awards', 'employeeOfTheWeek');
