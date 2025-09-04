@@ -8,7 +8,6 @@ import { collection, getDocs, addDoc, query, where, Timestamp } from 'firebase/f
 
 async function getDb() {
     if (!adminDb) {
-        // Return null instead of throwing an error if the admin SDK is not initialized.
         return null;
     }
     return adminDb;
@@ -76,7 +75,9 @@ export async function getRemainingAllowances(employeeName: User): Promise<{ drin
 
 export async function logConsumption(employeeName: User, itemName: ConsumableItem): Promise<void> {
     const db = await getDb();
-    if (!db) throw new Error('Database not available.');
+    if (!db) {
+      throw new Error('Firebase Admin SDK is not initialized.');
+    }
 
     const allowances = await getRemainingAllowances(employeeName);
     const isDrink = (DRINK_ITEMS as readonly string[]).includes(itemName);

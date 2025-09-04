@@ -1,3 +1,4 @@
+
 'use server';
 
 import type { User } from '@/lib/constants';
@@ -24,7 +25,6 @@ export async function setEmployeeOfTheWeek(employeeName: User): Promise<void> {
 export async function getEmployeeOfTheWeek(): Promise<User | null> {
   const db = await getDb();
   if (!db) {
-    console.log('Firebase Admin SDK is not initialized. Cannot get Employee of the Week.');
     return null;
   }
 
@@ -32,7 +32,6 @@ export async function getEmployeeOfTheWeek(): Promise<User | null> {
   const docSnap = await getDoc(awardRef);
 
   if (docSnap.exists()) {
-    // Optional: You could add logic here to check if the award is still valid (e.g., within the last 7 days)
     return docSnap.data().employeeName as User;
   } else {
     return null;

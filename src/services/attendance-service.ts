@@ -7,7 +7,6 @@ import { collection, getDocs, addDoc, query, where, updateDoc, doc, Timestamp, o
 
 async function getDb() {
     if (!adminDb) {
-        // Return null instead of throwing an error if the admin SDK is not initialized.
         return null;
     }
     return adminDb;
@@ -15,7 +14,9 @@ async function getDb() {
 
 export async function clockIn(employeeName: User): Promise<void> {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    throw new Error('Firebase Admin SDK is not initialized.');
+  };
 
   const q = query(
     collection(db, 'attendanceLogs'), 
@@ -37,7 +38,9 @@ export async function clockIn(employeeName: User): Promise<void> {
 
 export async function clockOut(employeeName: User): Promise<void> {
     const db = await getDb();
-    if (!db) return;
+    if (!db) {
+      throw new Error('Firebase Admin SDK is not initialized.');
+    }
 
     const q = query(
         collection(db, 'attendanceLogs'),
@@ -121,7 +124,9 @@ export async function getAllAttendanceLogs(): Promise<AttendanceLog[]> {
 
 export async function requestLeave(employeeName: User, leaveDate: Date, reason: string): Promise<void> {
     const db = await getDb();
-    if (!db) return;
+    if (!db) {
+      throw new Error('Firebase Admin SDK is not initialized.');
+    }
 
     await addDoc(collection(db, 'leaveRequests'), {
         employeeName,
