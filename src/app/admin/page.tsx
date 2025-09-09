@@ -7,6 +7,7 @@ import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { getAllUsersAllowances } from '@/services/consumption-log-service';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { ExportDataButton } from '@/components/export-data-button';
 
 
 export default async function AdminPage() {
@@ -67,7 +68,7 @@ export default async function AdminPage() {
                   <CardTitle>Data Management</CardTitle>
                   <CardDescription>All data is stored in a local file.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertTitle>Local Data Storage</AlertTitle>
@@ -75,6 +76,7 @@ export default async function AdminPage() {
                       All application data is stored in the `src/lib/db.json` file. This means the data will persist even if the server or your computer restarts.
                     </AlertDescription>
                   </Alert>
+                  <ExportDataButton />
               </CardContent>
             </Card>
         </div>
