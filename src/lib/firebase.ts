@@ -37,17 +37,17 @@ function initializeAdminApp(): admin.App {
     }
     
     try {
-      // The key is base64 encoded, so we need to decode it first
-      const decodedKey = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
-      const serviceAccount = JSON.parse(decodedKey);
+      const serviceAccount = JSON.parse(serviceAccountKey);
       
       return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
     } catch (error: any) {
-      throw new Error(`Error initializing Firebase Admin SDK. Please check if FIREBASE_SERVICE_ACCOUNT_KEY is a valid base64-encoded JSON object. Details: ${error.message}`);
+      throw new Error(`Error initializing Firebase Admin SDK. Please check if FIREBASE_SERVICE_ACCOUNT_KEY is a valid JSON object. Details: ${error.message}`);
     }
 }
 
 const adminApp = initializeAdminApp();
 export const adminDb: AdminFirestore = getAdminFirestore(adminApp);
+
+    
