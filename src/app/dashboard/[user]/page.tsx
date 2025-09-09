@@ -89,7 +89,7 @@ export default async function UserDashboard({ params }: { params: { user: string
              <Card>
                 <CardHeader>
                     <CardTitle>Log an Item</CardTitle>
-                    <CardDescription>Select an item you've consumed.</CardDescription>
+                    <CardDescription>Select an item you\'ve consumed.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <LogItemForm user={validUser} allowances={allowances} />
