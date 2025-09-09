@@ -6,14 +6,14 @@ import { adminDb } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, updateDoc, doc, Timestamp, orderBy, limit } from 'firebase/firestore';
 
 async function getDb() {
-    if (!adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized. Check server logs for details.');
-    }
     return adminDb;
 }
 
 export async function clockIn(employeeName: User): Promise<void> {
   const db = await getDb();
+  if (!db) {
+    throw new Error('Firebase Admin SDK is not initialized. Cannot clock in.');
+  }
 
   const q = query(
     collection(db, 'attendanceLogs'), 
@@ -35,6 +35,9 @@ export async function clockIn(employeeName: User): Promise<void> {
 
 export async function clockOut(employeeName: User): Promise<void> {
     const db = await getDb();
+     if (!db) {
+        throw new Error('Firebase Admin SDK is not initialized. Cannot clock out.');
+    }
 
     const q = query(
         collection(db, 'attendanceLogs'),
@@ -57,6 +60,8 @@ export async function clockOut(employeeName: User): Promise<void> {
 export async function getAttendanceStatus(employeeName: User): Promise<AttendanceStatus> {
     try {
         const db = await getDb();
+        if (!db) return { status: 'Clocked Out' };
+
         const q = query(
             collection(db, 'attendanceLogs'),
             where('employeeName', '==', employeeName),
@@ -85,6 +90,8 @@ export async function getAttendanceStatus(employeeName: User): Promise<Attendanc
 export async function getAttendanceHistory(employeeName: User): Promise<AttendanceLog[]> {
     try {
         const db = await getDb();
+        if (!db) return [];
+
         const q = query(
             collection(db, 'attendanceLogs'),
             where('employeeName', '==', employeeName),
@@ -109,6 +116,8 @@ export async function getAttendanceHistory(employeeName: User): Promise<Attendan
 export async function getAllAttendanceLogs(): Promise<AttendanceLog[]> {
     try {
         const db = await getDb();
+        if (!db) return [];
+
         const q = query(collection(db, 'attendanceLogs'), orderBy('clockIn', 'desc'));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => {
@@ -127,6 +136,9 @@ export async function getAllAttendanceLogs(): Promise<AttendanceLog[]> {
 
 export async function requestLeave(employeeName: User, leaveDate: Date, reason: string): Promise<void> {
     const db = await getDb();
+    if (!db) {
+        throw new Error('Firebase Admin SDK is not initialized. Cannot request leave.');
+    }
 
     await addDoc(collection(db, 'leaveRequests'), {
         employeeName,
@@ -139,6 +151,8 @@ export async function requestLeave(employeeName: User, leaveDate: Date, reason: 
 export async function getLeaveRequests(employeeName: User): Promise<LeaveRequest[]> {
     try {
         const db = await getDb();
+        if (!db) return [];
+
         const q = query(
             collection(db, 'leaveRequests'), 
             where('employeeName', '==', employeeName),
@@ -163,6 +177,8 @@ export async function getLeaveRequests(employeeName: User): Promise<LeaveRequest
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
     try {
         const db = await getDb();
+        if (!db) return [];
+        
         const q = query(collection(db, 'leaveRequests'), orderBy('leaveDate', 'desc'));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => {

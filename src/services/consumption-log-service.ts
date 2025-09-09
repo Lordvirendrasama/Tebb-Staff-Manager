@@ -7,9 +7,6 @@ import { adminDb } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, Timestamp } from 'firebase/firestore';
 
 async function getDb() {
-    if (!adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized. Check server logs for details.');
-    }
     return adminDb;
 }
 
@@ -17,6 +14,7 @@ async function getDb() {
 export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {
     try {
         const db = await getDb();
+        if (!db) return [];
         const consumptionCol = collection(db, 'consumptionLogs');
         const snapshot = await getDocs(consumptionCol);
         const logs = snapshot.docs.map(doc => {
@@ -36,6 +34,7 @@ export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {
 export async function getLogsForUser(employeeName: User): Promise<ConsumptionLog[]> {
   try {
     const db = await getDb();
+    if (!db) return [];
     const q = query(collection(db, 'consumptionLogs'), where('employeeName', '==', employeeName));
     const snapshot = await getDocs(q);
     const logs = snapshot.docs.map(doc => {
@@ -83,6 +82,9 @@ export async function getRemainingAllowances(employeeName: User): Promise<{ drin
 
 export async function logConsumption(employeeName: User, itemName: ConsumableItem): Promise<void> {
     const db = await getDb();
+    if (!db) {
+        throw new Error('Firebase Admin SDK is not initialized. Cannot log consumption.');
+    }
     
     const allowances = await getRemainingAllowances(employeeName);
     const isDrink = (DRINK_ITEMS as readonly string[]).includes(itemName);
