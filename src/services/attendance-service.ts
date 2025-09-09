@@ -5,13 +5,16 @@ import { startOfDay, endOfDay } from 'date-fns';
 
 async function getDb() {
     if (!adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized.');
+        console.error('Firebase Admin SDK is not initialized.');
+        return null;
     }
     return adminDb;
 }
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const db = await getDb();
+    if (!db) return { status: 'Clocked Out' };
+
     const todayStart = startOfDay(new Date());
 
     const snapshot = await db.collection('attendance-logs')
@@ -36,6 +39,7 @@ export async function getAttendanceStatus(user: User): Promise<AttendanceStatus>
 
 export async function clockIn(user: User): Promise<void> {
     const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
     const now = new Date();
     const log: AttendanceLog = {
         employeeName: user,
@@ -46,6 +50,7 @@ export async function clockIn(user: User): Promise<void> {
 
 export async function clockOut(user: User): Promise<void> {
     const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
     const todayStart = startOfDay(new Date());
 
     const snapshot = await db.collection('attendance-logs')
@@ -65,6 +70,8 @@ export async function clockOut(user: User): Promise<void> {
 
 export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]> {
     const db = await getDb();
+    if (!db) return [];
+
     const snapshot = await db.collection('attendance-logs')
         .where('employeeName', '==', user)
         .orderBy('clockIn', 'desc')
@@ -83,6 +90,7 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
 
 export async function requestLeave(user: User, leaveDate: Date, reason: string): Promise<void> {
     const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
     const request: LeaveRequest = {
         employeeName: user,
         leaveDate,
@@ -94,6 +102,8 @@ export async function requestLeave(user: User, leaveDate: Date, reason: string):
 
 export async function getLeaveRequests(user: User): Promise<LeaveRequest[]> {
     const db = await getDb();
+    if (!db) return [];
+    
     const snapshot = await db.collection('leave-requests')
         .where('employeeName', '==', user)
         .orderBy('leaveDate', 'desc')

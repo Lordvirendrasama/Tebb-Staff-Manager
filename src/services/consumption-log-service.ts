@@ -1,18 +1,21 @@
 
 import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
 import { adminDb } from '@/lib/firebase';
-import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
+import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 async function getDb() {
     if (!adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized.');
+        console.error('Firebase Admin SDK is not initialized.');
+        return null;
     }
     return adminDb;
 }
 
 export async function logConsumption(user: User, item: ConsumableItem): Promise<void> {
     const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+
     const log: ConsumptionLog = {
         employeeName: user,
         itemName: item,
@@ -23,6 +26,8 @@ export async function logConsumption(user: User, item: ConsumableItem): Promise<
 
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const db = await getDb();
+    if (!db) return [];
+
     const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);
@@ -56,6 +61,16 @@ export async function getRemainingAllowances(user: User): Promise<{ drinks: numb
 
 export async function getAllUsersAllowances(): Promise<Array<{ user: User; allowances: { drinks: number; meals: number } }>> {
     const db = await getDb();
+    if (!db) {
+        return USERS.map(user => ({
+            user,
+            allowances: {
+                drinks: MONTHLY_DRINK_ALLOWANCE,
+                meals: MONTHLY_MEAL_ALLOWANCE
+            }
+        }));
+    }
+
     const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);
@@ -74,11 +89,12 @@ export async function getAllUsersAllowances(): Promise<Array<{ user: User; allow
         }
     });
 
-    const allowances = Object.entries(userLogs).map(([userName, userLogs]) => {
-        const drinksConsumed = userLogs.filter(log => DRINK_ITEMS.includes(log.itemName as DrinkItem)).length;
-        const mealsConsumed = userLogs.filter(log => MEAL_ITEMS.includes(log.itemName as MealItem)).length;
+    const allowances = USERS.map(user => {
+        const currentUserLogs = userLogs[user] || [];
+        const drinksConsumed = currentUserLogs.filter(log => DRINK_ITEMS.includes(log.itemName as DrinkItem)).length;
+        const mealsConsumed = currentUserLogs.filter(log => MEAL_ITEMS.includes(log.itemName as MealItem)).length;
         return {
-            user: userName as User,
+            user: user,
             allowances: {
                 drinks: MONTHLY_DRINK_ALLOWANCE - drinksConsumed,
                 meals: MONTHLY_MEAL_ALLOWANCE - mealsConsumed,

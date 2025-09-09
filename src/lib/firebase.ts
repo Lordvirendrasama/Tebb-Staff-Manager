@@ -10,9 +10,14 @@ import {
 import admin from 'firebase-admin';
 import {App, getApp as getAdminApp, getApps as getAdminApps} from 'firebase-admin/app';
 
-const firebaseConfig: FirebaseOptions = JSON.parse(
-  process.env.NEXT_PUBLIC_FIREBASE_CONFIG || '{}'
-);
+const firebaseConfig: FirebaseOptions = {
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+};
 
 let firebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
@@ -26,7 +31,9 @@ let adminDb: admin.firestore.Firestore;
 
 function initializeAdminApp() {
   if (getAdminApps().length > 0) {
-    return getAdminApp();
+    adminApp = getAdminApp();
+    adminDb = admin.firestore();
+    return;
   }
 
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -44,9 +51,7 @@ function initializeAdminApp() {
     });
     adminDb = admin.firestore();
   } catch (error: any) {
-    throw new Error(
-      `Error initializing Firebase Admin SDK. Please check if FIREBASE_SERVICE_ACCOUNT_KEY is a valid JSON object. Details: ${error.message}`
-    );
+    console.error(`Error initializing Firebase Admin SDK. Please check if FIREBASE_SERVICE_ACCOUNT_KEY is a valid JSON object. Details: ${error.message}`);
   }
 }
 
