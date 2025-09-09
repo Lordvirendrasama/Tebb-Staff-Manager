@@ -7,7 +7,6 @@ import { clockInAction, clockOutAction } from '@/app/actions/attendance-actions'
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, LogOut, History, Clock } from 'lucide-react';
 import type { User, AttendanceStatus, AttendanceLog } from '@/lib/constants';
-import { format } from 'date-fns';
 import {
   Table,
   TableBody,
@@ -26,6 +25,16 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const formatLocaleTime = (date: Date | string | undefined) => {
+    if (!date) return '...';
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+  
+    const formatLocaleDate = (date: Date | string | undefined) => {
+    if (!date) return '...';
+    return new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
 
 
   const handleClockIn = () => {
@@ -59,7 +68,7 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
                 <Clock className="h-5 w-5 text-primary" />
                 <p className="text-sm font-medium">
                     {isClockedIn && isClient
-                        ? `Clocked in at ${format(new Date(status.clockInTime), 'p')}`
+                        ? `Clocked in at ${formatLocaleTime(status.clockInTime)}`
                         : isClockedIn ? "Clocked in" : "You are currently clocked out."
                     }
                 </p>
@@ -93,9 +102,9 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
                     <TableBody>
                     {history.slice(0, 5).map((log, index) => (
                         <TableRow key={index}>
-                            <TableCell>{format(new Date(log.clockIn), 'MMM d')}</TableCell>
-                            <TableCell>{isClient ? format(new Date(log.clockIn), 'p') : '...'}</TableCell>
-                            <TableCell>{log.clockOut && isClient ? format(new Date(log.clockOut), 'p') : '...'}</TableCell>
+                            <TableCell>{isClient ? formatLocaleDate(log.clockIn) : '...'}</TableCell>
+                            <TableCell>{isClient ? formatLocaleTime(log.clockIn) : '...'}</TableCell>
+                            <TableCell>{isClient ? formatLocaleTime(log.clockOut) : '...'}</TableCell>
                         </TableRow>
                     ))}
                     </TableBody>

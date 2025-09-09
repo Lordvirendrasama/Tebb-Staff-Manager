@@ -1,8 +1,10 @@
+
+'use client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { ConsumptionLog } from '@/lib/constants';
-import { format } from 'date-fns';
 import { Coffee, GlassWater, Milk, Soup, UtensilsCrossed } from 'lucide-react';
 import type { FC, SVGProps } from 'react';
+import { useState, useEffect } from 'react';
 
 const FriesIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
     <svg
@@ -36,6 +38,28 @@ const itemIcons: { [key: string]: FC<SVGProps<SVGSVGElement>> } = {
 };
 
 export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const formatLocaleDate = (date: Date) => {
+    return new Date(date).toLocaleDateString([], {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+  };
+
+  const formatLocaleTime = (date: Date) => {
+    return new Date(date).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+  };
+
   if (logs.length === 0) {
     return <p className="text-muted-foreground text-center py-12">No items logged yet.</p>;
   }
@@ -61,8 +85,8 @@ export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
                     <span>{log.itemName}</span>
                   </div>
                 </TableCell>
-                <TableCell>{format(new Date(log.dateTimeLogged), 'PPP')}</TableCell>
-                <TableCell className="text-right">{format(new Date(log.dateTimeLogged), 'p')}</TableCell>
+                <TableCell>{isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}</TableCell>
+                <TableCell className="text-right">{isClient ? formatLocaleTime(log.dateTimeLogged) : '...'}</TableCell>
               </TableRow>
             );
           })}
