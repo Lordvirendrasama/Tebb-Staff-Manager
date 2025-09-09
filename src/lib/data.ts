@@ -53,7 +53,6 @@ export const addAttendanceLog = (log: AttendanceLog) => {
     db.attendanceLogs.unshift(log);
 };
 export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<AttendanceLog>) => {
-    // find the most recent log for that user that doesn't have a clockOut
     const logIndex = db.attendanceLogs.findIndex(l => l.employeeName === user && !l.clockOut);
     if (logIndex !== -1) {
         db.attendanceLogs[logIndex] = { ...db.attendanceLogs[logIndex], ...updates };
