@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {getAllAttendanceLogs} from '@/services/attendance-service';
 
 const GenerateAttendanceReportInputSchema = z.object({});
 export type GenerateAttendanceReportInput = z.infer<typeof GenerateAttendanceReportInputSchema>;
@@ -32,6 +31,8 @@ const prompt = ai.definePrompt({
 
        The report should be in XML format. The root element should be <attendanceLogs>, and each entry should be a <log> element with <employeeName>, <clockIn>, and <clockOut> child elements.
 
+       If there is no data, return an empty <attendanceLogs/> element.
+
        Here is the attendance data:
        {{{attendanceData}}}`,
 });
@@ -43,15 +44,8 @@ const generateAttendanceReportFlow = ai.defineFlow(
     outputSchema: GenerateAttendanceReportOutputSchema,
   },
   async input => {
-    const attendanceLogs = await getAllAttendanceLogs();
-
-    // Format the attendance data for the prompt
-    const attendanceData = attendanceLogs
-      .map(
-        log =>
-          `${log.employeeName},${log.clockIn.toISOString()},${log.clockOut ? log.clockOut.toISOString() : 'N/A'}`
-      )
-      .join('\n');
+    // Placeholder as database is removed.
+    const attendanceData = '';
 
     const {output} = await prompt({attendanceData});
     return output!;

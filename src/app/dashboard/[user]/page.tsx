@@ -1,7 +1,5 @@
 
-import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
-import { getAttendanceStatus, getAttendanceHistory, getLeaveRequests } from '@/services/attendance-service';
-import { USERS } from '@/lib/constants';
+import { USERS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 import { redirect } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { LogItemForm } from '@/components/log-item-form';
@@ -21,19 +19,12 @@ export default async function UserDashboard({ params }: { params: { user: string
 
   const validUser = user as User;
 
-  const [
-    allowances, 
-    logs, 
-    attendanceStatus,
-    attendanceHistory,
-    leaveRequests
-  ] = await Promise.all([
-    getRemainingAllowances(validUser),
-    getLogsForUser(validUser),
-    getAttendanceStatus(validUser),
-    getAttendanceHistory(validUser),
-    getLeaveRequests(validUser),
-  ]);
+  // Placeholder data
+  const allowances = { drinks: MONTHLY_DRINK_ALLOWANCE, meals: MONTHLY_MEAL_ALLOWANCE };
+  const logs = [];
+  const attendanceStatus = { status: 'Clocked Out' as const };
+  const attendanceHistory = [];
+  const leaveRequests = [];
 
   const recentLogs = logs.slice(0, 5);
   const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;

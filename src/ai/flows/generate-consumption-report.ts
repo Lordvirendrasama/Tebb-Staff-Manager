@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {getAllConsumptionLogs} from '@/services/consumption-log-service';
 
 const GenerateConsumptionReportInputSchema = z.object({});
 export type GenerateConsumptionReportInput = z.infer<typeof GenerateConsumptionReportInputSchema>;
@@ -32,6 +31,8 @@ const prompt = ai.definePrompt({
 
        The report should be in XML format. The root element should be <consumptionLogs>, and each entry should be a <log> element with <employeeName>, <itemName>, and <dateTimeLogged> child elements.
 
+       If there is no data, return an empty <consumptionLogs/> element.
+
        Here is the consumption data:
        {{{consumptionData}}}`,
 });
@@ -43,15 +44,8 @@ const generateConsumptionReportFlow = ai.defineFlow(
     outputSchema: GenerateConsumptionReportOutputSchema,
   },
   async input => {
-    const consumptionLogs = await getAllConsumptionLogs();
-
-    // Format the consumption data for the prompt
-    const consumptionData = consumptionLogs
-      .map(
-        log =>
-          `${log.employeeName},${log.itemName},${log.dateTimeLogged.toISOString()}`
-      )
-      .join('\n');
+    // Placeholder as database is removed.
+    const consumptionData = '';
 
     const {output} = await prompt({consumptionData});
     return output!;

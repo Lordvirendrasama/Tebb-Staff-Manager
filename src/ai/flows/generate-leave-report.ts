@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {getAllLeaveRequests} from '@/services/attendance-service';
 
 const GenerateLeaveReportInputSchema = z.object({});
 export type GenerateLeaveReportInput = z.infer<typeof GenerateLeaveReportInputSchema>;
@@ -32,6 +31,8 @@ const prompt = ai.definePrompt({
 
        The report should be in XML format. The root element should be <leaveRequests>, and each entry should be a <request> element with <employeeName>, <leaveDate>, <reason>, and <status> child elements.
 
+       If there is no data, return an empty <leaveRequests/> element.
+
        Here is the leave data:
        {{{leaveData}}}`,
 });
@@ -43,15 +44,8 @@ const generateLeaveReportFlow = ai.defineFlow(
     outputSchema: GenerateLeaveReportOutputSchema,
   },
   async input => {
-    const leaveRequests = await getAllLeaveRequests();
-
-    // Format the leave data for the prompt
-    const leaveData = leaveRequests
-      .map(
-        req =>
-          `${req.employeeName},${req.leaveDate.toISOString()},"${req.reason.replace(/"/g, '""')}",${req.status}`
-      )
-      .join('\n');
+    // Placeholder as database is removed.
+    const leaveData = '';
 
     const {output} = await prompt({leaveData});
     return output!;

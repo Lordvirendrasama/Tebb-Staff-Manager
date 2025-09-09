@@ -1,23 +1,18 @@
 
-import { getRemainingAllowances } from '@/services/consumption-log-service';
 import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { AdminDashboard } from '@/components/admin-dashboard';
 import type { User } from '@/lib/constants';
 import { Progress } from '@/components/ui/progress';
-import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
 
 export default async function AdminPage() {
-  const [allowanceData, employeeOfTheWeek] = await Promise.all([
-    Promise.all(
-      USERS.map(async (user) => ({
-        user,
-        allowances: await getRemainingAllowances(user as User),
-      }))
-    ),
-    getEmployeeOfTheWeek()
-  ]);
+  // Placeholder data
+  const allowanceData = USERS.map((user) => ({
+    user,
+    allowances: { drinks: MONTHLY_DRINK_ALLOWANCE, meals: MONTHLY_MEAL_ALLOWANCE },
+  }));
+  const employeeOfTheWeek = null;
 
   return (
     <div className="space-y-8">

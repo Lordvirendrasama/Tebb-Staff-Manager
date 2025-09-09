@@ -2,16 +2,13 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Trophy } from 'lucide-react';
-import { getAttendanceStatus } from '@/services/attendance-service';
-import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { Badge } from '@/components/ui/badge';
 
 export default async function Home() {
-  const [abbasStatus, musaibStatus, employeeOfTheWeek] = await Promise.all([
-    getAttendanceStatus('Abbas'),
-    getAttendanceStatus('Musaib'),
-    getEmployeeOfTheWeek(),
-  ]);
+  // Placeholder data
+  const abbasStatus = { status: 'Clocked Out' };
+  const musaibStatus = { status: 'Clocked Out' };
+  const employeeOfTheWeek = null;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
