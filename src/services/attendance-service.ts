@@ -27,13 +27,8 @@ export async function clockIn(user: User): Promise<void> {
 }
 
 export async function clockOut(user: User): Promise<void> {
-    const latestLog = data.getAttendanceLogs()
-        .filter(log => log.employeeName === user)
-        .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())[0];
-        
-    if (latestLog && !latestLog.clockOut) {
-         data.updateLatestAttendanceLogForUser(user, { clockOut: new Date() });
-    }
+    // Directly call the data update function to ensure the correct log is updated.
+    data.updateLatestAttendanceLogForUser(user, { clockOut: new Date() });
 }
 
 export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]> {
@@ -59,4 +54,3 @@ export async function getLeaveRequests(user: User): Promise<LeaveRequest[]> {
         .sort((a, b) => b.leaveDate.getTime() - a.leaveDate.getTime())
         .slice(0, 10);
 }
-
