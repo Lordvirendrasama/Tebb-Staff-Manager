@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, App } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import admin from 'firebase-admin';
@@ -24,34 +25,24 @@ export const db = getFirestore(app);
 
 
 // Server-side admin app
-function initializeAdminApp(): admin.App {
-    if (admin.apps.length > 0) {
-        return admin.app();
-    }
+let adminApp: admin.App;
 
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-        throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not set. The Admin SDK cannot be initialized.');
-    }
-
+if (!admin.apps.length) {
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (serviceAccountKey) {
     try {
-        const decodedKey = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
-        const serviceAccount = JSON.parse(decodedKey);
-        
-        return admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
+      const serviceAccount = JSON.parse(Buffer.from(serviceAccountKey, 'base64').toString('utf-8'));
+      adminApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
     } catch (error) {
-        console.error("Failed to parse or initialize Firebase Admin SDK. Please ensure FIREBASE_SERVICE_ACCOUNT_KEY is a valid base64-encoded JSON object.", error);
-        throw new Error('Failed to initialize Firebase Admin SDK.');
+      console.error("Error initializing Firebase Admin SDK:", error);
     }
+  } else {
+    console.warn("FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK will not be initialized.");
+  }
+} else {
+  adminApp = admin.app();
 }
 
-let adminApp: admin.App | null = null;
-try {
-  adminApp = initializeAdminApp();
-} catch (error) {
-    console.error(error);
-}
-
-export const adminDb: AdminFirestore | undefined = adminApp ? getAdminFirestore(adminApp) : undefined;
+export const adminDb: AdminFirestore | undefined = adminApp! ? getAdminFirestore(adminApp) : undefined;
