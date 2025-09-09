@@ -1,6 +1,9 @@
+
 'use server';
 
 import * as data from '@/lib/data';
+import type { Database } from '@/lib/data';
+import { revalidatePath } from 'next/cache';
 
 export async function getAllDataAction() {
     try {
@@ -23,5 +26,20 @@ export async function getAllDataAction() {
     } catch (error) {
         console.error(error);
         return { success: false, message: 'Failed to fetch data from the local file.' };
+    }
+}
+
+
+export async function importDataAction(db: Database) {
+    try {
+        data.writeDb(db);
+        revalidatePath('/');
+        revalidatePath('/admin');
+        revalidatePath('/dashboard/Abbas');
+        revalidatePath('/dashboard/Musaib');
+        return { success: true, message: 'Data imported successfully!' };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: 'Failed to import data.' };
     }
 }

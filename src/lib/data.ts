@@ -1,17 +1,18 @@
+
 import type { User, ConsumptionLog, AttendanceLog, LeaveRequest } from './constants';
 import fs from 'fs';
 import path from 'path';
 
 const DB_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
 
-interface Database {
+export interface Database {
   consumptionLogs: ConsumptionLog[];
   attendanceLogs: AttendanceLog[];
   leaveRequests: LeaveRequest[];
   employeeOfTheWeek: User | null;
 }
 
-function readDb(): Database {
+export function readDb(): Database {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf-8');
     const db = JSON.parse(data);
@@ -28,7 +29,7 @@ function readDb(): Database {
   }
 }
 
-function writeDb(db: Database) {
+export function writeDb(db: Database) {
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
 }
 
@@ -63,7 +64,8 @@ export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<At
     
     if (logsForUser.length > 0) {
         const latestLog = logsForUser[0];
-        const logIndex = db.attendanceLogs.findIndex(log => log.clockIn === latestLog.clockIn && log.employeeName === user);
+        const logIndex = db.attendanceLogs.findIndex(log => log.clockIn.getTime() === latestLog.clockIn.getTime() && log.employeeName === user);
+
         if (logIndex !== -1) {
             db.attendanceLogs[logIndex] = { ...db.attendanceLogs[logIndex], ...updates };
             writeDb(db);

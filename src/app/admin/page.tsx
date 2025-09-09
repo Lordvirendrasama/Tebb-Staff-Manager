@@ -8,6 +8,7 @@ import { getAllUsersAllowances } from '@/services/consumption-log-service';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { ExportDataButton } from '@/components/export-data-button';
+import { ImportDataButton } from '@/components/import-data-button';
 
 
 export default async function AdminPage() {
@@ -66,19 +67,22 @@ export default async function AdminPage() {
             <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
-                  <CardDescription>All data is stored locally in the project.</CardDescription>
+                  <CardDescription>Import and export all application data.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertTitle>Local Data Storage</AlertTitle>
                     <AlertDescription>
-                      All application data is stored in a local `db.json` file within the project, making it persistent and portable for local development.
+                      All application data is stored in a local `db.json` file within the project. You can export this file to create a backup or import a file to restore data.
                     </AlertDescription>
                   </Alert>
-                  <ExportDataButton />
+                  <div className="grid grid-cols-2 gap-4">
+                    <ExportDataButton />
+                    <ImportDataButton />
+                  </div>
               </CardContent>
-            </Everything>
+            </Card>
         </div>
       </div>
     </div>
