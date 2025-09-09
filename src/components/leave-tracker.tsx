@@ -16,17 +16,18 @@ import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
+import type { DateRange } from 'react-day-picker';
 
 export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequests: LeaveRequest[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<DateRange | undefined>();
   const [reason, setReason] = useState('');
   const [leaveType, setLeaveType] = useState<LeaveType>('Unpaid');
 
   const handleRequestLeave = () => {
     if (!date || !reason) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and provide a reason.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a date range and provide a reason.' });
         return;
     }
 
@@ -54,6 +55,15 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                 return 'secondary';
         }
     };
+    
+    const formatDateRange = (start: Date, end: Date) => {
+        const startDate = format(new Date(start), 'PP');
+        const endDate = format(new Date(end), 'PP');
+        if (startDate === endDate) {
+            return startDate;
+        }
+        return `${startDate} to ${endDate}`;
+    }
 
   return (
     <div className="space-y-4">
@@ -63,15 +73,27 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                 <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
                     <CalendarDays className="mr-2" />
-                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                    {date?.from ? (
+                      date.to ? (
+                        <>
+                          {format(date.from, "LLL dd, y")} -{" "}
+                          {format(date.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(date.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span>Pick a date range</span>
+                    )}
                 </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                 <Calendar
-                    mode="single"
+                    mode="range"
                     selected={date}
                     onSelect={setDate}
                     initialFocus
+                    numberOfMonths={2}
                 />
                 </PopoverContent>
             </Popover>
@@ -118,7 +140,7 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Date</TableHead>
+                            <TableHead>Dates</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead className="text-right">Status</TableHead>
                         </TableRow>
@@ -126,7 +148,7 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                     <TableBody>
                     {leaveRequests.slice(0, 5).map((req) => (
                         <TableRow key={req.id}>
-                        <TableCell>{format(new Date(req.leaveDate), 'PPP')}</TableCell>
+                        <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
                         <TableCell className="text-muted-foreground text-xs">{req.leaveType}</TableCell>
                         <TableCell className="text-right">
                              <Badge variant={getStatusVariant(req.status)}>

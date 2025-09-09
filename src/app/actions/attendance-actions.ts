@@ -4,6 +4,7 @@
 import type { User, LeaveType } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { clockIn, clockOut, requestLeave, getAttendanceStatus, approveLeaveRequest, denyLeaveRequest } from '@/services/attendance-service';
+import type { DateRange } from 'react-day-picker';
 
 export async function clockInAction(user: User) {
     try {
@@ -35,9 +36,12 @@ export async function clockOutAction(user: User) {
     }
 }
 
-export async function requestLeaveAction(user: User, leaveDate: Date, reason: string, leaveType: LeaveType) {
+export async function requestLeaveAction(user: User, leaveDateRange: DateRange, reason: string, leaveType: LeaveType) {
     try {
-        await requestLeave(user, leaveDate, reason, leaveType);
+        if (!leaveDateRange.from || !leaveDateRange.to) {
+            return { success: false, message: 'Please select a valid date range.' };
+        }
+        await requestLeave(user, leaveDateRange.from, leaveDateRange.to, reason, leaveType);
         revalidatePath(`/dashboard/${user}`);
         revalidatePath('/admin');
         return { success: true, message: 'Leave requested successfully.' };

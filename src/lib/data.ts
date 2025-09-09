@@ -21,7 +21,7 @@ export function readDb(): Database {
         ...db,
         consumptionLogs: db.consumptionLogs.map((log: any) => ({ ...log, dateTimeLogged: new Date(log.dateTimeLogged) })),
         attendanceLogs: db.attendanceLogs.map((log: any) => ({ ...log, clockIn: new Date(log.clockIn), clockOut: log.clockOut ? new Date(log.clockOut) : undefined })),
-        leaveRequests: db.leaveRequests.map((req: any) => ({ ...req, leaveDate: new Date(req.leaveDate) }))
+        leaveRequests: db.leaveRequests.map((req: any) => ({ ...req, startDate: new Date(req.startDate), endDate: new Date(req.endDate) }))
     };
   } catch (error) {
     // If the file doesn't exist or is empty, return a default structure

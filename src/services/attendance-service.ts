@@ -39,11 +39,12 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
         .slice(0, 10);
 }
 
-export async function requestLeave(user: User, leaveDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
+export async function requestLeave(user: User, startDate: Date, endDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
     const request: LeaveRequest = {
         id: new Date().toISOString() + Math.random().toString(36).substring(2, 9), // simple unique id
         employeeName: user,
-        leaveDate,
+        startDate,
+        endDate,
         reason,
         leaveType,
         status: 'Pending',
@@ -55,12 +56,12 @@ export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[
     const allRequests = data.getLeaveRequests();
     return allRequests
         .filter(req => req.employeeName === user)
-        .sort((a, b) => new Date(b.leaveDate).getTime() - new Date(a.leaveDate).getTime())
+        .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
         .slice(0, 10);
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
-    return data.getAllLeaveRequests().sort((a,b) => new Date(b.leaveDate).getTime() - new Date(a.leaveDate).getTime());
+    return data.getAllLeaveRequests().sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 }
 
 export async function approveLeaveRequest(id: string): Promise<void> {

@@ -51,6 +51,15 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                 return 'secondary';
         }
     };
+    
+    const formatDateRange = (start: Date, end: Date) => {
+        const startDate = format(new Date(start), 'PP');
+        const endDate = format(new Date(end), 'PP');
+        if (startDate === endDate) {
+            return startDate;
+        }
+        return `${startDate} to ${endDate}`;
+    }
 
     const pendingRequests = requests.filter(r => r.status === 'Pending');
 
@@ -69,7 +78,7 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                              <TableHeader>
                                 <TableRow>
                                     <TableHead>Employee</TableHead>
-                                    <TableHead>Date</TableHead>
+                                    <TableHead>Dates</TableHead>
                                     <TableHead>Type</TableHead>
                                     <TableHead>Reason</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -79,9 +88,9 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                                 {pendingRequests.map(req => (
                                     <TableRow key={req.id}>
                                         <TableCell className="font-medium">{req.employeeName}</TableCell>
-                                        <TableCell>{format(new Date(req.leaveDate), 'PPP')}</TableCell>
+                                        <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
                                         <TableCell className="text-xs text-muted-foreground">{req.leaveType}</TableCell>
-                                        <TableCell className="text-xs max-w-xs truncate">{req.reason}</TableCell>
+                                        <TableCell className="text-xs max-w-[120px] truncate">{req.reason}</TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Button size="icon" variant="outline" onClick={() => handleApprove(req.id)} disabled={isPending}>
                                                 {isPending ? <Loader2 className="animate-spin" /> : <Check className="text-green-500"/>}
