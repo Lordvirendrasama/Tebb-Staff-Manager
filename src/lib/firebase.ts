@@ -24,27 +24,31 @@ if (!getApps().length) {
 export const db = getFirestore(app);
 
 
-// Server-side admin app
-function initializeAdminApp() {
+// Server-side admin app - THIS IS THE CORRECTED IMPLEMENTATION
+function initializeAdminApp(): admin.App | undefined {
+    // If the admin app is already initialized, return it.
     if (admin.apps.length) {
         return admin.app();
     }
 
     const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    
+    // If the key is not available, log a warning and exit.
     if (!serviceAccountKey) {
-        // This is not a fatal error during development if admin actions aren't called.
-        // The services calling this will handle the undefined db.
-        console.warn("FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK will not be initialized on the server. Server-side Firebase features will not work.");
+        console.warn("FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. Firebase Admin SDK will not be initialized on the server. Server-side Firebase features will be unavailable.");
         return undefined;
     }
     
     try {
+      // Decode and parse the service account key from the environment variable.
       const serviceAccount = JSON.parse(Buffer.from(serviceAccountKey, 'base64').toString('utf-8'));
+      
+      // Initialize the Firebase Admin SDK with the credentials.
       return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
     } catch (error) {
-      console.error("Error initializing Firebase Admin SDK from service account key:", error);
+      console.error("Error initializing Firebase Admin SDK. Please check if FIREBASE_SERVICE_ACCOUNT_KEY is a valid base64-encoded JSON object.", error);
       return undefined;
     }
 }
