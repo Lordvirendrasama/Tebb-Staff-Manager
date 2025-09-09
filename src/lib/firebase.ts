@@ -38,6 +38,7 @@ function initializeAdminApp(): admin.App | null {
     }
     
     try {
+      // The key is a JSON string, so it needs to be parsed.
       const serviceAccount = JSON.parse(serviceAccountKey);
       
       return admin.initializeApp({
