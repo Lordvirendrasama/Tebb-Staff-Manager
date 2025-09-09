@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { getAttendanceStatus } from '@/services/attendance-service';
+import { getEmployeeOfTheWeek } from '@/services/awards-service';
 
 export default async function Home() {
-  // Placeholder data
-  const abbasStatus = { status: 'Clocked Out' };
-  const musaibStatus = { status: 'Clocked Out' };
-  const employeeOfTheWeek = null;
+  const abbasStatus = await getAttendanceStatus('Abbas');
+  const musaibStatus = await getAttendanceStatus('Musaib');
+  const employeeOfTheWeek = await getEmployeeOfTheWeek();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">

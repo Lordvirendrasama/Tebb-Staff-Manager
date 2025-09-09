@@ -1,5 +1,5 @@
 
-import { USERS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
+import { USERS } from '@/lib/constants';
 import { redirect } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { LogItemForm } from '@/components/log-item-form';
@@ -9,6 +9,8 @@ import { Ban, GlassWater, Utensils } from 'lucide-react';
 import type { User } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { LeaveTracker } from '@/components/leave-tracker';
+import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
+import { getAttendanceStatus, getAttendanceHistory, getLeaveRequests } from '@/services/attendance-service';
 
 export default async function UserDashboard({ params }: { params: { user: string } }) {
   const { user } = params;
@@ -19,12 +21,11 @@ export default async function UserDashboard({ params }: { params: { user: string
 
   const validUser = user as User;
 
-  // Placeholder data
-  const allowances = { drinks: MONTHLY_DRINK_ALLOWANCE, meals: MONTHLY_MEAL_ALLOWANCE };
-  const logs = [];
-  const attendanceStatus = { status: 'Clocked Out' as const };
-  const attendanceHistory = [];
-  const leaveRequests = [];
+  const allowances = await getRemainingAllowances(validUser);
+  const logs = await getLogsForUser(validUser);
+  const attendanceStatus = await getAttendanceStatus(validUser);
+  const attendanceHistory = await getAttendanceHistory(validUser);
+  const leaveRequests = await getLeaveRequests(validUser);
 
   const recentLogs = logs.slice(0, 5);
   const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;

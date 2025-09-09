@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -10,6 +11,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { adminDb } from '@/lib/firebase';
+import type { LeaveRequest } from '@/lib/constants';
+import { format } from 'date-fns';
 
 const GenerateLeaveReportInputSchema = z.object({});
 export type GenerateLeaveReportInput = z.infer<typeof GenerateLeaveReportInputSchema>;
@@ -37,6 +41,21 @@ const prompt = ai.definePrompt({
        {{{leaveData}}}`,
 });
 
+async function getLeaveData(): Promise<string> {
+    if (!adminDb) {
+        return '';
+    }
+    const snapshot = await adminDb.collection('leave-requests').orderBy('leaveDate', 'desc').get();
+    const requests = snapshot.docs.map(doc => {
+        const data = doc.data() as LeaveRequest;
+        return {
+            ...data,
+            leaveDate: format(data.leaveDate.toDate(), 'yyyy-MM-dd'),
+        };
+    });
+    return JSON.stringify(requests, null, 2);
+}
+
 const generateLeaveReportFlow = ai.defineFlow(
   {
     name: 'generateLeaveReportFlow',
@@ -44,8 +63,7 @@ const generateLeaveReportFlow = ai.defineFlow(
     outputSchema: GenerateLeaveReportOutputSchema,
   },
   async input => {
-    // Placeholder as database is removed.
-    const leaveData = '';
+    const leaveData = await getLeaveData();
 
     const {output} = await prompt({leaveData});
     return output!;

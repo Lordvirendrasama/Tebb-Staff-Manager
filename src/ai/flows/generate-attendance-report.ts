@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -10,6 +11,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { adminDb } from '@/lib/firebase';
+import type { AttendanceLog } from '@/lib/constants';
+import { format } from 'date-fns';
 
 const GenerateAttendanceReportInputSchema = z.object({});
 export type GenerateAttendanceReportInput = z.infer<typeof GenerateAttendanceReportInputSchema>;
@@ -37,6 +41,22 @@ const prompt = ai.definePrompt({
        {{{attendanceData}}}`,
 });
 
+async function getAttendanceData(): Promise<string> {
+    if (!adminDb) {
+        return '';
+    }
+    const snapshot = await adminDb.collection('attendance-logs').orderBy('clockIn', 'desc').get();
+    const logs = snapshot.docs.map(doc => {
+        const data = doc.data() as AttendanceLog;
+        return {
+            ...data,
+            clockIn: format(data.clockIn.toDate(), 'yyyy-MM-dd HH:mm:ss'),
+            clockOut: data.clockOut ? format(data.clockOut.toDate(), 'yyyy-MM-dd HH:mm:ss') : undefined,
+        };
+    });
+    return JSON.stringify(logs, null, 2);
+}
+
 const generateAttendanceReportFlow = ai.defineFlow(
   {
     name: 'generateAttendanceReportFlow',
@@ -44,9 +64,7 @@ const generateAttendanceReportFlow = ai.defineFlow(
     outputSchema: GenerateAttendanceReportOutputSchema,
   },
   async input => {
-    // Placeholder as database is removed.
-    const attendanceData = '';
-
+    const attendanceData = await getAttendanceData();
     const {output} = await prompt({attendanceData});
     return output!;
   }

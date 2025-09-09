@@ -1,18 +1,16 @@
 
-import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
+import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { AdminDashboard } from '@/components/admin-dashboard';
-import type { User } from '@/lib/constants';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
+import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { getAllUsersAllowances } from '@/services/consumption-log-service';
+
 
 export default async function AdminPage() {
-  // Placeholder data
-  const allowanceData = USERS.map((user) => ({
-    user,
-    allowances: { drinks: MONTHLY_DRINK_ALLOWANCE, meals: MONTHLY_MEAL_ALLOWANCE },
-  }));
-  const employeeOfTheWeek = null;
+  const allowanceData = await getAllUsersAllowances();
+  const employeeOfTheWeek = await getEmployeeOfTheWeek();
 
   return (
     <div className="space-y-8">
