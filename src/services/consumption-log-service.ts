@@ -8,77 +8,82 @@ import { collection, getDocs, addDoc, query, where, Timestamp } from 'firebase/f
 
 async function getDb() {
     if (!adminDb) {
-        return null;
+        throw new Error('Firebase Admin SDK is not initialized. Check server logs for details.');
     }
     return adminDb;
 }
 
 // This function is required by the GenAI flow.
 export async function getAllConsumptionLogs(): Promise<ConsumptionLog[]> {
-    const db = await getDb();
-    if (!db) return [];
-
-    const consumptionCol = collection(db, 'consumptionLogs');
-    const snapshot = await getDocs(consumptionCol);
-    const logs = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        dateTimeLogged: (data.dateTimeLogged as Timestamp).toDate(),
-      } as ConsumptionLog;
-    });
-    return logs;
+    try {
+        const db = await getDb();
+        const consumptionCol = collection(db, 'consumptionLogs');
+        const snapshot = await getDocs(consumptionCol);
+        const logs = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            ...data,
+            dateTimeLogged: (data.dateTimeLogged as Timestamp).toDate(),
+          } as ConsumptionLog;
+        });
+        return logs;
+    } catch (e) {
+        console.error("Could not fetch all consumption logs", e);
+        return [];
+    }
 }
 
 export async function getLogsForUser(employeeName: User): Promise<ConsumptionLog[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  const q = query(collection(db, 'consumptionLogs'), where('employeeName', '==', employeeName));
-  const snapshot = await getDocs(q);
-  const logs = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        dateTimeLogged: (data.dateTimeLogged as Timestamp).toDate(),
-      } as ConsumptionLog;
-  });
-  return logs.sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
+  try {
+    const db = await getDb();
+    const q = query(collection(db, 'consumptionLogs'), where('employeeName', '==', employeeName));
+    const snapshot = await getDocs(q);
+    const logs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          dateTimeLogged: (data.dateTimeLogged as Timestamp).toDate(),
+        } as ConsumptionLog;
+    });
+    return logs.sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
+  } catch (e) {
+    console.error(`Could not fetch logs for user ${employeeName}`, e);
+    return [];
+  }
 }
 
 export async function getRemainingAllowances(employeeName: User): Promise<{ drinks: number; meals: number }> {
-    const db = await getDb();
-    if (!db) return { drinks: MONTHLY_DRINK_ALLOWANCE, meals: MONTHLY_MEAL_ALLOWANCE };
+    try {
+        const userLogs = await getLogsForUser(employeeName);
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
 
-    const userLogs = await getLogsForUser(employeeName);
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+        const logsThisMonth = userLogs.filter(log => {
+            const logDate = new Date(log.dateTimeLogged);
+            return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
+        });
 
-    const logsThisMonth = userLogs.filter(log => {
-        const logDate = new Date(log.dateTimeLogged);
-        return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
-    });
+        const drinksConsumed = logsThisMonth.filter(log => (DRINK_ITEMS as readonly string[]).includes(log.itemName)).length;
+        const mealsConsumed = logsThisMonth.filter(log => (MEAL_ITEMS as readonly string[]).includes(log.itemName)).length;
 
-    const drinksConsumed = logsThisMonth.filter(log => (DRINK_ITEMS as readonly string[]).includes(log.itemName)).length;
-    const mealsConsumed = logsThisMonth.filter(log => (MEAL_ITEMS as readonly string[]).includes(log.itemName)).length;
+        const drinksLeft = MONTHLY_DRINK_ALLOWANCE - drinksConsumed;
+        const mealsLeft = MONTHLY_MEAL_ALLOWANCE - mealsConsumed;
 
-    const drinksLeft = MONTHLY_DRINK_ALLOWANCE - drinksConsumed;
-    const mealsLeft = MONTHLY_MEAL_ALLOWANCE - mealsConsumed;
-
-    return {
-        drinks: Math.max(0, drinksLeft),
-        meals: Math.max(0, mealsLeft),
-    };
+        return {
+            drinks: Math.max(0, drinksLeft),
+            meals: Math.max(0, mealsLeft),
+        };
+    } catch (e) {
+        console.error(`Could not fetch remaining allowances for user ${employeeName}`, e);
+        return { drinks: MONTHLY_DRINK_ALLOWANCE, meals: MONTHLY_MEAL_ALLOWANCE };
+    }
 }
 
 
 export async function logConsumption(employeeName: User, itemName: ConsumableItem): Promise<void> {
     const db = await getDb();
-    if (!db) {
-      throw new Error('Firebase Admin SDK is not initialized.');
-    }
-
+    
     const allowances = await getRemainingAllowances(employeeName);
     const isDrink = (DRINK_ITEMS as readonly string[]).includes(itemName);
 

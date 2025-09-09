@@ -23,16 +23,21 @@ export async function setEmployeeOfTheWeek(employeeName: User): Promise<void> {
 export async function getEmployeeOfTheWeek(): Promise<User | null> {
   // Gracefully handle missing adminDb on page load to avoid crashing the app.
   if (!adminDb) {
-    console.log("Firebase Admin not available, can't get Employee of the Week.");
+    console.warn("Firebase Admin not available, can't get Employee of the Week.");
     return null;
   }
 
-  const awardRef = doc(adminDb, 'awards', 'employeeOfTheWeek');
-  const docSnap = await getDoc(awardRef);
+  try {
+    const awardRef = doc(adminDb, 'awards', 'employeeOfTheWeek');
+    const docSnap = await getDoc(awardRef);
 
-  if (docSnap.exists()) {
-    return docSnap.data().employeeName as User;
-  } else {
-    return null;
+    if (docSnap.exists()) {
+      return docSnap.data().employeeName as User;
+    } else {
+      return null;
+    }
+  } catch(e) {
+      console.error("Could not fetch employee of the week", e);
+      return null;
   }
 }
