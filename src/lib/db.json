@@ -1,34 +1,7 @@
+
 {
-  "consumptionLogs": [
-    {
-      "employeeName": "Musaib",
-      "itemName": "Coffee",
-      "dateTimeLogged": "2024-07-30T10:20:00.000Z"
-    }
-  ],
-  "attendanceLogs": [
-    {
-      "employeeName": "Musaib",
-      "clockIn": "2025-09-09T16:12:24.988Z"
-    },
-    {
-      "employeeName": "Musaib",
-      "clockIn": "2024-07-30T10:15:00.000Z",
-      "clockOut": "2024-07-30T14:30:00.000Z"
-    },
-    {
-      "employeeName": "Abbas",
-      "clockIn": "2024-07-30T09:05:00.000Z",
-      "clockOut": "2025-09-09T16:01:29.978Z"
-    }
-  ],
-  "leaveRequests": [
-    {
-      "employeeName": "Musaib",
-      "leaveDate": "2024-08-20T00:00:00.000Z",
-      "reason": "Dentist Appointment",
-      "status": "Approved"
-    }
-  ],
-  "employeeOfTheWeek": "Musaib"
+  "consumptionLogs": [],
+  "attendanceLogs": [],
+  "leaveRequests": [],
+  "employeeOfTheWeek": null
 }
