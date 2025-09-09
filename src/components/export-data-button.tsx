@@ -43,9 +43,9 @@ export function ExportDataButton() {
   };
 
   return (
-    <Button onClick={handleExport} disabled={isPending} className="w-full">
+    <Button onClick={handleExport} disabled={isPending} className="w-full" variant="outline">
       {isPending ? <Loader2 className="animate-spin" /> : <Download />}
-      Export Data
+      Export to JSON
     </Button>
   );
 }

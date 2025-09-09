@@ -9,6 +9,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { ExportDataButton } from '@/components/export-data-button';
 import { ImportDataButton } from '@/components/import-data-button';
+import { ExportCsvButton } from '@/components/export-csv-button';
 
 
 export default async function AdminPage() {
@@ -77,9 +78,10 @@ export default async function AdminPage() {
                       All application data is stored in a local `db.json` file within the project. You can export this file to create a backup or import a file to restore data.
                     </AlertDescription>
                   </Alert>
-                  <div className="grid grid-cols-2 gap-4">
-                    <ExportDataButton />
+                  <div className="grid grid-cols-1 gap-4">
                     <ImportDataButton />
+                    <ExportDataButton />
+                    <ExportCsvButton />
                   </div>
               </CardContent>
             </Card>

@@ -56,9 +56,9 @@ export function ImportDataButton() {
   return (
     <AlertDialog>
         <AlertDialogTrigger asChild>
-            <Button variant="outline" className="w-full" disabled={isPending}>
+            <Button className="w-full" disabled={isPending}>
                 {isPending ? <Loader2 className="animate-spin" /> : <Upload />}
-                Import Data
+                Import from JSON
             </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
