@@ -6,17 +6,11 @@ import * as data from '@/lib/data';
 import { startOfDay } from 'date-fns';
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
-    const todayStart = startOfDay(new Date());
-
     const latestLog = data.getAttendanceLogs()
-        .filter(log => log.employeeName === user && log.clockIn >= todayStart)
+        .filter(log => log.employeeName === user)
         .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())[0];
 
-    if (!latestLog) {
-        return { status: 'Clocked Out' };
-    }
-
-    if (!latestLog.clockOut) {
+    if (latestLog && !latestLog.clockOut) {
         return { status: 'Clocked In', clockInTime: latestLog.clockIn };
     }
 
@@ -33,10 +27,8 @@ export async function clockIn(user: User): Promise<void> {
 }
 
 export async function clockOut(user: User): Promise<void> {
-    const todayStart = startOfDay(new Date());
-
     const latestLog = data.getAttendanceLogs()
-        .filter(log => log.employeeName === user && log.clockIn >= todayStart)
+        .filter(log => log.employeeName === user)
         .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())[0];
         
     if (latestLog && !latestLog.clockOut) {
@@ -67,3 +59,4 @@ export async function getLeaveRequests(user: User): Promise<LeaveRequest[]> {
         .sort((a, b) => b.leaveDate.getTime() - a.leaveDate.getTime())
         .slice(0, 10);
 }
+
