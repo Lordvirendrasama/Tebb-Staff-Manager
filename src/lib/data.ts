@@ -10,12 +10,36 @@ interface Db {
     employeeOfTheWeek: User | null;
 }
 
-const db: Db = {
+let db: Db = {
     consumptionLogs: [],
     attendanceLogs: [],
     leaveRequests: [],
     employeeOfTheWeek: null
 };
+
+function resetData() {
+    console.log("Resetting data...");
+    db = {
+        consumptionLogs: [],
+        attendanceLogs: [],
+        leaveRequests: [],
+        employeeOfTheWeek: 'Abbas' // Default to Abbas
+    };
+
+    const now = new Date();
+    // Seed some example data for today
+    db.attendanceLogs.push(
+        { employeeName: 'Abbas', clockIn: new Date(new Date(now).setHours(9, 5, 0, 0))},
+        { employeeName: 'Musaib', clockIn: new Date(new Date(now).setHours(10, 15, 0, 0)), clockOut: new Date(new Date(now).setHours(14, 30, 0, 0)) }
+    );
+     db.consumptionLogs.push(
+        { employeeName: 'Musaib', itemName: 'Coffee', dateTimeLogged: new Date(new Date(now).setHours(10, 20, 0, 0)) }
+    );
+     db.leaveRequests.push(
+        { employeeName: 'Musaib', leaveDate: new Date('2024-08-20'), reason: 'Dentist Appointment', status: 'Approved' }
+    );
+}
+
 
 // --- Consumption Logs ---
 export const getConsumptionLogs = () => db.consumptionLogs;
@@ -29,7 +53,8 @@ export const addAttendanceLog = (log: AttendanceLog) => {
     db.attendanceLogs.unshift(log);
 };
 export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<AttendanceLog>) => {
-    const logIndex = db.attendanceLogs.findIndex(l => l.employeeName === user);
+    // find the most recent log for that user that doesn't have a clockOut
+    const logIndex = db.attendanceLogs.findIndex(l => l.employeeName === user && !l.clockOut);
     if (logIndex !== -1) {
         db.attendanceLogs[logIndex] = { ...db.attendanceLogs[logIndex], ...updates };
     }
@@ -48,34 +73,5 @@ export const setEmployeeOfTheWeek = (user: User) => {
     db.employeeOfTheWeek = user;
 };
 
-// --- Seed initial data ---
-function seedData() {
-    if (db.consumptionLogs.length > 0) return; // Don't re-seed
 
-    console.log("Seeding initial data...");
-
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-
-    db.consumptionLogs.push(
-        { employeeName: 'Abbas', itemName: 'Coffee', dateTimeLogged: new Date(now.getTime() - 2 * 60 * 60 * 1000) },
-        { employeeName: 'Musaib', itemName: 'Pasta', dateTimeLogged: new Date(now.getTime() - 4 * 60 * 60 * 1000) },
-        { employeeName: 'Abbas', itemName: 'Fries', dateTimeLogged: new Date(yesterday.getTime() - 3 * 60 * 60 * 1000) }
-    );
-
-    db.attendanceLogs.push(
-        { employeeName: 'Abbas', clockIn: new Date(now.setHours(9, 0, 0, 0)), clockOut: new Date(now.setHours(17, 5, 0, 0))},
-        { employeeName: 'Musaib', clockIn: new Date(now.setHours(8, 55, 0, 0)) },
-        { employeeName: 'Abbas', clockIn: new Date(yesterday.setHours(9, 3, 0, 0)), clockOut: new Date(yesterday.setHours(17, 2, 0, 0))}
-    );
-
-    db.leaveRequests.push(
-        { employeeName: 'Musaib', leaveDate: new Date('2024-08-10'), reason: 'Family event', status: 'Approved' },
-        { employeeName: 'Abbas', leaveDate: new Date('2024-08-15'), reason: 'Appointment', status: 'Pending' }
-    );
-
-    db.employeeOfTheWeek = 'Musaib';
-}
-
-seedData();
+resetData();
