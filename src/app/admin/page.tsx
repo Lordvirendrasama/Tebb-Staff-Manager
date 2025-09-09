@@ -1,11 +1,12 @@
 
 import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { AdminDashboard } from '@/components/admin-dashboard';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
 import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { getAllUsersAllowances } from '@/services/consumption-log-service';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 
 export default async function AdminPage() {
@@ -62,13 +63,19 @@ export default async function AdminPage() {
 
         <div className="md:col-span-1 space-y-8">
             <Card>
-            <CardHeader>
-                <CardTitle>Data Export</CardTitle>
-                <CardDescription>Generate XML reports of all data.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <AdminDashboard />
-            </CardContent>
+              <CardHeader>
+                  <CardTitle>Data Management</CardTitle>
+                  <CardDescription>All data is stored locally in memory.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Local Data Storage</AlertTitle>
+                    <AlertDescription>
+                      All application data is stored in-memory and will be reset if the server restarts. No data is persisted.
+                    </AlertDescription>
+                  </Alert>
+              </CardContent>
             </Card>
         </div>
       </div>
