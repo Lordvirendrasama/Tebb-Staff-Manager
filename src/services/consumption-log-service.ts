@@ -1,4 +1,3 @@
-
 import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
 import { adminDb } from '@/lib/firebase';
 import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
@@ -6,15 +5,13 @@ import { startOfMonth, endOfMonth } from 'date-fns';
 
 async function getDb() {
     if (!adminDb) {
-        console.error('Firebase Admin SDK is not initialized.');
-        return null;
+        throw new Error('Firebase Admin SDK is not initialized.');
     }
     return adminDb;
 }
 
 export async function logConsumption(user: User, item: ConsumableItem): Promise<void> {
     const db = await getDb();
-    if (!db) throw new Error("Database not initialized");
 
     const log: ConsumptionLog = {
         employeeName: user,
@@ -26,7 +23,6 @@ export async function logConsumption(user: User, item: ConsumableItem): Promise<
 
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const db = await getDb();
-    if (!db) return [];
 
     const now = new Date();
     const start = startOfMonth(now);
@@ -61,15 +57,6 @@ export async function getRemainingAllowances(user: User): Promise<{ drinks: numb
 
 export async function getAllUsersAllowances(): Promise<Array<{ user: User; allowances: { drinks: number; meals: number } }>> {
     const db = await getDb();
-    if (!db) {
-        return USERS.map(user => ({
-            user,
-            allowances: {
-                drinks: MONTHLY_DRINK_ALLOWANCE,
-                meals: MONTHLY_MEAL_ALLOWANCE
-            }
-        }));
-    }
 
     const now = new Date();
     const start = startOfMonth(now);

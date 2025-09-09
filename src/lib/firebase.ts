@@ -1,4 +1,3 @@
-
 import {initializeApp, getApps, getApp, FirebaseOptions} from 'firebase/app';
 import {getFirestore, Firestore} from 'firebase/firestore';
 import {
@@ -30,29 +29,31 @@ let adminApp: App;
 let adminDb: admin.firestore.Firestore;
 
 function initializeAdminApp() {
-  if (getAdminApps().length > 0) {
-    adminApp = getAdminApp();
-    adminDb = admin.firestore();
-    return;
-  }
+    if (getAdminApps().length > 0) {
+        adminApp = getAdminApp();
+        adminDb = admin.firestore();
+        return;
+    }
 
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!serviceAccountKey) {
-    console.warn(
-      'FIREBASE_SERVICE_ACCOUNT_KEY is not set. Admin SDK will not be initialized.'
-    );
-    return;
-  }
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-  try {
-    const serviceAccount = JSON.parse(serviceAccountKey);
-    adminApp = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    adminDb = admin.firestore();
-  } catch (error: any) {
-    console.error(`Error initializing Firebase Admin SDK. Please check if FIREBASE_SERVICE_ACCOUNT_KEY is a valid JSON object. Details: ${error.message}`);
-  }
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
+        console.warn('Firebase Admin SDK credentials are not set. Admin features will be disabled.');
+        return;
+    }
+
+    try {
+        adminApp = admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: privateKey,
+            }),
+        });
+        adminDb = admin.firestore();
+    } catch (error: any) {
+        console.error(`Error initializing Firebase Admin SDK: ${error.message}`);
+    }
 }
 
 initializeAdminApp();
