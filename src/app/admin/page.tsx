@@ -65,14 +65,14 @@ export default async function AdminPage() {
             <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
-                  <CardDescription>All data is stored locally in memory.</CardDescription>
+                  <CardDescription>All data is stored in a local file.</CardDescription>
               </CardHeader>
               <CardContent>
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertTitle>Local Data Storage</AlertTitle>
                     <AlertDescription>
-                      All application data is stored in-memory and will be reset if the server restarts. No data is persisted.
+                      All application data is stored in the `src/lib/db.json` file. This means the data will persist even if the server or your computer restarts.
                     </AlertDescription>
                   </Alert>
               </CardContent>

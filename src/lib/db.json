@@ -1,4 +1,3 @@
-
 {
   "consumptionLogs": [
     {
@@ -15,7 +14,8 @@
     },
     {
       "employeeName": "Abbas",
-      "clockIn": "2024-07-30T09:05:00.000Z"
+      "clockIn": "2024-07-30T09:05:00.000Z",
+      "clockOut": "2025-09-09T16:01:29.978Z"
     }
   ],
   "leaveRequests": [
@@ -26,5 +26,5 @@
       "status": "Approved"
     }
   ],
-  "employeeOfTheWeek": "Abbas"
+  "employeeOfTheWeek": "Musaib"
 }
