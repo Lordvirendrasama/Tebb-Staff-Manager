@@ -1,3 +1,4 @@
+
 import {initializeApp, getApps, getApp, FirebaseOptions} from 'firebase/app';
 import {getFirestore, Firestore} from 'firebase/firestore';
 import {
@@ -8,6 +9,9 @@ import {
 } from 'firebase/auth';
 import admin from 'firebase-admin';
 import {App, getApp as getAdminApp, getApps as getAdminApps} from 'firebase-admin/app';
+import { config } from 'dotenv';
+
+config();
 
 const firebaseConfig: FirebaseOptions = {
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,

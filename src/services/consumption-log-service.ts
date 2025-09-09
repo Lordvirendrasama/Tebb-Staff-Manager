@@ -1,3 +1,4 @@
+
 import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
 import { adminDb } from '@/lib/firebase';
 import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
