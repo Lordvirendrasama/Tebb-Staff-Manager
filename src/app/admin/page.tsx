@@ -10,11 +10,13 @@ import { Info } from 'lucide-react';
 import { ExportDataButton } from '@/components/export-data-button';
 import { ImportDataButton } from '@/components/import-data-button';
 import { ExportCsvButton } from '@/components/export-csv-button';
-
+import { LeaveRequestManager } from '@/components/leave-request-manager';
+import { getAllLeaveRequests } from '@/services/attendance-service';
 
 export default async function AdminPage() {
   const allowanceData = await getAllUsersAllowances();
   const employeeOfTheWeek = await getEmployeeOfTheWeek();
+  const leaveRequests = await getAllLeaveRequests();
 
   return (
     <div className="space-y-8">
@@ -62,10 +64,7 @@ export default async function AdminPage() {
               <EmployeeOfTheWeekManager currentEmployee={employeeOfTheWeek} />
             </CardContent>
           </Card>
-        </div>
-
-        <div className="md:col-span-1 space-y-8">
-            <Card>
+           <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
                   <CardDescription>Import and export all application data.</CardDescription>
@@ -75,7 +74,7 @@ export default async function AdminPage() {
                     <Info className="h-4 w-4" />
                     <AlertTitle>Local Data Storage</AlertTitle>
                     <AlertDescription>
-                      All application data is stored in a local `db.json` file within the project. You can export this file to create a backup or import a file to restore data.
+                      All application data is stored in a local `db.json` file. You can export this file to create a backup or import a file to restore data.
                     </AlertDescription>
                   </Alert>
                   <div className="grid grid-cols-1 gap-4">
@@ -85,6 +84,10 @@ export default async function AdminPage() {
                   </div>
               </CardContent>
             </Card>
+        </div>
+
+        <div className="md:col-span-1 space-y-8">
+           <LeaveRequestManager requests={leaveRequests} />
         </div>
       </div>
     </div>

@@ -5,8 +5,8 @@ import { useTransition, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { requestLeaveAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, CalendarDays, ClipboardList } from 'lucide-react';
-import type { User, LeaveRequest } from '@/lib/constants';
+import { Loader2, Send, CalendarDays, ClipboardList, Wallet, Repeat } from 'lucide-react';
+import type { User, LeaveRequest, LeaveType, LeaveStatus } from '@/lib/constants';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,12 +14,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
 
 export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequests: LeaveRequest[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [date, setDate] = useState<Date | undefined>();
   const [reason, setReason] = useState('');
+  const [leaveType, setLeaveType] = useState<LeaveType>('Unpaid');
 
   const handleRequestLeave = () => {
     if (!date || !reason) {
@@ -28,7 +31,7 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
     }
 
     startTransition(async () => {
-      const result = await requestLeaveAction(user, date, reason);
+      const result = await requestLeaveAction(user, date, reason, leaveType);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
         setDate(undefined);
@@ -38,6 +41,19 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
       }
     });
   };
+  
+    const getStatusVariant = (status: LeaveStatus) => {
+        switch (status) {
+            case 'Approved':
+                return 'default';
+            case 'Denied':
+                return 'destructive';
+            case 'Pending':
+                return 'secondary';
+            default:
+                return 'secondary';
+        }
+    };
 
   return (
     <div className="space-y-4">
@@ -59,6 +75,28 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                 />
                 </PopoverContent>
             </Popover>
+            <RadioGroup defaultValue="Unpaid" onValueChange={(value: LeaveType) => setLeaveType(value)} className="grid grid-cols-2 gap-4">
+                 <div>
+                    <RadioGroupItem value="Unpaid" id="unpaid" className="peer sr-only" />
+                    <Label
+                      htmlFor="unpaid"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <Wallet className="mb-3 h-6 w-6" />
+                      Unpaid Day Off
+                    </Label>
+                  </div>
+                   <div>
+                    <RadioGroupItem value="Paid (Made Up)" id="paid" className="peer sr-only" />
+                    <Label
+                      htmlFor="paid"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <Repeat className="mb-3 h-6 w-6" />
+                      Paid (Make-up shift)
+                    </Label>
+                  </div>
+            </RadioGroup>
             <Textarea 
                 placeholder="Reason for leave..."
                 value={reason}
@@ -81,15 +119,17 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                     <TableHeader>
                         <TableRow>
                             <TableHead>Date</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead className="text-right">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {leaveRequests.slice(0, 5).map((req, index) => (
-                        <TableRow key={index}>
+                    {leaveRequests.slice(0, 5).map((req) => (
+                        <TableRow key={req.id}>
                         <TableCell>{format(new Date(req.leaveDate), 'PPP')}</TableCell>
-                        <TableCell>
-                            <Badge variant={req.status === 'Approved' ? 'default' : req.status === 'Rejected' ? 'destructive' : 'secondary'}>
+                        <TableCell className="text-muted-foreground text-xs">{req.leaveType}</TableCell>
+                        <TableCell className="text-right">
+                             <Badge variant={getStatusVariant(req.status)}>
                                 {req.status}
                             </Badge>
                         </TableCell>

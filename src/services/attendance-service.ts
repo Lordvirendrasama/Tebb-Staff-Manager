@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { User, AttendanceStatus, AttendanceLog, LeaveRequest } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, LeaveStatus } from '@/lib/constants';
 import * as data from '@/lib/data';
 import { startOfDay } from 'date-fns';
 
@@ -9,7 +9,7 @@ export async function getAttendanceStatus(user: User): Promise<AttendanceStatus>
     const allLogs = data.getAttendanceLogs();
     const latestLog = allLogs
         .filter(log => log.employeeName === user)
-        .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())[0];
+        .sort((a, b) => new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime())[0];
 
     if (latestLog && !latestLog.clockOut) {
         return { status: 'Clocked In', clockInTime: latestLog.clockIn };
@@ -35,24 +35,38 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
     const allLogs = data.getAttendanceLogs();
     return allLogs
         .filter(log => log.employeeName === user)
-        .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())
+        .sort((a, b) => new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime())
         .slice(0, 10);
 }
 
-export async function requestLeave(user: User, leaveDate: Date, reason: string): Promise<void> {
+export async function requestLeave(user: User, leaveDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
     const request: LeaveRequest = {
+        id: new Date().toISOString() + Math.random().toString(36).substring(2, 9), // simple unique id
         employeeName: user,
         leaveDate,
         reason,
+        leaveType,
         status: 'Pending',
     };
     data.addLeaveRequest(request);
 }
 
-export async function getLeaveRequests(user: User): Promise<LeaveRequest[]> {
+export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
     const allRequests = data.getLeaveRequests();
     return allRequests
         .filter(req => req.employeeName === user)
-        .sort((a, b) => b.leaveDate.getTime() - a.leaveDate.getTime())
+        .sort((a, b) => new Date(b.leaveDate).getTime() - new Date(a.leaveDate).getTime())
         .slice(0, 10);
+}
+
+export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
+    return data.getAllLeaveRequests().sort((a,b) => new Date(b.leaveDate).getTime() - new Date(a.leaveDate).getTime());
+}
+
+export async function approveLeaveRequest(id: string): Promise<void> {
+    data.updateLeaveRequestStatus(id, 'Approved');
+}
+
+export async function denyLeaveRequest(id: string): Promise<void> {
+    data.updateLeaveRequestStatus(id, 'Denied');
 }

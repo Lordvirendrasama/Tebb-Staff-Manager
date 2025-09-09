@@ -10,7 +10,7 @@ import type { User } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { LeaveTracker } from '@/components/leave-tracker';
 import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
-import { getAttendanceStatus, getAttendanceHistory, getLeaveRequests } from '@/services/attendance-service';
+import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser } from '@/services/attendance-service';
 
 export default async function UserDashboard({ params }: { params: { user: string } }) {
   const { user } = params;
@@ -25,7 +25,7 @@ export default async function UserDashboard({ params }: { params: { user: string
   const logs = await getLogsForUser(validUser);
   const attendanceStatus = await getAttendanceStatus(validUser);
   const attendanceHistory = await getAttendanceHistory(validUser);
-  const leaveRequests = await getLeaveRequests(validUser);
+  const leaveRequests = await getLeaveRequestsForUser(validUser);
 
   const recentLogs = logs.slice(0, 5);
   const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;

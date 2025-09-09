@@ -1,9 +1,9 @@
 
 'use server';
 
-import type { User } from '@/lib/constants';
+import type { User, LeaveType } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
-import { clockIn, clockOut, requestLeave, getAttendanceStatus } from '@/services/attendance-service';
+import { clockIn, clockOut, requestLeave, getAttendanceStatus, approveLeaveRequest, denyLeaveRequest } from '@/services/attendance-service';
 
 export async function clockInAction(user: User) {
     try {
@@ -35,12 +35,33 @@ export async function clockOutAction(user: User) {
     }
 }
 
-export async function requestLeaveAction(user: User, leaveDate: Date, reason: string) {
+export async function requestLeaveAction(user: User, leaveDate: Date, reason: string, leaveType: LeaveType) {
     try {
-        await requestLeave(user, leaveDate, reason);
+        await requestLeave(user, leaveDate, reason, leaveType);
         revalidatePath(`/dashboard/${user}`);
+        revalidatePath('/admin');
         return { success: true, message: 'Leave requested successfully.' };
     } catch (error) {
+        return { success: false, message: 'An error occurred.' };
+    }
+}
+
+export async function approveLeaveAction(id: string) {
+    try {
+        await approveLeaveRequest(id);
+        revalidatePath('/admin');
+        return { success: true, message: 'Leave request approved.' };
+    } catch(error) {
+        return { success: false, message: 'An error occurred.' };
+    }
+}
+
+export async function denyLeaveAction(id: string) {
+    try {
+        await denyLeaveRequest(id);
+        revalidatePath('/admin');
+        return { success: true, message: 'Leave request denied.' };
+    } catch(error) {
         return { success: false, message: 'An error occurred.' };
     }
 }

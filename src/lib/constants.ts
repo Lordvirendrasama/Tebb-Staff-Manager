@@ -33,9 +33,14 @@ export type AttendanceStatus = {
     clockInTime: Date;
 };
 
+export type LeaveType = 'Paid (Made Up)' | 'Unpaid';
+export type LeaveStatus = 'Pending' | 'Approved' | 'Denied';
+
 export interface LeaveRequest {
+  id: string;
   employeeName: User;
   leaveDate: Date;
   reason: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  leaveType: LeaveType;
+  status: LeaveStatus;
 }

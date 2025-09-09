@@ -78,10 +78,23 @@ export const getLeaveRequests = (): LeaveRequest[] => {
     return readDb().leaveRequests;
 };
 
+export const getAllLeaveRequests = (): LeaveRequest[] => {
+    return readDb().leaveRequests;
+};
+
 export const addLeaveRequest = (request: LeaveRequest) => {
     const db = readDb();
     db.leaveRequests.push(request);
     writeDb(db);
+};
+
+export const updateLeaveRequestStatus = (id: string, status: 'Approved' | 'Denied') => {
+    const db = readDb();
+    const requestIndex = db.leaveRequests.findIndex(req => req.id === id);
+    if (requestIndex !== -1) {
+        db.leaveRequests[requestIndex].status = status;
+        writeDb(db);
+    }
 };
 
 
