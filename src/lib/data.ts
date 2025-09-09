@@ -19,7 +19,23 @@ function readDb(): Db {
     try {
         if (fs.existsSync(dbFilePath)) {
             const fileContent = fs.readFileSync(dbFilePath, 'utf-8');
-            return JSON.parse(fileContent);
+            const parsedDb = JSON.parse(fileContent);
+
+            // Revive date strings into Date objects
+            parsedDb.consumptionLogs.forEach((log: ConsumptionLog) => {
+                log.dateTimeLogged = new Date(log.dateTimeLogged);
+            });
+            parsedDb.attendanceLogs.forEach((log: AttendanceLog) => {
+                log.clockIn = new Date(log.clockIn);
+                if (log.clockOut) {
+                    log.clockOut = new Date(log.clockOut);
+                }
+            });
+            parsedDb.leaveRequests.forEach((req: LeaveRequest) => {
+                req.leaveDate = new Date(req.leaveDate);
+            });
+
+            return parsedDb;
         }
     } catch (error) {
         console.error("Error reading db.json:", error);
@@ -97,3 +113,4 @@ export const setEmployeeOfTheWeek = (user: User) => {
     db.employeeOfTheWeek = user;
     writeDb();
 };
+
