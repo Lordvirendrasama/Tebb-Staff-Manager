@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp, App } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import admin from 'firebase-admin';
@@ -25,30 +24,26 @@ export const db = getFirestore(app);
 
 
 // Server-side admin app
-function initializeAdminApp() {
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-
+function initializeAdminApp(): admin.App | null {
     if (admin.apps.length > 0) {
         return admin.app();
     }
 
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     if (!serviceAccountKey) {
         console.warn("FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK will not be initialized.");
         return null;
     }
 
     try {
-        // The service account key is expected to be a base64 encoded string.
         const decodedKey = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
         const serviceAccount = JSON.parse(decodedKey);
         
-        // Use the project ID from the service account for initialization
         return admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            projectId: serviceAccount.project_id,
         });
     } catch (error) {
-        console.error("Failed to parse or initialize Firebase Admin SDK:", error);
+        console.error("Failed to parse or initialize Firebase Admin SDK. Please ensure FIREBASE_SERVICE_ACCOUNT_KEY is a valid base64-encoded JSON object.", error);
         return null;
     }
 }
