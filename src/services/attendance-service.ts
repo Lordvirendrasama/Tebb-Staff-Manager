@@ -6,7 +6,7 @@ import * as data from '@/lib/data';
 import { startOfDay } from 'date-fns';
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
-    const allLogs = await data.getAttendanceLogs();
+    const allLogs = data.getAttendanceLogs();
     const latestLog = allLogs
         .filter(log => log.employeeName === user)
         .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())[0];
@@ -24,15 +24,15 @@ export async function clockIn(user: User): Promise<void> {
         employeeName: user,
         clockIn: now,
     };
-    await data.addAttendanceLog(log);
+    data.addAttendanceLog(log);
 }
 
 export async function clockOut(user: User): Promise<void> {
-    await data.updateLatestAttendanceLogForUser(user, { clockOut: new Date() });
+    data.updateLatestAttendanceLogForUser(user, { clockOut: new Date() });
 }
 
 export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]> {
-    const allLogs = await data.getAttendanceLogs();
+    const allLogs = data.getAttendanceLogs();
     return allLogs
         .filter(log => log.employeeName === user)
         .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())
@@ -46,11 +46,11 @@ export async function requestLeave(user: User, leaveDate: Date, reason: string):
         reason,
         status: 'Pending',
     };
-    await data.addLeaveRequest(request);
+    data.addLeaveRequest(request);
 }
 
 export async function getLeaveRequests(user: User): Promise<LeaveRequest[]> {
-    const allRequests = await data.getLeaveRequests();
+    const allRequests = data.getLeaveRequests();
     return allRequests
         .filter(req => req.employeeName === user)
         .sort((a, b) => b.leaveDate.getTime() - a.leaveDate.getTime())

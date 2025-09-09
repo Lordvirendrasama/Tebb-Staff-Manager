@@ -12,7 +12,7 @@ export async function logConsumption(user: User, item: ConsumableItem): Promise<
         itemName: item,
         dateTimeLogged: new Date(),
     };
-    await data.addConsumptionLog(log);
+    data.addConsumptionLog(log);
 }
 
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
@@ -20,7 +20,7 @@ export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const start = startOfMonth(now);
     const end = endOfMonth(now);
 
-    const allLogs = await data.getConsumptionLogs();
+    const allLogs = data.getConsumptionLogs();
 
     return allLogs
         .filter(log => 
@@ -47,7 +47,7 @@ export async function getAllUsersAllowances(): Promise<Array<{ user: User; allow
     const start = startOfMonth(now);
     const end = endOfMonth(now);
     
-    const logs = (await data.getConsumptionLogs())
+    const logs = (data.getConsumptionLogs())
         .filter(log => log.dateTimeLogged >= start && log.dateTimeLogged <= end);
 
     const userLogs: Record<User, ConsumptionLog[]> = { 'Abbas': [], 'Musaib': [] };

@@ -1,112 +1,106 @@
-
 import type { User, ConsumptionLog, AttendanceLog, LeaveRequest } from './constants';
-import { getDb } from './firebase';
+import fs from 'fs';
+import path from 'path';
 
-const CONSUMPTION_COLLECTION = 'consumptionLogs';
-const ATTENDANCE_COLLECTION = 'attendanceLogs';
-const LEAVE_COLLECTION = 'leaveRequests';
-const AWARDS_COLLECTION = 'awards';
+const DB_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
 
-function docToConsumptionLog(doc: FirebaseFirestore.DocumentSnapshot): ConsumptionLog {
-    const data = doc.data()!;
-    return {
-        employeeName: data.employeeName,
-        itemName: data.itemName,
-        dateTimeLogged: data.dateTimeLogged.toDate(),
-    };
+interface Database {
+  consumptionLogs: ConsumptionLog[];
+  attendanceLogs: AttendanceLog[];
+  leaveRequests: LeaveRequest[];
+  employeeOfTheWeek: User | null;
 }
 
-function docToAttendanceLog(doc: FirebaseFirestore.DocumentSnapshot): AttendanceLog {
-    const data = doc.data()!;
+function readDb(): Database {
+  try {
+    const data = fs.readFileSync(DB_PATH, 'utf-8');
+    const db = JSON.parse(data);
+    // Dates are stored as ISO strings in JSON, so we need to convert them back to Date objects
     return {
-        employeeName: data.employeeName,
-        clockIn: data.clockIn.toDate(),
-        clockOut: data.clockOut ? data.clockOut.toDate() : undefined,
+        ...db,
+        consumptionLogs: db.consumptionLogs.map((log: any) => ({ ...log, dateTimeLogged: new Date(log.dateTimeLogged) })),
+        attendanceLogs: db.attendanceLogs.map((log: any) => ({ ...log, clockIn: new Date(log.clockIn), clockOut: log.clockOut ? new Date(log.clockOut) : undefined })),
+        leaveRequests: db.leaveRequests.map((req: any) => ({ ...req, leaveDate: new Date(req.leaveDate) }))
     };
+  } catch (error) {
+    // If the file doesn't exist or is empty, return a default structure
+    return { consumptionLogs: [], attendanceLogs: [], leaveRequests: [], employeeOfTheWeek: null };
+  }
 }
 
-function docToLeaveRequest(doc: FirebaseFirestore.DocumentSnapshot): LeaveRequest {
-    const data = doc.data()!;
-    return {
-        employeeName: data.employeeName,
-        leaveDate: data.leaveDate.toDate(),
-        reason: data.reason,
-        status: data.status,
-    };
+function writeDb(db: Database) {
+  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
 }
 
 
 // --- Consumption Logs ---
-export const getConsumptionLogs = async (): Promise<ConsumptionLog[]> => {
-    const db = getDb();
-    const snapshot = await db.collection(CONSUMPTION_COLLECTION).get();
-    return snapshot.docs.map(docToConsumptionLog);
+export const getConsumptionLogs = (): ConsumptionLog[] => {
+    return readDb().consumptionLogs;
 };
 
-export const addConsumptionLog = async (log: ConsumptionLog) => {
-    const db = getDb();
-    await db.collection(CONSUMPTION_COLLECTION).add(log);
+export const addConsumptionLog = (log: ConsumptionLog) => {
+    const db = readDb();
+    db.consumptionLogs.push(log);
+    writeDb(db);
 };
 
 // --- Attendance Logs ---
-export const getAttendanceLogs = async (): Promise<AttendanceLog[]> => {
-    const db = getDb();
-    const snapshot = await db.collection(ATTENDANCE_COLLECTION).get();
-    return snapshot.docs.map(docToAttendanceLog);
+export const getAttendanceLogs = (): AttendanceLog[] => {
+    return readDb().attendanceLogs;
 };
 
-export const addAttendanceLog = async (log: AttendanceLog) => {
-    const db = getDb();
-    await db.collection(ATTENDANCE_COLLECTION).add(log);
+export const addAttendanceLog = (log: AttendanceLog) => {
+    const db = readDb();
+    db.attendanceLogs.push(log);
+    writeDb(db);
 };
 
-export const updateLatestAttendanceLogForUser = async (user: User, updates: Partial<AttendanceLog>) => {
-    const db = getDb();
-    const snapshot = await db.collection(ATTENDANCE_COLLECTION)
-        .where('employeeName', '==', user)
-        .orderBy('clockIn', 'desc')
-        .limit(1)
-        .get();
-
-    if (!snapshot.empty) {
-        const docId = snapshot.docs[0].id;
-        await db.collection(ATTENDANCE_COLLECTION).doc(docId).update(updates);
+export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<AttendanceLog>) => {
+    const db = readDb();
+    const logsForUser = db.attendanceLogs
+        .filter(log => log.employeeName === user)
+        .sort((a, b) => new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime());
+    
+    if (logsForUser.length > 0) {
+        const latestLog = logsForUser[0];
+        const logIndex = db.attendanceLogs.findIndex(log => log.clockIn === latestLog.clockIn && log.employeeName === user);
+        if (logIndex !== -1) {
+            db.attendanceLogs[logIndex] = { ...db.attendanceLogs[logIndex], ...updates };
+            writeDb(db);
+        }
     }
 };
 
 // --- Leave Requests ---
-export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
-    const db = getDb();
-    const snapshot = await db.collection(LEAVE_COLLECTION).get();
-    return snapshot.docs.map(docToLeaveRequest);
+export const getLeaveRequests = (): LeaveRequest[] => {
+    return readDb().leaveRequests;
 };
 
-export const addLeaveRequest = async (request: LeaveRequest) => {
-    const db = getDb();
-    await db.collection(LEAVE_COLLECTION).add(request);
+export const addLeaveRequest = (request: LeaveRequest) => {
+    const db = readDb();
+    db.leaveRequests.push(request);
+    writeDb(db);
 };
 
 
 // --- Awards ---
-export const getEmployeeOfTheWeek = async (): Promise<User | null> => {
-    const db = getDb();
-    const doc = await db.collection(AWARDS_COLLECTION).doc('employeeOfTheWeek').get();
-    if (doc.exists) {
-        return doc.data()!.employeeName;
-    }
-    return null;
+export const getEmployeeOfTheWeek = (): User | null => {
+    return readDb().employeeOfTheWeek;
 };
 
-export const setEmployeeOfTheWeek = async (user: User | null) => {
-    const db = getDb();
-    await db.collection(AWARDS_COLLECTION).doc('employeeOfTheWeek').set({ employeeName: user });
+export const setEmployeeOfTheWeek = (user: User | null) => {
+    const db = readDb();
+    db.employeeOfTheWeek = user;
+    writeDb(db);
 };
 
 // --- Data Export ---
 export async function getAllData() {
-    const consumptionLogs = await getConsumptionLogs();
-    const attendanceLogs = await getAttendanceLogs();
-    const leaveRequests = await getLeaveRequests();
-    const employeeOfTheWeek = await getEmployeeOfTheWeek();
-    return { consumptionLogs, attendanceLogs, leaveRequests, employeeOfTheWeek };
+    const db = readDb();
+    return {
+        consumptionLogs: db.consumptionLogs,
+        attendanceLogs: db.attendanceLogs,
+        leaveRequests: db.leaveRequests,
+        employeeOfTheWeek: db.employeeOfTheWeek,
+    };
 }

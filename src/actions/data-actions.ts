@@ -22,6 +22,6 @@ export async function getAllDataAction() {
         };
     } catch (error) {
         console.error(error);
-        return { success: false, message: 'Failed to fetch data from Firestore.' };
+        return { success: false, message: 'Failed to fetch data from the local file.' };
     }
 }

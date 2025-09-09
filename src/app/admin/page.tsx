@@ -66,19 +66,19 @@ export default async function AdminPage() {
             <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
-                  <CardDescription>All data is stored in Firebase Firestore.</CardDescription>
+                  <CardDescription>All data is stored locally in the project.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertTitle>Firebase Firestore</AlertTitle>
+                    <AlertTitle>Local Data Storage</AlertTitle>
                     <AlertDescription>
-                      All application data is stored in a secure, cloud-hosted Firestore database, allowing it to persist and be accessible from anywhere.
+                      All application data is stored in a local `db.json` file within the project, making it persistent and portable for local development.
                     </AlertDescription>
                   </Alert>
                   <ExportDataButton />
               </CardContent>
-            </Card>
+            </Everything>
         </div>
       </div>
     </div>
