@@ -20,7 +20,7 @@ export function ExportDataButton() {
           const dataToExport = {
             consumptionLogs: result.data.consumptionLogs.map(log => ({...log, dateTimeLogged: new Date(log.dateTimeLogged).toISOString()})),
             attendanceLogs: result.data.attendanceLogs.map(log => ({...log, clockIn: new Date(log.clockIn).toISOString(), clockOut: log.clockOut ? new Date(log.clockOut).toISOString() : undefined })),
-            leaveRequests: result.data.leaveRequests.map(req => ({...req, leaveDate: new Date(req.leaveDate).toISOString()})),
+            leaveRequests: result.data.leaveRequests.map(req => ({...req, startDate: new Date(req.startDate).toISOString(), endDate: new Date(req.endDate).toISOString()})),
             employeeOfTheWeek: result.data.employeeOfTheWeek
           }
 

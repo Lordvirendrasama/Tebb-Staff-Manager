@@ -43,7 +43,7 @@ export function ExportCsvButton() {
 
             // Leave Requests
             if (result.data.leaveRequests.length > 0) {
-                const leaveHeaders = ['employeeName', 'leaveDate', 'reason', 'status'];
+                const leaveHeaders = ['employeeName', 'startDate', 'endDate', 'reason', 'leaveType', 'status'];
                 const leaveCsv = convertToCsv(result.data.leaveRequests, leaveHeaders);
                 const leaveBlob = new Blob([leaveCsv], { type: 'text/csv;charset=utf-8;' });
                 saveAs(leaveBlob, 'leave_requests.csv');

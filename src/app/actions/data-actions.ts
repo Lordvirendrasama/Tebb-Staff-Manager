@@ -1,3 +1,4 @@
+
 'use server';
 
 import * as data from '@/lib/data';
@@ -18,7 +19,7 @@ export async function getAllDataAction() {
             data: {
                 consumptionLogs: consumptionLogs.map(log => ({...log, dateTimeLogged: log.dateTimeLogged.toISOString()})),
                 attendanceLogs: attendanceLogs.map(log => ({...log, clockIn: log.clockIn.toISOString(), clockOut: log.clockOut?.toISOString()})),
-                leaveRequests: leaveRequests.map(req => ({...req, leaveDate: req.leaveDate.toISOString()})),
+                leaveRequests: leaveRequests.map(req => ({...req, startDate: req.startDate.toISOString(), endDate: req.endDate.toISOString()})),
                 employeeOfTheWeek
             }
         };
@@ -34,7 +35,7 @@ export async function importDataAction(db: Database) {
         const sanitizedDb: Database = {
             consumptionLogs: db.consumptionLogs.map(log => ({...log, dateTimeLogged: new Date(log.dateTimeLogged) })),
             attendanceLogs: db.attendanceLogs.map(log => ({...log, clockIn: new Date(log.clockIn), clockOut: log.clockOut ? new Date(log.clockOut) : undefined })),
-            leaveRequests: db.leaveRequests.map(req => ({...req, leaveDate: new Date(req.leaveDate) })),
+            leaveRequests: db.leaveRequests.map(req => ({...req, startDate: new Date(req.startDate), endDate: new Date(req.endDate) })),
             employeeOfTheWeek: db.employeeOfTheWeek,
         }
         data.writeDb(sanitizedDb);

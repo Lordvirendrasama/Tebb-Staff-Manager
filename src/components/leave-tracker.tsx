@@ -26,7 +26,7 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
   const [leaveType, setLeaveType] = useState<LeaveType>('Unpaid');
 
   const handleRequestLeave = () => {
-    if (!date || !reason) {
+    if (!date || !reason || !date.from || !date.to) {
         toast({ variant: 'destructive', title: 'Error', description: 'Please select a date range and provide a reason.' });
         return;
     }
