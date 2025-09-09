@@ -1,8 +1,9 @@
 
 import type { User, ConsumptionLog, AttendanceLog, LeaveRequest } from './constants';
-import { USERS } from './constants';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// In-memory data store
+// In-memory data store with a JSON file backup
 interface Db {
     consumptionLogs: ConsumptionLog[];
     attendanceLogs: AttendanceLog[];
@@ -10,67 +11,89 @@ interface Db {
     employeeOfTheWeek: User | null;
 }
 
-let db: Db = {
-    consumptionLogs: [],
-    attendanceLogs: [],
-    leaveRequests: [],
-    employeeOfTheWeek: null
-};
+const dbFilePath = path.join(process.cwd(), 'src', 'lib', 'db.json');
 
-function resetData() {
-    console.log("Resetting data...");
-    db = {
+let db: Db;
+
+function readDb(): Db {
+    try {
+        if (fs.existsSync(dbFilePath)) {
+            const fileContent = fs.readFileSync(dbFilePath, 'utf-8');
+            return JSON.parse(fileContent);
+        }
+    } catch (error) {
+        console.error("Error reading db.json:", error);
+    }
+    // If file doesn't exist or is invalid, return default structure
+    return {
         consumptionLogs: [],
         attendanceLogs: [],
         leaveRequests: [],
-        employeeOfTheWeek: 'Abbas' // Default to Abbas
+        employeeOfTheWeek: null
     };
-
-    const now = new Date();
-    // Seed some example data for today
-    db.attendanceLogs.push(
-        { employeeName: 'Abbas', clockIn: new Date(new Date(now).setHours(9, 5, 0, 0))},
-        { employeeName: 'Musaib', clockIn: new Date(new Date(now).setHours(10, 15, 0, 0)), clockOut: new Date(new Date(now).setHours(14, 30, 0, 0)) }
-    );
-     db.consumptionLogs.push(
-        { employeeName: 'Musaib', itemName: 'Coffee', dateTimeLogged: new Date(new Date(now).setHours(10, 20, 0, 0)) }
-    );
-     db.leaveRequests.push(
-        { employeeName: 'Musaib', leaveDate: new Date('2024-08-20'), reason: 'Dentist Appointment', status: 'Approved' }
-    );
 }
+
+function writeDb() {
+    try {
+        fs.writeFileSync(dbFilePath, JSON.stringify(db, null, 2), 'utf-8');
+    } catch (error) {
+        console.error("Error writing to db.json:", error);
+    }
+}
+
+// Initialize DB
+db = readDb();
 
 
 // --- Consumption Logs ---
-export const getConsumptionLogs = () => db.consumptionLogs;
+export const getConsumptionLogs = () => {
+    db = readDb();
+    return db.consumptionLogs;
+}
 export const addConsumptionLog = (log: ConsumptionLog) => {
+    db = readDb();
     db.consumptionLogs.unshift(log);
+    writeDb();
 };
 
 // --- Attendance Logs ---
-export const getAttendanceLogs = () => db.attendanceLogs;
+export const getAttendanceLogs = () => {
+    db = readDb();
+    return db.attendanceLogs;
+}
 export const addAttendanceLog = (log: AttendanceLog) => {
+    db = readDb();
     db.attendanceLogs.unshift(log);
+    writeDb();
 };
 export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<AttendanceLog>) => {
+    db = readDb();
     const logIndex = db.attendanceLogs.findIndex(l => l.employeeName === user && !l.clockOut);
     if (logIndex !== -1) {
         db.attendanceLogs[logIndex] = { ...db.attendanceLogs[logIndex], ...updates };
+        writeDb();
     }
 };
 
 // --- Leave Requests ---
-export const getLeaveRequests = () => db.leaveRequests;
+export const getLeaveRequests = () => {
+    db = readDb();
+    return db.leaveRequests;
+}
 export const addLeaveRequest = (request: LeaveRequest) => {
+    db = readDb();
     db.leaveRequests.unshift(request);
+    writeDb();
 };
 
 
 // --- Awards ---
-export const getEmployeeOfTheWeek = () => db.employeeOfTheWeek;
+export const getEmployeeOfTheWeek = () => {
+    db = readDb();
+    return db.employeeOfTheWeek;
+}
 export const setEmployeeOfTheWeek = (user: User) => {
+    db = readDb();
     db.employeeOfTheWeek = user;
+    writeDb();
 };
-
-
-resetData();

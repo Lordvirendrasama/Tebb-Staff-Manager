@@ -1,0 +1,30 @@
+
+{
+  "consumptionLogs": [
+    {
+      "employeeName": "Musaib",
+      "itemName": "Coffee",
+      "dateTimeLogged": "2024-07-30T10:20:00.000Z"
+    }
+  ],
+  "attendanceLogs": [
+    {
+      "employeeName": "Musaib",
+      "clockIn": "2024-07-30T10:15:00.000Z",
+      "clockOut": "2024-07-30T14:30:00.000Z"
+    },
+    {
+      "employeeName": "Abbas",
+      "clockIn": "2024-07-30T09:05:00.000Z"
+    }
+  ],
+  "leaveRequests": [
+    {
+      "employeeName": "Musaib",
+      "leaveDate": "2024-08-20T00:00:00.000Z",
+      "reason": "Dentist Appointment",
+      "status": "Approved"
+    }
+  ],
+  "employeeOfTheWeek": "Abbas"
+}
