@@ -13,7 +13,6 @@ async function getDb() {
 
 export async function logConsumption(user: User, item: ConsumableItem): Promise<void> {
     const db = await getDb();
-
     const log: ConsumptionLog = {
         employeeName: user,
         itemName: item,
@@ -24,7 +23,6 @@ export async function logConsumption(user: User, item: ConsumableItem): Promise<
 
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const db = await getDb();
-
     const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);
@@ -58,7 +56,6 @@ export async function getRemainingAllowances(user: User): Promise<{ drinks: numb
 
 export async function getAllUsersAllowances(): Promise<Array<{ user: User; allowances: { drinks: number; meals: number } }>> {
     const db = await getDb();
-
     const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);
