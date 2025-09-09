@@ -1,116 +1,112 @@
 
 import type { User, ConsumptionLog, AttendanceLog, LeaveRequest } from './constants';
-import * as fs from 'fs';
-import * as path from 'path';
+import { getDb } from './firebase';
 
-// In-memory data store with a JSON file backup
-interface Db {
-    consumptionLogs: ConsumptionLog[];
-    attendanceLogs: AttendanceLog[];
-    leaveRequests: LeaveRequest[];
-    employeeOfTheWeek: User | null;
-}
+const CONSUMPTION_COLLECTION = 'consumptionLogs';
+const ATTENDANCE_COLLECTION = 'attendanceLogs';
+const LEAVE_COLLECTION = 'leaveRequests';
+const AWARDS_COLLECTION = 'awards';
 
-const dbFilePath = path.join(process.cwd(), 'src', 'lib', 'db.json');
-
-let db: Db;
-
-function readDb(): Db {
-    try {
-        if (fs.existsSync(dbFilePath)) {
-            const fileContent = fs.readFileSync(dbFilePath, 'utf-8');
-            const parsedDb = JSON.parse(fileContent);
-
-            // Revive date strings into Date objects
-            parsedDb.consumptionLogs.forEach((log: ConsumptionLog) => {
-                log.dateTimeLogged = new Date(log.dateTimeLogged);
-            });
-            parsedDb.attendanceLogs.forEach((log: AttendanceLog) => {
-                log.clockIn = new Date(log.clockIn);
-                if (log.clockOut) {
-                    log.clockOut = new Date(log.clockOut);
-                }
-            });
-            parsedDb.leaveRequests.forEach((req: LeaveRequest) => {
-                req.leaveDate = new Date(req.leaveDate);
-            });
-
-            return parsedDb;
-        }
-    } catch (error) {
-        console.error("Error reading db.json:", error);
-    }
-    // If file doesn't exist or is invalid, return default structure
+function docToConsumptionLog(doc: FirebaseFirestore.DocumentSnapshot): ConsumptionLog {
+    const data = doc.data()!;
     return {
-        consumptionLogs: [],
-        attendanceLogs: [],
-        leaveRequests: [],
-        employeeOfTheWeek: null
+        employeeName: data.employeeName,
+        itemName: data.itemName,
+        dateTimeLogged: data.dateTimeLogged.toDate(),
     };
 }
 
-function writeDb() {
-    try {
-        fs.writeFileSync(dbFilePath, JSON.stringify(db, null, 2), 'utf-8');
-    } catch (error) {
-        console.error("Error writing to db.json:", error);
-    }
+function docToAttendanceLog(doc: FirebaseFirestore.DocumentSnapshot): AttendanceLog {
+    const data = doc.data()!;
+    return {
+        employeeName: data.employeeName,
+        clockIn: data.clockIn.toDate(),
+        clockOut: data.clockOut ? data.clockOut.toDate() : undefined,
+    };
 }
 
-// Initialize DB
-db = readDb();
+function docToLeaveRequest(doc: FirebaseFirestore.DocumentSnapshot): LeaveRequest {
+    const data = doc.data()!;
+    return {
+        employeeName: data.employeeName,
+        leaveDate: data.leaveDate.toDate(),
+        reason: data.reason,
+        status: data.status,
+    };
+}
 
 
 // --- Consumption Logs ---
-export const getConsumptionLogs = () => {
-    db = readDb();
-    return db.consumptionLogs;
-}
-export const addConsumptionLog = (log: ConsumptionLog) => {
-    db = readDb();
-    db.consumptionLogs.unshift(log);
-    writeDb();
+export const getConsumptionLogs = async (): Promise<ConsumptionLog[]> => {
+    const db = getDb();
+    const snapshot = await db.collection(CONSUMPTION_COLLECTION).get();
+    return snapshot.docs.map(docToConsumptionLog);
+};
+
+export const addConsumptionLog = async (log: ConsumptionLog) => {
+    const db = getDb();
+    await db.collection(CONSUMPTION_COLLECTION).add(log);
 };
 
 // --- Attendance Logs ---
-export const getAttendanceLogs = () => {
-    db = readDb();
-    return db.attendanceLogs;
-}
-export const addAttendanceLog = (log: AttendanceLog) => {
-    db = readDb();
-    db.attendanceLogs.unshift(log);
-    writeDb();
+export const getAttendanceLogs = async (): Promise<AttendanceLog[]> => {
+    const db = getDb();
+    const snapshot = await db.collection(ATTENDANCE_COLLECTION).get();
+    return snapshot.docs.map(docToAttendanceLog);
 };
-export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<AttendanceLog>) => {
-    db = readDb();
-    const logIndex = db.attendanceLogs.findIndex(l => l.employeeName === user && !l.clockOut);
-    if (logIndex !== -1) {
-        db.attendanceLogs[logIndex] = { ...db.attendanceLogs[logIndex], ...updates };
-        writeDb();
+
+export const addAttendanceLog = async (log: AttendanceLog) => {
+    const db = getDb();
+    await db.collection(ATTENDANCE_COLLECTION).add(log);
+};
+
+export const updateLatestAttendanceLogForUser = async (user: User, updates: Partial<AttendanceLog>) => {
+    const db = getDb();
+    const snapshot = await db.collection(ATTENDANCE_COLLECTION)
+        .where('employeeName', '==', user)
+        .orderBy('clockIn', 'desc')
+        .limit(1)
+        .get();
+
+    if (!snapshot.empty) {
+        const docId = snapshot.docs[0].id;
+        await db.collection(ATTENDANCE_COLLECTION).doc(docId).update(updates);
     }
 };
 
 // --- Leave Requests ---
-export const getLeaveRequests = () => {
-    db = readDb();
-    return db.leaveRequests;
-}
-export const addLeaveRequest = (request: LeaveRequest) => {
-    db = readDb();
-    db.leaveRequests.unshift(request);
-    writeDb();
+export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
+    const db = getDb();
+    const snapshot = await db.collection(LEAVE_COLLECTION).get();
+    return snapshot.docs.map(docToLeaveRequest);
+};
+
+export const addLeaveRequest = async (request: LeaveRequest) => {
+    const db = getDb();
+    await db.collection(LEAVE_COLLECTION).add(request);
 };
 
 
 // --- Awards ---
-export const getEmployeeOfTheWeek = () => {
-    db = readDb();
-    return db.employeeOfTheWeek;
-}
-export const setEmployeeOfTheWeek = (user: User) => {
-    db = readDb();
-    db.employeeOfTheWeek = user;
-    writeDb();
+export const getEmployeeOfTheWeek = async (): Promise<User | null> => {
+    const db = getDb();
+    const doc = await db.collection(AWARDS_COLLECTION).doc('employeeOfTheWeek').get();
+    if (doc.exists) {
+        return doc.data()!.employeeName;
+    }
+    return null;
 };
 
+export const setEmployeeOfTheWeek = async (user: User | null) => {
+    const db = getDb();
+    await db.collection(AWARDS_COLLECTION).doc('employeeOfTheWeek').set({ employeeName: user });
+};
+
+// --- Data Export ---
+export async function getAllData() {
+    const consumptionLogs = await getConsumptionLogs();
+    const attendanceLogs = await getAttendanceLogs();
+    const leaveRequests = await getLeaveRequests();
+    const employeeOfTheWeek = await getEmployeeOfTheWeek();
+    return { consumptionLogs, attendanceLogs, leaveRequests, employeeOfTheWeek };
+}

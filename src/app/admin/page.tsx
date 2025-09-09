@@ -66,14 +66,14 @@ export default async function AdminPage() {
             <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
-                  <CardDescription>All data is stored in a local file.</CardDescription>
+                  <CardDescription>All data is stored in Firebase Firestore.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertTitle>Local Data Storage</AlertTitle>
+                    <AlertTitle>Firebase Firestore</AlertTitle>
                     <AlertDescription>
-                      All application data is stored in the `src/lib/db.json` file. This means the data will persist even if the server or your computer restarts.
+                      All application data is stored in a secure, cloud-hosted Firestore database, allowing it to persist and be accessible from anywhere.
                     </AlertDescription>
                   </Alert>
                   <ExportDataButton />
