@@ -9,7 +9,8 @@ import { Ban, GlassWater, Utensils } from 'lucide-react';
 import type { User } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
-import { getAttendanceStatus, getAttendanceHistory } from '@/services/attendance-service';
+import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser } from '@/services/attendance-service';
+import { LeaveTracker } from '@/components/leave-tracker';
 
 export default async function UserDashboard({ params }: { params: { user: string } }) {
   const { user } = params;
@@ -27,6 +28,7 @@ export default async function UserDashboard({ params }: { params: { user: string
   const logs = await getLogsForUser(validUser);
   const attendanceStatus = await getAttendanceStatus(validUser);
   const attendanceHistory = await getAttendanceHistory(validUser);
+  const leaveHistory = await getLeaveRequestsForUser(validUser);
 
   const recentLogs = logs.slice(0, 5);
   const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;
@@ -90,16 +92,12 @@ export default async function UserDashboard({ params }: { params: { user: string
              <Card>
                 <CardHeader>
                     <CardTitle>Log an Item</CardTitle>
-                    <CardDescription>Select an item you\'ve consumed.</CardDescription>
+                    <CardDescription>Select an item you've consumed.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <LogItemForm user={validUser} allowances={allowances} />
                 </CardContent>
             </Card>
-        </div>
-
-        {/* Column 3 */}
-        <div className="md:col-span-1">
             <Card className="h-full">
                 <CardHeader>
                     <CardTitle>Consumption History</CardTitle>
@@ -109,6 +107,11 @@ export default async function UserDashboard({ params }: { params: { user: string
                     <ConsumptionHistory logs={recentLogs} />
                 </CardContent>
             </Card>
+        </div>
+
+        {/* Column 3 */}
+        <div className="md:col-span-1">
+           <LeaveTracker user={validUser} history={leaveHistory} />
         </div>
       </div>
     </div>

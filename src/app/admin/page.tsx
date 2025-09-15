@@ -10,15 +10,19 @@ import { Info } from 'lucide-react';
 import { ExportDataButton } from '@/components/export-data-button';
 import { ImportDataButton } from '@/components/import-data-button';
 import { ExportCsvButton } from '@/components/export-csv-button';
-import { getMonthlyOvertime, getEmployees } from '@/services/attendance-service';
+import { getMonthlyOvertime, getEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
+import { LeaveRequestManager } from '@/components/leave-request-manager';
+import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 
 export default async function AdminPage() {
   const allowanceData = await getAllUsersAllowances();
   const employeeOfTheWeek = await getEmployeeOfTheWeek();
   const overtimeData = await getMonthlyOvertime();
   const employees = await getEmployees();
+  const leaveRequests = await getAllLeaveRequests();
+  const monthlyLeaves = await getMonthlyLeaves();
 
 
   return (
@@ -67,7 +71,12 @@ export default async function AdminPage() {
               <EmployeeOfTheWeekManager currentEmployee={employeeOfTheWeek} employees={employees} />
             </CardContent>
           </Card>
-           <Card>
+          <LeaveRequestManager requests={leaveRequests} />
+        </div>
+
+        <div className="lg:col-span-1 space-y-8">
+           <StaffManager employees={employees} />
+            <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
                   <CardDescription>Import and export all application data.</CardDescription>
@@ -89,12 +98,9 @@ export default async function AdminPage() {
             </Card>
         </div>
 
-        <div className="lg:col-span-1 space-y-8">
-           <StaffManager employees={employees} />
-        </div>
-
          <div className="lg:col-span-1 space-y-8">
             <OvertimeTracker data={overtimeData} />
+            <MonthlyLeavesTracker data={monthlyLeaves} />
         </div>
       </div>
     </div>

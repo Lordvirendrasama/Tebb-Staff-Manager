@@ -51,3 +51,19 @@ export interface Employee {
   weeklyOffDay: WeekDay;
   standardWorkHours: number;
 }
+
+export const LEAVE_TYPES = ['Paid (Scheduled)', 'Paid (Made Up)', 'Unpaid'] as const;
+export type LeaveType = (typeof LEAVE_TYPES)[number];
+
+export const LEAVE_STATUSES = ['Pending', 'Approved', 'Denied'] as const;
+export type LeaveStatus = (typeof LEAVE_STATUSES)[number];
+
+export interface LeaveRequest {
+  id: string;
+  employeeName: User;
+  startDate: Date;
+  endDate: Date;
+  reason: string;
+  leaveType: LeaveType;
+  status: LeaveStatus;
+}

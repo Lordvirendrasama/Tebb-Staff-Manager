@@ -26,7 +26,7 @@ export function ExportCsvButton() {
       if (result.success && result.data) {
         try {
             // Consumption Logs
-            if (result.data.consumptionLogs.length > 0) {
+            if (result.data.consumptionLogs && result.data.consumptionLogs.length > 0) {
                 const consumptionHeaders = ['employeeName', 'itemName', 'dateTimeLogged'];
                 const consumptionCsv = convertToCsv(result.data.consumptionLogs, consumptionHeaders);
                 const consumptionBlob = new Blob([consumptionCsv], { type: 'text/csv;charset=utf-8;' });
@@ -34,7 +34,7 @@ export function ExportCsvButton() {
             }
             
             // Attendance Logs
-            if (result.data.attendanceLogs.length > 0) {
+            if (result.data.attendanceLogs && result.data.attendanceLogs.length > 0) {
                 const attendanceHeaders = ['employeeName', 'clockIn', 'clockOut'];
                 const attendanceCsv = convertToCsv(result.data.attendanceLogs, attendanceHeaders);
                 const attendanceBlob = new Blob([attendanceCsv], { type: 'text/csv;charset=utf-8;' });
@@ -42,7 +42,7 @@ export function ExportCsvButton() {
             }
 
             // Leave Requests
-            if (result.data.leaveRequests.length > 0) {
+            if (result.data.leaveRequests && result.data.leaveRequests.length > 0) {
                 const leaveHeaders = ['employeeName', 'startDate', 'endDate', 'reason', 'leaveType', 'status'];
                 const leaveCsv = convertToCsv(result.data.leaveRequests, leaveHeaders);
                 const leaveBlob = new Blob([leaveCsv], { type: 'text/csv;charset=utf-8;' });

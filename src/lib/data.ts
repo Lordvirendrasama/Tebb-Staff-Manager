@@ -1,5 +1,5 @@
 
-import type { User, ConsumptionLog, AttendanceLog, Employee } from './constants';
+import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest } from './constants';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,6 +10,7 @@ export interface Database {
   attendanceLogs: AttendanceLog[];
   employeeOfTheWeek: User | null;
   employees: Employee[];
+  leaveRequests: LeaveRequest[];
 }
 
 export function readDb(): Database {
@@ -32,14 +33,14 @@ export function readDb(): Database {
         employees: [
             { id: '1', name: 'Abbas', weeklyOffDay: 'Wednesday', standardWorkHours: 6 },
             { id: '2', name: 'Musaib', weeklyOffDay: 'Tuesday', standardWorkHours: 7 }
-        ] 
+        ],
+        leaveRequests: [],
     };
   }
 }
 
 export function writeDb(db: Database) {
-  const sanitizedDb = { ...db, leaveRequests: undefined };
-  fs.writeFileSync(DB_PATH, JSON.stringify(sanitizedDb, null, 2), 'utf-8');
+  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
 }
 
 
@@ -113,6 +114,26 @@ export const updateEmployee = (employeeId: string, updates: Partial<Employee>) =
     }
 }
 
+// --- Leave Requests ---
+export const getLeaveRequests = (): LeaveRequest[] => {
+    return readDb().leaveRequests;
+}
+
+export const addLeaveRequest = (request: LeaveRequest) => {
+    const db = readDb();
+    db.leaveRequests.push(request);
+    writeDb(db);
+}
+
+export const updateLeaveRequest = (requestId: string, updates: Partial<LeaveRequest>) => {
+    const db = readDb();
+    const requestIndex = db.leaveRequests.findIndex(req => req.id === requestId);
+    if (requestIndex !== -1) {
+        db.leaveRequests[requestIndex] = { ...db.leaveRequests[requestIndex], ...updates };
+        writeDb(db);
+    }
+}
+
 
 // --- Data Export ---
 export async function getAllData() {
@@ -121,6 +142,7 @@ export async function getAllData() {
         consumptionLogs: db.consumptionLogs,
         attendanceLogs: db.attendanceLogs,
         employeeOfTheWeek: db.employeeOfTheWeek,
-        employees: db.employees
+        employees: db.employees,
+        leaveRequests: db.leaveRequests,
     };
 }
