@@ -11,9 +11,10 @@ import { ExportDataButton } from '@/components/export-data-button';
 import { ImportDataButton } from '@/components/import-data-button';
 import { ExportCsvButton } from '@/components/export-csv-button';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
-import { getAllLeaveRequests, getMonthlyOvertime, getEmployees } from '@/services/attendance-service';
+import { getAllLeaveRequests, getMonthlyOvertime, getEmployees, getMonthlyLeaves } from '@/services/attendance-service';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
+import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 
 export default async function AdminPage() {
   const allowanceData = await getAllUsersAllowances();
@@ -21,6 +22,7 @@ export default async function AdminPage() {
   const leaveRequests = await getAllLeaveRequests();
   const overtimeData = await getMonthlyOvertime();
   const employees = await getEmployees();
+  const monthlyLeaves = await getMonthlyLeaves();
 
 
   return (
@@ -98,6 +100,7 @@ export default async function AdminPage() {
 
          <div className="lg:col-span-1 space-y-8">
             <OvertimeTracker data={overtimeData} />
+            <MonthlyLeavesTracker data={monthlyLeaves} />
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 
 import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, Employee } from '@/lib/constants';
 import * as data from '@/lib/data';
-import { differenceInHours, startOfMonth, endOfMonth, startOfDay } from 'date-fns';
+import { differenceInHours, startOfMonth, endOfMonth, startOfDay, differenceInDays, eachDayOfInterval } from 'date-fns';
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const allLogs = data.getAttendanceLogs();
@@ -104,6 +104,36 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
 
     return employees.map(emp => ({ name: emp.name, overtime: overtimeByUser[emp.name] || 0 }));
 }
+
+export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaves: number }>> {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    
+    const employees = await getEmployees();
+    const approvedLeaveRequests = data.getLeaveRequests().filter(req => req.status === 'Approved');
+
+    const leavesByUser: Record<User, number> = employees.reduce((acc, emp) => {
+        acc[emp.name] = 0;
+        return acc;
+    }, {} as Record<User, number>);
+
+    approvedLeaveRequests.forEach(req => {
+        const leaveInterval = { start: new Date(req.startDate), end: new Date(req.endDate) };
+        const daysInLeave = eachDayOfInterval(leaveInterval);
+        
+        daysInLeave.forEach(day => {
+            if (day >= monthStart && day <= monthEnd) {
+                if (leavesByUser[req.employeeName] !== undefined) {
+                    leavesByUser[req.employeeName]++;
+                }
+            }
+        });
+    });
+
+    return employees.map(emp => ({ name: emp.name, leaves: leavesByUser[emp.name] || 0 }));
+}
+
 
 // --- Employee Service Functions ---
 export async function getEmployees(): Promise<Employee[]> {
