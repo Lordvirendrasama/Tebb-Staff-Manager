@@ -8,9 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, GlassWater, Utensils } from 'lucide-react';
 import type { User } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
-import { LeaveTracker } from '@/components/leave-tracker';
 import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
-import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser } from '@/services/attendance-service';
+import { getAttendanceStatus, getAttendanceHistory } from '@/services/attendance-service';
 
 export default async function UserDashboard({ params }: { params: { user: string } }) {
   const { user } = params;
@@ -28,7 +27,6 @@ export default async function UserDashboard({ params }: { params: { user: string
   const logs = await getLogsForUser(validUser);
   const attendanceStatus = await getAttendanceStatus(validUser);
   const attendanceHistory = await getAttendanceHistory(validUser);
-  const leaveRequests = await getLeaveRequestsForUser(validUser);
 
   const recentLogs = logs.slice(0, 5);
   const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;
@@ -96,16 +94,6 @@ export default async function UserDashboard({ params }: { params: { user: string
                 </CardHeader>
                 <CardContent>
                     <LogItemForm user={validUser} allowances={allowances} />
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Leave Tracker</CardTitle>
-                    <CardDescription>Request time off and see your history.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <LeaveTracker user={validUser} leaveRequests={leaveRequests} />
                 </CardContent>
             </Card>
         </div>

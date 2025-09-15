@@ -1,5 +1,5 @@
 
-import type { User, ConsumptionLog, AttendanceLog, LeaveRequest, Employee } from './constants';
+import type { User, ConsumptionLog, AttendanceLog, Employee } from './constants';
 import fs from 'fs';
 import path from 'path';
 
@@ -8,7 +8,6 @@ const DB_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
 export interface Database {
   consumptionLogs: ConsumptionLog[];
   attendanceLogs: AttendanceLog[];
-  leaveRequests: LeaveRequest[];
   employeeOfTheWeek: User | null;
   employees: Employee[];
 }
@@ -22,14 +21,13 @@ export function readDb(): Database {
         ...db,
         consumptionLogs: db.consumptionLogs.map((log: any) => ({ ...log, dateTimeLogged: new Date(log.dateTimeLogged) })),
         attendanceLogs: db.attendanceLogs.map((log: any) => ({ ...log, clockIn: new Date(log.clockIn), clockOut: log.clockOut ? new Date(log.clockOut) : undefined })),
-        leaveRequests: db.leaveRequests.map((req: any) => ({ ...req, startDate: new Date(req.startDate), endDate: new Date(req.endDate) }))
+        leaveRequests: db.leaveRequests ? db.leaveRequests.map((req: any) => ({ ...req, startDate: new Date(req.startDate), endDate: new Date(req.endDate) })) : [],
     };
   } catch (error) {
     // If the file doesn't exist or is empty, return a default structure
     return { 
         consumptionLogs: [], 
         attendanceLogs: [], 
-        leaveRequests: [], 
         employeeOfTheWeek: null,
         employees: [
             { id: '1', name: 'Abbas', weeklyOffDay: 'Wednesday', standardWorkHours: 6 },
@@ -40,7 +38,8 @@ export function readDb(): Database {
 }
 
 export function writeDb(db: Database) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+  const sanitizedDb = { ...db, leaveRequests: undefined };
+  fs.writeFileSync(DB_PATH, JSON.stringify(sanitizedDb, null, 2), 'utf-8');
 }
 
 
@@ -83,31 +82,6 @@ export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<At
     }
 };
 
-// --- Leave Requests ---
-export const getLeaveRequests = (): LeaveRequest[] => {
-    return readDb().leaveRequests;
-};
-
-export const getAllLeaveRequests = (): LeaveRequest[] => {
-    return readDb().leaveRequests;
-};
-
-export const addLeaveRequest = (request: LeaveRequest) => {
-    const db = readDb();
-    db.leaveRequests.push(request);
-    writeDb(db);
-};
-
-export const updateLeaveRequestStatus = (id: string, status: 'Approved' | 'Denied') => {
-    const db = readDb();
-    const requestIndex = db.leaveRequests.findIndex(req => req.id === id);
-    if (requestIndex !== -1) {
-        db.leaveRequests[requestIndex].status = status;
-        writeDb(db);
-    }
-};
-
-
 // --- Awards ---
 export const getEmployeeOfTheWeek = (): User | null => {
     return readDb().employeeOfTheWeek;
@@ -146,7 +120,6 @@ export async function getAllData() {
     return {
         consumptionLogs: db.consumptionLogs,
         attendanceLogs: db.attendanceLogs,
-        leaveRequests: db.leaveRequests,
         employeeOfTheWeek: db.employeeOfTheWeek,
         employees: db.employees
     };

@@ -1,9 +1,9 @@
 
 'use server';
 
-import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, Employee } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, Employee } from '@/lib/constants';
 import * as data from '@/lib/data';
-import { differenceInHours, startOfMonth, endOfMonth, startOfDay, eachDayOfInterval } from 'date-fns';
+import { differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const allLogs = data.getAttendanceLogs();
@@ -39,39 +39,6 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
         .slice(0, 10);
 }
 
-export async function requestLeave(user: User, startDate: Date, endDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
-    const request: LeaveRequest = {
-        id: new Date().toISOString() + Math.random().toString(36).substring(2, 9), // simple unique id
-        employeeName: user,
-        startDate: startOfDay(startDate),
-        endDate: startOfDay(endDate),
-        reason,
-        leaveType,
-        status: 'Pending',
-    };
-    data.addLeaveRequest(request);
-}
-
-export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
-    const allRequests = data.getLeaveRequests();
-    return allRequests
-        .filter(req => req.employeeName === user)
-        .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-        .slice(0, 10);
-}
-
-export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
-    return data.getAllLeaveRequests().sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-}
-
-export async function approveLeaveRequest(id: string): Promise<void> {
-    data.updateLeaveRequestStatus(id, 'Approved');
-}
-
-export async function denyLeaveRequest(id: string): Promise<void> {
-    data.updateLeaveRequestStatus(id, 'Denied');
-}
-
 export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime: number }>> {
     const now = new Date();
     const monthStart = startOfMonth(now);
@@ -104,36 +71,6 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
 
     return employees.map(emp => ({ name: emp.name, overtime: overtimeByUser[emp.name] || 0 }));
 }
-
-export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaves: number }>> {
-    const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-    
-    const employees = await getEmployees();
-    const approvedLeaveRequests = data.getLeaveRequests().filter(req => req.status === 'Approved');
-
-    const leavesByUser: Record<User, number> = employees.reduce((acc, emp) => {
-        acc[emp.name] = 0;
-        return acc;
-    }, {} as Record<User, number>);
-
-    approvedLeaveRequests.forEach(req => {
-        const leaveInterval = { start: new Date(req.startDate), end: new Date(req.endDate) };
-        const daysInLeave = eachDayOfInterval(leaveInterval);
-        
-        daysInLeave.forEach(day => {
-            if (day >= monthStart && day <= monthEnd) {
-                if (leavesByUser[req.employeeName] !== undefined) {
-                    leavesByUser[req.employeeName]++;
-                }
-            }
-        });
-    });
-
-    return employees.map(emp => ({ name: emp.name, leaves: leavesByUser[emp.name] || 0 }));
-}
-
 
 // --- Employee Service Functions ---
 export async function getEmployees(): Promise<Employee[]> {

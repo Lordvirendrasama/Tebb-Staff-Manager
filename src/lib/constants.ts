@@ -33,19 +33,6 @@ export type AttendanceStatus = {
     clockInTime: Date;
 };
 
-export type LeaveType = 'Paid (Made Up)' | 'Unpaid';
-export type LeaveStatus = 'Pending' | 'Approved' | 'Denied';
-
-export interface LeaveRequest {
-  id: string;
-  employeeName: User;
-  startDate: Date;
-  endDate: Date;
-  reason: string;
-  leaveType: LeaveType;
-  status: LeaveStatus;
-}
-
 export const WEEKDAYS = [
   'Sunday',
   'Monday',
