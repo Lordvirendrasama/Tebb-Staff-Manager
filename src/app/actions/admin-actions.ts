@@ -4,7 +4,7 @@
 import type { User } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { setEmployeeOfTheWeek } from '@/services/awards-service';
-import { addEmployee, updateEmployee } from '@/services/attendance-service';
+import { addEmployee, updateEmployee, deleteEmployee } from '@/services/attendance-service';
 
 export async function setEmployeeOfTheWeekAction(employeeName: User) {
     try {
@@ -39,5 +39,17 @@ export async function updateEmployeeAction(id: string, name: string, weeklyOffDa
     } catch (error) {
         console.error(error);
         return { success: false, message: 'Failed to update employee.' };
+    }
+}
+
+export async function deleteEmployeeAction(id: string) {
+    try {
+        await deleteEmployee(id);
+        revalidatePath('/admin');
+        revalidatePath('/');
+        return { success: true, message: 'Employee removed successfully!' };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: 'Failed to remove employee.' };
     }
 }

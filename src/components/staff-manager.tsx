@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Loader2, UserPlus, Save, Edit, Clock } from 'lucide-react';
+import { Loader2, UserPlus, Save, Edit, Clock, Trash2 } from 'lucide-react';
 import type { Employee, WeekDay } from '@/lib/constants';
 import { WEEKDAYS } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { addEmployeeAction, updateEmployeeAction } from '@/app/actions/admin-actions';
+import { addEmployeeAction, updateEmployeeAction, deleteEmployeeAction } from '@/app/actions/admin-actions';
 import { Label } from './ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 export function StaffManager({ employees }: { employees: Employee[] }) {
   const [isPending, startTransition] = useTransition();
@@ -68,13 +70,24 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
       }
     });
   };
+
+  const handleDelete = (employeeId: string) => {
+    startTransition(async () => {
+      const result = await deleteEmployeeAction(employeeId);
+      if (result.success) {
+        toast({ title: 'Success', description: result.message });
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
+      }
+    });
+  };
   
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Staff Management</CardTitle>
-        <CardDescription>Add or edit employee details.</CardDescription>
+        <CardDescription>Add, edit, or remove employee details.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {employees.map(employee => (
@@ -87,9 +100,30 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
                     <span>{employee.standardWorkHours} hrs/day</span>
                 </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => handleEdit(employee)}>
+            <Button variant="ghost" size="icon" onClick={() => handleEdit(employee)} disabled={isPending}>
               <Edit className="h-4 w-4" />
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" disabled={isPending}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently remove {employee.name} and all of their associated data. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(employee.id)} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+                    {isPending ? <Loader2 className="animate-spin" /> : 'Remove'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ))}
 

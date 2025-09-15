@@ -91,6 +91,11 @@ export async function updateEmployee(id: string, name: string, weeklyOffDay: str
     data.updateEmployee(id, { name, weeklyOffDay: weeklyOffDay as any, standardWorkHours });
 }
 
+export async function deleteEmployee(id: string): Promise<void> {
+    data.deleteEmployee(id);
+}
+
+
 // --- Leave Request Service Functions ---
 export async function requestLeave(user: User, startDate: Date, endDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
     const newRequest: LeaveRequest = {

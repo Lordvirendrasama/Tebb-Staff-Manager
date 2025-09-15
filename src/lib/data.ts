@@ -114,6 +114,28 @@ export const updateEmployee = (employeeId: string, updates: Partial<Employee>) =
     }
 }
 
+export const deleteEmployee = (employeeId: string) => {
+    const db = readDb();
+    const employeeToDelete = db.employees.find(emp => emp.id === employeeId);
+    if (!employeeToDelete) return;
+
+    const employeeName = employeeToDelete.name;
+
+    // Filter out the employee and all their associated data
+    db.employees = db.employees.filter(emp => emp.id !== employeeId);
+    db.consumptionLogs = db.consumptionLogs.filter(log => log.employeeName !== employeeName);
+    db.attendanceLogs = db.attendanceLogs.filter(log => log.employeeName !== employeeName);
+    db.leaveRequests = db.leaveRequests.filter(req => req.employeeName !== employeeName);
+
+    // Check if the deleted employee was employee of the week
+    if (db.employeeOfTheWeek === employeeName) {
+        db.employeeOfTheWeek = null;
+    }
+
+    writeDb(db);
+}
+
+
 // --- Leave Requests ---
 export const getLeaveRequests = (): LeaveRequest[] => {
     return readDb().leaveRequests;
