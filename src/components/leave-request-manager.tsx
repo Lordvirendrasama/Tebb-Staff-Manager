@@ -8,9 +8,9 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Check, X } from 'lucide-react';
+import { Loader2, Check, X, FilePenLine } from 'lucide-react';
 import type { LeaveRequest } from '@/lib/constants';
-import { approveLeaveAction, denyLeaveAction } from '@/app/actions/attendance-actions';
+import { approveLeaveAction, denyLeaveAction, markAsUnpaidAction } from '@/app/actions/attendance-actions';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
@@ -27,6 +27,17 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
   const handleAction = (action: 'approve' | 'deny', requestId: string) => {
     startTransition(async () => {
       const result = action === 'approve' ? await approveLeaveAction(requestId) : await denyLeaveAction(requestId);
+      if (result.success) {
+        toast({ title: 'Success', description: result.message });
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
+      }
+    });
+  };
+
+  const handleMarkAsUnpaid = (requestId: string) => {
+     startTransition(async () => {
+      const result = await markAsUnpaidAction(requestId);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
       } else {
@@ -109,6 +120,12 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                               <DialogClose asChild>
                                 <Button variant="ghost">Cancel</Button>
                               </DialogClose>
+                              {req.leaveType === 'Paid (Made Up)' && (
+                                <Button variant="secondary" onClick={() => handleMarkAsUnpaid(req.id)} disabled={isPending}>
+                                  {isPending ? <Loader2 className="animate-spin" /> : <FilePenLine />}
+                                  Mark as Unpaid
+                                </Button>
+                              )}
                               <Button variant="destructive" onClick={() => handleAction('deny', req.id)} disabled={isPending}>
                                 {isPending ? <Loader2 className="animate-spin" /> : <X />}
                                 Deny

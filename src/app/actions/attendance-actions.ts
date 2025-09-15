@@ -3,7 +3,7 @@
 
 import type { User, LeaveType } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
-import { clockIn, clockOut, getAttendanceStatus, requestLeave, approveLeave, denyLeave } from '@/services/attendance-service';
+import { clockIn, clockOut, getAttendanceStatus, requestLeave, approveLeave, denyLeave, updateLeaveType } from '@/services/attendance-service';
 
 export async function clockInAction(user: User) {
     try {
@@ -66,5 +66,16 @@ export async function denyLeaveAction(requestId: string) {
     } catch (error) {
         console.error(error);
         return { success: false, message: 'Failed to deny leave request.' };
+    }
+}
+
+export async function markAsUnpaidAction(requestId: string) {
+    try {
+        await updateLeaveType(requestId, 'Unpaid');
+        revalidatePath('/admin');
+        return { success: true, message: 'Leave marked as Unpaid.' };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: 'Failed to update leave type.' };
     }
 }

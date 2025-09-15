@@ -129,6 +129,10 @@ export async function denyLeave(requestId: string): Promise<void> {
     data.updateLeaveRequest(requestId, { status: 'Denied' });
 }
 
+export async function updateLeaveType(requestId: string, leaveType: LeaveType): Promise<void> {
+    data.updateLeaveRequest(requestId, { leaveType });
+}
+
 export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays: number }>> {
     const now = new Date();
     const monthStart = startOfMonth(now);
