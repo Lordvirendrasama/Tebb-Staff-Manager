@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useTransition, useState } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { requestLeaveAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,11 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
   const [date, setDate] = useState<DateRange | undefined>();
   const [reason, setReason] = useState('');
   const [leaveType, setLeaveType] = useState<LeaveType>('Unpaid');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleRequestLeave = () => {
     if (!date || !reason || !date.from || !date.to) {
@@ -148,7 +153,7 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                     <TableBody>
                     {leaveRequests.slice(0, 5).map((req) => (
                         <TableRow key={req.id}>
-                        <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
+                        <TableCell>{isClient ? formatDateRange(req.startDate, req.endDate) : '...'}</TableCell>
                         <TableCell className="text-muted-foreground text-xs">{req.leaveType}</TableCell>
                         <TableCell className="text-right">
                              <Badge variant={getStatusVariant(req.status)}>
