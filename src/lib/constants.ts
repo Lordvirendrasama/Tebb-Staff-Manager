@@ -1,11 +1,11 @@
 
 export interface ConsumptionLog {
+  id: string;
   employeeName: string;
   itemName: string;
   dateTimeLogged: Date;
 }
 
-// USERS constant is removed in favor of a dynamic list from the database.
 export type User = string;
 
 export const DRINK_ITEMS = ['Coffee', 'Cooler', 'Milkshake'] as const;
@@ -21,6 +21,7 @@ export const MONTHLY_DRINK_ALLOWANCE = 6;
 export const MONTHLY_MEAL_ALLOWANCE = 6;
 
 export interface AttendanceLog {
+  id: string;
   employeeName: User;
   clockIn: Date;
   clockOut?: Date;

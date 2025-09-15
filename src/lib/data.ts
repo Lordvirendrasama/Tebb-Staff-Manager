@@ -1,170 +1,165 @@
 
-import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest } from './constants';
-import fs from 'fs';
-import path from 'path';
+import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest, WeekDay } from './constants';
+import { db } from './firebase';
 
-const DB_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
+const EMPLOYEES_COLLECTION = 'employees';
+const CONSUMPTION_LOGS_COLLECTION = 'consumptionLogs';
+const ATTENDANCE_LOGS_COLLECTION = 'attendanceLogs';
+const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';
+const AWARDS_COLLECTION = 'awards';
 
-export interface Database {
-  consumptionLogs: ConsumptionLog[];
-  attendanceLogs: AttendanceLog[];
-  employeeOfTheWeek: User | null;
-  employees: Employee[];
-  leaveRequests: LeaveRequest[];
+// --- Seeding ---
+async function seedDatabase() {
+    const employeesRef = db.collection(EMPLOYEES_COLLECTION);
+    const snapshot = await employeesRef.limit(1).get();
+
+    if (snapshot.empty) {
+        console.log('No employees found, seeding database...');
+        const batch = db.batch();
+        const initialEmployees: Omit<Employee, 'id'>[] = [
+            { name: 'Abbas', weeklyOffDay: 'Wednesday', standardWorkHours: 6 },
+            { name: 'Musaib', weeklyOffDay: 'Tuesday', standardWorkHours: 7 }
+        ];
+
+        initialEmployees.forEach(emp => {
+            const docRef = employeesRef.doc(); // Firestore generates the ID
+            batch.set(docRef, emp);
+        });
+
+        await batch.commit();
+        console.log('Database seeded with initial employees.');
+    }
 }
 
-export function readDb(): Database {
-  try {
-    const data = fs.readFileSync(DB_PATH, 'utf-8');
-    const db = JSON.parse(data);
-    // Dates are stored as ISO strings in JSON, so we need to convert them back to Date objects
-    return {
-        ...db,
-        consumptionLogs: db.consumptionLogs.map((log: any) => ({ ...log, dateTimeLogged: new Date(log.dateTimeLogged) })),
-        attendanceLogs: db.attendanceLogs.map((log: any) => ({ ...log, clockIn: new Date(log.clockIn), clockOut: log.clockOut ? new Date(log.clockOut) : undefined })),
-        leaveRequests: db.leaveRequests ? db.leaveRequests.map((req: any) => ({ ...req, startDate: new Date(req.startDate), endDate: new Date(req.endDate) })) : [],
-    };
-  } catch (error) {
-    // If the file doesn't exist or is empty, return a default structure
-    return { 
-        consumptionLogs: [], 
-        attendanceLogs: [], 
-        employeeOfTheWeek: null,
-        employees: [
-            { id: '1', name: 'Abbas', weeklyOffDay: 'Wednesday', standardWorkHours: 6 },
-            { id: '2', name: 'Musaib', weeklyOffDay: 'Tuesday', standardWorkHours: 7 }
-        ],
-        leaveRequests: [],
-    };
-  }
-}
+// Call seeding at the start
+seedDatabase().catch(console.error);
 
-export function writeDb(db: Database) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+// Helper to convert Firestore timestamps to Dates in documents
+function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
+    const data = doc.data() as any;
+    if (!data) throw new Error("Document data is empty");
+
+    const convertedData: any = { id: doc.id };
+    for (const key in data) {
+        const value = data[key];
+        if (value instanceof Object && 'toDate' in value && typeof value.toDate === 'function') {
+            convertedData[key] = value.toDate();
+        } else {
+            convertedData[key] = value;
+        }
+    }
+    return convertedData as T;
 }
 
 
 // --- Consumption Logs ---
-export const getConsumptionLogs = (): ConsumptionLog[] => {
-    return readDb().consumptionLogs;
+export const getConsumptionLogs = async (): Promise<ConsumptionLog[]> => {
+    const snapshot = await db.collection(CONSUMPTION_LOGS_COLLECTION).get();
+    return snapshot.docs.map(doc => docWithDates<ConsumptionLog>(doc));
 };
 
-export const addConsumptionLog = (log: ConsumptionLog) => {
-    const db = readDb();
-    db.consumptionLogs.push(log);
-    writeDb(db);
+export const addConsumptionLog = async (log: Omit<ConsumptionLog, 'id'>) => {
+    await db.collection(CONSUMPTION_LOGS_COLLECTION).add(log);
 };
 
 // --- Attendance Logs ---
-export const getAttendanceLogs = (): AttendanceLog[] => {
-    return readDb().attendanceLogs;
+export const getAttendanceLogs = async (): Promise<AttendanceLog[]> => {
+    const snapshot = await db.collection(ATTENDANCE_LOGS_COLLECTION).get();
+    return snapshot.docs.map(doc => docWithDates<AttendanceLog>(doc));
 };
 
-export const addAttendanceLog = (log: AttendanceLog) => {
-    const db = readDb();
-    db.attendanceLogs.push(log);
-    writeDb(db);
+export const addAttendanceLog = async (log: Omit<AttendanceLog, 'id'>) => {
+    await db.collection(ATTENDANCE_LOGS_COLLECTION).add(log);
 };
 
-export const updateLatestAttendanceLogForUser = (user: User, updates: Partial<AttendanceLog>) => {
-    const db = readDb();
-    const logsForUser = db.attendanceLogs
-        .filter(log => log.employeeName === user)
-        .sort((a, b) => new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime());
-    
-    if (logsForUser.length > 0) {
-        const latestLog = logsForUser[0];
-        const logIndex = db.attendanceLogs.findIndex(log => log.clockIn.getTime() === latestLog.clockIn.getTime() && log.employeeName === user);
+export const updateLatestAttendanceLogForUser = async (user: User, updates: Partial<AttendanceLog>) => {
+    const query = db.collection(ATTENDANCE_LOGS_COLLECTION)
+        .where('employeeName', '==', user)
+        .orderBy('clockIn', 'desc')
+        .limit(1);
 
-        if (logIndex !== -1) {
-            db.attendanceLogs[logIndex] = { ...db.attendanceLogs[logIndex], ...updates };
-            writeDb(db);
-        }
+    const snapshot = await query.get();
+    if (!snapshot.empty) {
+        const docId = snapshot.docs[0].id;
+        await db.collection(ATTENDANCE_LOGS_COLLECTION).doc(docId).update(updates);
     }
 };
 
 // --- Awards ---
-export const getEmployeeOfTheWeek = (): User | null => {
-    return readDb().employeeOfTheWeek;
+export const getEmployeeOfTheWeek = async (): Promise<User | null> => {
+    const doc = await db.collection(AWARDS_COLLECTION).doc('employeeOfTheWeek').get();
+    if (doc.exists) {
+        return doc.data()?.employeeName || null;
+    }
+    return null;
 };
 
-export const setEmployeeOfTheWeek = (user: User | null) => {
-    const db = readDb();
-    db.employeeOfTheWeek = user;
-    writeDb(db);
+export const setEmployeeOfTheWeek = async (user: User | null) => {
+    await db.collection(AWARDS_COLLECTION).doc('employeeOfTheWeek').set({ employeeName: user });
 };
 
 // --- Employees ---
-export const getEmployees = (): Employee[] => {
-    return readDb().employees;
-}
-
-export const addEmployee = (employee: Employee) => {
-    const db = readDb();
-    db.employees.push(employee);
-    writeDb(db);
-}
-
-export const updateEmployee = (employeeId: string, updates: Partial<Employee>) => {
-    const db = readDb();
-    const employeeIndex = db.employees.findIndex(emp => emp.id === employeeId);
-    if (employeeIndex !== -1) {
-        db.employees[employeeIndex] = { ...db.employees[employeeIndex], ...updates };
-        writeDb(db);
+export const getEmployees = async (): Promise<Employee[]> => {
+    const snapshot = await db.collection(EMPLOYEES_COLLECTION).get();
+    if(snapshot.empty) {
+        await seedDatabase();
+        const seededSnapshot = await db.collection(EMPLOYEES_COLLECTION).get();
+        return seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
     }
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
 }
 
-export const deleteEmployee = (employeeId: string) => {
-    const db = readDb();
-    const employeeToDelete = db.employees.find(emp => emp.id === employeeId);
-    if (!employeeToDelete) return;
+export const addEmployee = async (employee: Omit<Employee, 'id'>) => {
+    await db.collection(EMPLOYEES_COLLECTION).add(employee);
+}
 
-    const employeeName = employeeToDelete.name;
+export const updateEmployee = async (employeeId: string, updates: Partial<Omit<Employee, 'id'>>) => {
+    await db.collection(EMPLOYEES_COLLECTION).doc(employeeId).update(updates);
+}
 
-    // Filter out the employee and all their associated data
-    db.employees = db.employees.filter(emp => emp.id !== employeeId);
-    db.consumptionLogs = db.consumptionLogs.filter(log => log.employeeName !== employeeName);
-    db.attendanceLogs = db.attendanceLogs.filter(log => log.employeeName !== employeeName);
-    db.leaveRequests = db.leaveRequests.filter(req => req.employeeName !== employeeName);
+export const deleteEmployee = async (employeeId: string) => {
+    const employeeRef = db.collection(EMPLOYEES_COLLECTION).doc(employeeId);
+    const employeeDoc = await employeeRef.get();
+    if (!employeeDoc.exists) return;
+
+    const employeeName = employeeDoc.data()?.name;
+    const batch = db.batch();
+
+    // Delete employee
+    batch.delete(employeeRef);
+
+    // Delete associated data
+    const collectionsToDelete = [
+        CONSUMPTION_LOGS_COLLECTION,
+        ATTENDANCE_LOGS_COLLECTION,
+        LEAVE_REQUESTS_COLLECTION,
+    ];
+
+    for (const collectionName of collectionsToDelete) {
+        const snapshot = await db.collection(collectionName).where('employeeName', '==', employeeName).get();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    }
 
     // Check if the deleted employee was employee of the week
-    if (db.employeeOfTheWeek === employeeName) {
-        db.employeeOfTheWeek = null;
+    const eow = await getEmployeeOfTheWeek();
+    if (eow === employeeName) {
+        await setEmployeeOfTheWeek(null);
     }
-
-    writeDb(db);
+    
+    await batch.commit();
 }
 
 
 // --- Leave Requests ---
-export const getLeaveRequests = (): LeaveRequest[] => {
-    return readDb().leaveRequests;
+export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
+    const snapshot = await db.collection(LEAVE_REQUESTS_COLLECTION).get();
+    return snapshot.docs.map(doc => docWithDates<LeaveRequest>(doc));
 }
 
-export const addLeaveRequest = (request: LeaveRequest) => {
-    const db = readDb();
-    db.leaveRequests.push(request);
-    writeDb(db);
+export const addLeaveRequest = async (request: Omit<LeaveRequest, 'id'>) => {
+    await db.collection(LEAVE_REQUESTS_COLLECTION).add(request);
 }
 
-export const updateLeaveRequest = (requestId: string, updates: Partial<LeaveRequest>) => {
-    const db = readDb();
-    const requestIndex = db.leaveRequests.findIndex(req => req.id === requestId);
-    if (requestIndex !== -1) {
-        db.leaveRequests[requestIndex] = { ...db.leaveRequests[requestIndex], ...updates };
-        writeDb(db);
-    }
-}
-
-
-// --- Data Export ---
-export async function getAllData() {
-    const db = readDb();
-    return {
-        consumptionLogs: db.consumptionLogs,
-        attendanceLogs: db.attendanceLogs,
-        employeeOfTheWeek: db.employeeOfTheWeek,
-        employees: db.employees,
-        leaveRequests: db.leaveRequests,
-    };
+export const updateLeaveRequest = async (requestId: string, updates: Partial<Omit<LeaveRequest, 'id'>>) => {
+    await db.collection(LEAVE_REQUESTS_COLLECTION).doc(requestId).update(updates);
 }

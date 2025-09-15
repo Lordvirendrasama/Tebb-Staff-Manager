@@ -58,8 +58,8 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
 
     startTransition(async () => {
       const action = editingEmployee ? 
-        updateEmployeeAction(editingEmployee.id, name, weeklyOffDay, standardWorkHours) : 
-        addEmployeeAction(name, weeklyOffDay, standardWorkHours);
+        updateEmployeeAction(editingEmployee.id, name, weeklyOffDay as WeekDay, standardWorkHours) : 
+        addEmployeeAction(name, weeklyOffDay as WeekDay, standardWorkHours);
       const result = await action;
 
       if (result.success) {

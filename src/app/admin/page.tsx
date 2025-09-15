@@ -7,9 +7,6 @@ import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { getAllUsersAllowances } from '@/services/consumption-log-service';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
-import { ExportDataButton } from '@/components/export-data-button';
-import { ImportDataButton } from '@/components/import-data-button';
-import { ExportCsvButton } from '@/components/export-csv-button';
 import { getMonthlyOvertime, getEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
@@ -76,24 +73,19 @@ export default async function AdminPage() {
 
         <div className="lg:col-span-1 space-y-8">
            <StaffManager employees={employees} />
-            <Card>
+             <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
-                  <CardDescription>Import and export all application data.</CardDescription>
+                  <CardDescription>Application data is now stored in Firebase.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                   <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertTitle>Local Data Storage</AlertTitle>
+                    <AlertTitle>Firebase Firestore Enabled</AlertTitle>
                     <AlertDescription>
-                      All application data is stored in a local `db.json` file. You can export this file to create a backup or import a file to restore data.
+                      All application data is now stored in a secure, cloud-based Firestore database. You can manage your data directly in the Firebase console.
                     </AlertDescription>
                   </Alert>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    <ImportDataButton />
-                    <ExportDataButton />
-                    <ExportCsvButton />
-                  </div>
               </CardContent>
             </Card>
         </div>

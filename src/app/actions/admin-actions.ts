@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { User } from '@/lib/constants';
+import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { setEmployeeOfTheWeek } from '@/services/awards-service';
 import { addEmployee, updateEmployee, deleteEmployee } from '@/services/attendance-service';
@@ -18,7 +18,7 @@ export async function setEmployeeOfTheWeekAction(employeeName: User) {
     }
 }
 
-export async function addEmployeeAction(name: string, weeklyOffDay: string, standardWorkHours: number) {
+export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
     try {
         await addEmployee(name, weeklyOffDay, standardWorkHours);
         revalidatePath('/admin');
@@ -30,7 +30,7 @@ export async function addEmployeeAction(name: string, weeklyOffDay: string, stan
     }
 }
 
-export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: string, standardWorkHours: number) {
+export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
     try {
         await updateEmployee(id, name, weeklyOffDay, standardWorkHours);
         revalidatePath('/admin');

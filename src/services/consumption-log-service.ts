@@ -8,12 +8,12 @@ import { startOfMonth, endOfMonth } from 'date-fns';
 import { getEmployees } from './attendance-service';
 
 export async function logConsumption(user: User, item: ConsumableItem): Promise<void> {
-    const log: ConsumptionLog = {
+    const log: Omit<ConsumptionLog, 'id'> = {
         employeeName: user,
         itemName: item,
         dateTimeLogged: new Date(),
     };
-    data.addConsumptionLog(log);
+    await data.addConsumptionLog(log);
 }
 
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
@@ -21,7 +21,7 @@ export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const start = startOfMonth(now);
     const end = endOfMonth(now);
 
-    const allLogs = data.getConsumptionLogs();
+    const allLogs = await data.getConsumptionLogs();
 
     return allLogs
         .filter(log => 
@@ -50,7 +50,7 @@ export async function getAllUsersAllowances(): Promise<Array<{ user: User; allow
     const employees = await getEmployees();
     const users = employees.map(e => e.name);
     
-    const logs = (data.getConsumptionLogs())
+    const logs = (await data.getConsumptionLogs())
         .filter(log => log.dateTimeLogged >= start && log.dateTimeLogged <= end);
 
     const userLogs: Record<User, ConsumptionLog[]> = users.reduce((acc, name) => {
