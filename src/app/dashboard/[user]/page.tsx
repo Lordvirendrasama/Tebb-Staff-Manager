@@ -30,7 +30,7 @@ export default async function UserDashboard({ params }: { params: { user: string
   const attendanceHistory = await getAttendanceHistory(validUser);
   const leaveHistory = await getLeaveRequestsForUser(validUser);
 
-  const recentLogs = logs.slice(0, 5);
+  const recentLogs = logs.slice(0, 6);
   const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;
 
   return (
@@ -101,7 +101,7 @@ export default async function UserDashboard({ params }: { params: { user: string
             <Card>
                 <CardHeader>
                     <CardTitle>Consumption History</CardTitle>
-                    <CardDescription>Your last 5 logged items this month.</CardDescription>
+                    <CardDescription>Your last 6 logged items this month.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ConsumptionHistory logs={recentLogs} />
