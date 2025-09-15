@@ -5,7 +5,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -14,12 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, Loader2, History } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import type { User, LeaveRequest, LeaveType } from '@/lib/constants';
 import { LEAVE_TYPES } from '@/lib/constants';
 import { requestLeaveAction } from '@/app/actions/attendance-actions';
 import { cn } from '@/lib/utils';
-import type { DateRange } from 'react-day-picker';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
@@ -99,15 +98,15 @@ export function LeaveTracker({ user, history }: { user: User; history: LeaveRequ
                         <FormControl>
                           <Button
                             variant="outline"
-                            className={cn('pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
+                            className={cn('w-full justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
                             disabled={isPending}
                           >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
                             {field.value?.from ? (
                                 formatDateRange(field.value.from, field.value.to)
                             ) : (
                               <span>Pick a date range</span>
                             )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -118,7 +117,6 @@ export function LeaveTracker({ user, history }: { user: User; history: LeaveRequ
                           onSelect={field.onChange}
                           initialFocus
                           numberOfMonths={2}
-                          disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
                         />
                       </PopoverContent>
                     </Popover>
@@ -183,7 +181,7 @@ export function LeaveTracker({ user, history }: { user: User; history: LeaveRequ
                         <TableRow>
                         <TableHead>Dates</TableHead>
                         <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -191,7 +189,7 @@ export function LeaveTracker({ user, history }: { user: User; history: LeaveRequ
                         <TableRow key={request.id}>
                             <TableCell>{isClient ? formatDateRange(request.startDate, request.endDate) : '...'}</TableCell>
                             <TableCell>{request.leaveType}</TableCell>
-                            <TableCell>
+                            <TableCell className="text-right">
                                <Badge variant={getStatusVariant(request.status)}>{request.status}</Badge>
                             </TableCell>
                         </TableRow>
