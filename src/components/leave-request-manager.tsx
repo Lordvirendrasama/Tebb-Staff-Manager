@@ -13,6 +13,7 @@ import type { LeaveRequest } from '@/lib/constants';
 import { approveLeaveAction, denyLeaveAction } from '@/app/actions/attendance-actions';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 
 export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) {
   const [isPending, startTransition] = useTransition();
@@ -65,34 +66,58 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                     <TableHead>Employee</TableHead>
                     <TableHead>Dates</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Status</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
                 {reqs.map(req => (
-                    <TableRow key={req.id}>
-                    <TableCell>{req.employeeName}</TableCell>
-                    <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
-                    <TableCell>{req.leaveType}</TableCell>
-                    <TableCell className="max-w-[150px] truncate">{req.reason}</TableCell>
-                    <TableCell className="text-right">
-                        {req.status === 'Pending' ? (
-                        <div className="flex gap-2 justify-end">
-                            <Button size="icon" variant="ghost" onClick={() => handleAction('approve', req.id)} disabled={isPending}>
-                            {isPending ? <Loader2 className="animate-spin" /> : <Check className="text-green-500"/>}
-                            <span className="sr-only">Approve</span>
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => handleAction('deny', req.id)} disabled={isPending}>
-                            {isPending ? <Loader2 className="animate-spin" /> : <X className="text-red-500"/>}
-                            <span className="sr-only">Deny</span>
-                            </Button>
-                        </div>
-                        ) : (
+                    <Dialog key={req.id}>
+                      <DialogTrigger asChild>
+                        <TableRow className="cursor-pointer">
+                          <TableCell>{req.employeeName}</TableCell>
+                          <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
+                          <TableCell>{req.leaveType}</TableCell>
+                          <TableCell>
                             <Badge variant={getStatusVariant(req.status)}>{req.status}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Leave Request Details</DialogTitle>
+                          <DialogDescription>Review the leave request from {req.employeeName}.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="font-semibold">Employee:</div>
+                                <div>{req.employeeName}</div>
+                                <div className="font-semibold">Dates:</div>
+                                <div>{formatDateRange(req.startDate, req.endDate)}</div>
+                                <div className="font-semibold">Leave Type:</div>
+                                <div>{req.leaveType}</div>
+                                <div className="font-semibold">Status:</div>
+                                <div><Badge variant={getStatusVariant(req.status)}>{req.status}</Badge></div>
+                                <div className="font-semibold col-span-2">Reason:</div>
+                                <div className="col-span-2 text-sm p-2 bg-muted rounded-md">{req.reason}</div>
+                            </div>
+                        </div>
+                        {req.status === 'Pending' && (
+                          <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="ghost">Cancel</Button>
+                              </DialogClose>
+                              <Button variant="destructive" onClick={() => handleAction('deny', req.id)} disabled={isPending}>
+                                {isPending ? <Loader2 className="animate-spin" /> : <X />}
+                                Deny
+                              </Button>
+                              <Button onClick={() => handleAction('approve', req.id)} disabled={isPending}>
+                                {isPending ? <Loader2 className="animate-spin" /> : <Check />}
+                                Approve
+                              </Button>
+                          </DialogFooter>
                         )}
-                    </TableCell>
-                    </TableRow>
+                      </DialogContent>
+                    </Dialog>
                 ))}
                 </TableBody>
             </Table>
@@ -105,7 +130,7 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
     <Card>
       <CardHeader>
         <CardTitle>Leave Requests</CardTitle>
-        <CardDescription>Manage employee leave requests.</CardDescription>
+        <CardDescription>Manage employee leave requests. Click a request to review and take action.</CardDescription>
       </CardHeader>
       <CardContent>
          <Tabs defaultValue="pending">
