@@ -8,32 +8,6 @@ const ATTENDANCE_LOGS_COLLECTION = 'attendanceLogs';
 const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';
 const AWARDS_COLLECTION = 'awards';
 
-// --- Seeding ---
-async function seedDatabase() {
-    const employeesRef = db.collection(EMPLOYEES_COLLECTION);
-    const snapshot = await employeesRef.limit(1).get();
-
-    if (snapshot.empty) {
-        console.log('No employees found, seeding database...');
-        const batch = db.batch();
-        const initialEmployees: Omit<Employee, 'id'>[] = [
-            { name: 'Abbas', weeklyOffDay: 'Wednesday', standardWorkHours: 6 },
-            { name: 'Musaib', weeklyOffDay: 'Tuesday', standardWorkHours: 7 }
-        ];
-
-        initialEmployees.forEach(emp => {
-            const docRef = employeesRef.doc(); // Firestore generates the ID
-            batch.set(docRef, emp);
-        });
-
-        await batch.commit();
-        console.log('Database seeded with initial employees.');
-    }
-}
-
-// Call seeding at the start
-seedDatabase().catch(console.error);
-
 // Helper to convert Firestore timestamps to Dates in documents
 function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
     const data = doc.data() as any;
@@ -101,11 +75,6 @@ export const setEmployeeOfTheWeek = async (user: User | null) => {
 // --- Employees ---
 export const getEmployees = async (): Promise<Employee[]> => {
     const snapshot = await db.collection(EMPLOYEES_COLLECTION).get();
-    if(snapshot.empty) {
-        await seedDatabase();
-        const seededSnapshot = await db.collection(EMPLOYEES_COLLECTION).get();
-        return seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
-    }
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
 }
 
