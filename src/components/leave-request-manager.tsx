@@ -6,12 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from './ui/scroll-area';
 import { format } from 'date-fns';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useTransition } from 'react';
 import { approveLeaveAction, denyLeaveAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X } from 'lucide-react';
+import { Badge } from './ui/badge';
 
 export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) {
     const [isPending, startTransition] = useTransition();
@@ -37,19 +37,6 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                 toast({ variant: "destructive", title: "Error", description: result.message });
             }
         });
-    };
-    
-    const getStatusVariant = (status: LeaveStatus) => {
-        switch (status) {
-            case 'Approved':
-                return 'default';
-            case 'Denied':
-                return 'destructive';
-            case 'Pending':
-                return 'secondary';
-            default:
-                return 'secondary';
-        }
     };
     
     const formatDateRange = (start: Date, end: Date) => {
@@ -89,8 +76,8 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                                     <TableRow key={req.id}>
                                         <TableCell className="font-medium">{req.employeeName}</TableCell>
                                         <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
-                                        <TableCell className="text-xs text-muted-foreground">{req.leaveType}</TableCell>
-                                        <TableCell className="text-xs max-w-[120px] truncate">{req.reason}</TableCell>
+                                        <TableCell><Badge variant="outline" className="text-xs">{req.leaveType}</Badge></TableCell>
+                                        <TableCell className="text-xs max-w-[120px] truncate text-muted-foreground">{req.reason}</TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Button size="icon" variant="outline" onClick={() => handleApprove(req.id)} disabled={isPending}>
                                                 {isPending ? <Loader2 className="animate-spin" /> : <Check className="text-green-500"/>}
