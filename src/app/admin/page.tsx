@@ -89,7 +89,7 @@ export default async function AdminPage() {
                       All application data is stored in a local `db.json` file. You can export this file to create a backup or import a file to restore data.
                     </AlertDescription>
                   </Alert>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
                     <ImportDataButton />
                     <ExportDataButton />
                     <ExportCsvButton />

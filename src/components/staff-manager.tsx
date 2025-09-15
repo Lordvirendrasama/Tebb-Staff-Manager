@@ -92,38 +92,40 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
       <CardContent className="space-y-4">
         {employees.map(employee => (
           <div key={employee.id} className="flex items-center justify-between p-2 border rounded-lg">
-            <div className="grid grid-cols-3 items-center gap-4 text-sm w-full pr-4">
-                <p className="font-medium truncate">{employee.name}</p>
-                <p className="text-muted-foreground truncate">{employee.weeklyOffDay}</p>
-                 <div className="flex items-center gap-1 text-muted-foreground truncate">
+             <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 items-center gap-x-4 gap-y-1 text-sm w-full pr-4">
+                <p className="font-medium truncate col-span-1 sm:col-span-1">{employee.name}</p>
+                <p className="text-muted-foreground truncate col-span-1 sm:col-span-1">{employee.weeklyOffDay}</p>
+                 <div className="flex items-center gap-1 text-muted-foreground truncate col-span-1 sm:col-span-1">
                     <Clock className="h-3 w-3" />
                     <span>{employee.standardWorkHours} hrs/day</span>
                 </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => handleEdit(employee)} disabled={isPending}>
-              <Edit className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" disabled={isPending}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently remove {employee.name} and all of their associated data. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDelete(employee.id)} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-                    {isPending ? <Loader2 className="animate-spin" /> : 'Remove'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex">
+              <Button variant="ghost" size="icon" onClick={() => handleEdit(employee)} disabled={isPending}>
+                <Edit className="h-4 w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" disabled={isPending}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently remove {employee.name} and all of their associated data. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(employee.id)} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+                      {isPending ? <Loader2 className="animate-spin" /> : 'Remove'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         ))}
 
@@ -170,7 +172,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
                   disabled={isPending}
                 />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={handleCancel} variant="outline" className="w-full" disabled={isPending}>Cancel</Button>
               <Button onClick={handleSave} className="w-full" disabled={isPending || !name || !weeklyOffDay || !standardWorkHours}>
                 {isPending ? <Loader2 className="animate-spin" /> : <Save />}

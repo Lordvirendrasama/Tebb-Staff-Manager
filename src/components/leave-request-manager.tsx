@@ -64,8 +64,8 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                 <TableHeader>
                 <TableRow>
                     <TableHead>Employee</TableHead>
-                    <TableHead>Dates</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden sm:table-cell">Dates</TableHead>
+                    <TableHead className="hidden md:table-cell">Type</TableHead>
                     <TableHead>Status</TableHead>
                 </TableRow>
                 </TableHeader>
@@ -74,9 +74,12 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                     <Dialog key={req.id}>
                       <DialogTrigger asChild>
                         <TableRow className="cursor-pointer">
-                          <TableCell>{req.employeeName}</TableCell>
-                          <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
-                          <TableCell>{req.leaveType}</TableCell>
+                          <TableCell>
+                            <span className="font-medium">{req.employeeName}</span>
+                            <div className="sm:hidden text-xs text-muted-foreground">{formatDateRange(req.startDate, req.endDate)}</div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">{formatDateRange(req.startDate, req.endDate)}</TableCell>
+                          <TableCell className="hidden md:table-cell">{req.leaveType}</TableCell>
                           <TableCell>
                             <Badge variant={getStatusVariant(req.status)}>{req.status}</Badge>
                           </TableCell>
@@ -88,7 +91,7 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                           <DialogDescription>Review the leave request from {req.employeeName}.</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                                 <div className="font-semibold">Employee:</div>
                                 <div>{req.employeeName}</div>
                                 <div className="font-semibold">Dates:</div>
@@ -97,12 +100,12 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                                 <div>{req.leaveType}</div>
                                 <div className="font-semibold">Status:</div>
                                 <div><Badge variant={getStatusVariant(req.status)}>{req.status}</Badge></div>
-                                <div className="font-semibold col-span-2">Reason:</div>
-                                <div className="col-span-2 text-sm p-2 bg-muted rounded-md">{req.reason}</div>
+                                <div className="font-semibold col-span-1 sm:col-span-2">Reason:</div>
+                                <div className="col-span-1 sm:col-span-2 text-sm p-2 bg-muted rounded-md">{req.reason}</div>
                             </div>
                         </div>
                         {req.status === 'Pending' && (
-                          <DialogFooter>
+                          <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
                               <DialogClose asChild>
                                 <Button variant="ghost">Cancel</Button>
                               </DialogClose>
