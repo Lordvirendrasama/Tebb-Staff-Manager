@@ -24,12 +24,14 @@
     {
       "id": "1",
       "name": "Abbas",
-      "weeklyOffDay": "Wednesday"
+      "weeklyOffDay": "Wednesday",
+      "standardWorkHours": 6
     },
     {
       "id": "2",
       "name": "Musaib",
-      "weeklyOffDay": "Tuesday"
+      "weeklyOffDay": "Tuesday",
+      "standardWorkHours": 7
     }
   ]
 }

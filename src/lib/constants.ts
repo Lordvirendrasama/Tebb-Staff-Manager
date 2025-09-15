@@ -19,9 +19,6 @@ export type ConsumableItem = (typeof ALL_ITEMS)[number];
 
 export const MONTHLY_DRINK_ALLOWANCE = 6;
 export const MONTHLY_MEAL_ALLOWANCE = 6;
-// ANNUAL_LEAVE_ALLOWANCE is no longer needed with the new system.
-export const STANDARD_WORK_HOURS = 8;
-
 
 export interface AttendanceLog {
   employeeName: User;
@@ -65,4 +62,5 @@ export interface Employee {
   id: string;
   name: string;
   weeklyOffDay: WeekDay;
+  standardWorkHours: number;
 }

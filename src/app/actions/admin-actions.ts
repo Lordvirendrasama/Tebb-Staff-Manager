@@ -18,9 +18,9 @@ export async function setEmployeeOfTheWeekAction(employeeName: User) {
     }
 }
 
-export async function addEmployeeAction(name: string, weeklyOffDay: string) {
+export async function addEmployeeAction(name: string, weeklyOffDay: string, standardWorkHours: number) {
     try {
-        await addEmployee(name, weeklyOffDay);
+        await addEmployee(name, weeklyOffDay, standardWorkHours);
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee added successfully!' };
@@ -30,9 +30,9 @@ export async function addEmployeeAction(name: string, weeklyOffDay: string) {
     }
 }
 
-export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: string) {
+export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: string, standardWorkHours: number) {
     try {
-        await updateEmployee(id, name, weeklyOffDay);
+        await updateEmployee(id, name, weeklyOffDay, standardWorkHours);
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };

@@ -1,9 +1,8 @@
 
 'use server';
 
-import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, Employee, WeekDay } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, Employee } from '@/lib/constants';
 import * as data from '@/lib/data';
-import { STANDARD_WORK_HOURS } from '@/lib/constants';
 import { differenceInHours, startOfMonth, endOfMonth, startOfDay } from 'date-fns';
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
@@ -79,7 +78,7 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
     const monthEnd = endOfMonth(now);
     
     const employees = await getEmployees();
-    const employeeNames = employees.map(e => e.name);
+    const employeeMap = new Map(employees.map(e => [e.name, e]));
 
     const attendanceLogs = data.getAttendanceLogs().filter(log => 
         log.clockOut && 
@@ -87,23 +86,23 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
         new Date(log.clockIn) <= monthEnd
     );
 
-    const overtimeByUser: Record<User, number> = employeeNames.reduce((acc, name) => {
-        acc[name] = 0;
+    const overtimeByUser: Record<User, number> = employees.reduce((acc, emp) => {
+        acc[emp.name] = 0;
         return acc;
     }, {} as Record<User, number>);
 
-
     attendanceLogs.forEach(log => {
-        if (log.clockOut) {
+        const employee = employeeMap.get(log.employeeName);
+        if (employee && log.clockOut) {
             const hoursWorked = differenceInHours(new Date(log.clockOut), new Date(log.clockIn));
-            const overtime = Math.max(0, hoursWorked - STANDARD_WORK_HOURS);
+            const overtime = Math.max(0, hoursWorked - employee.standardWorkHours);
             if (overtimeByUser[log.employeeName] !== undefined) {
                 overtimeByUser[log.employeeName] += overtime;
             }
         }
     });
 
-    return employeeNames.map(user => ({ name: user, overtime: overtimeByUser[user] || 0 }));
+    return employees.map(emp => ({ name: emp.name, overtime: overtimeByUser[emp.name] || 0 }));
 }
 
 // --- Employee Service Functions ---
@@ -111,15 +110,16 @@ export async function getEmployees(): Promise<Employee[]> {
     return data.getEmployees();
 }
 
-export async function addEmployee(name: string, weeklyOffDay: string): Promise<void> {
+export async function addEmployee(name: string, weeklyOffDay: string, standardWorkHours: number): Promise<void> {
     const newEmployee: Employee = {
         id: new Date().toISOString() + Math.random().toString(36).substring(2, 9),
         name,
         weeklyOffDay: weeklyOffDay as any,
+        standardWorkHours,
     };
     data.addEmployee(newEmployee);
 }
 
-export async function updateEmployee(id: string, name: string, weeklyOffDay: string): Promise<void> {
-    data.updateEmployee(id, { name, weeklyOffDay: weeklyOffDay as any });
+export async function updateEmployee(id: string, name: string, weeklyOffDay: string, standardWorkHours: number): Promise<void> {
+    data.updateEmployee(id, { name, weeklyOffDay: weeklyOffDay as any, standardWorkHours });
 }

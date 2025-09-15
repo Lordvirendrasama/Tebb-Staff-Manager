@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Loader2, Plus, UserPlus, Save, Edit, Trash2 } from 'lucide-react';
+import { Loader2, UserPlus, Save, Edit, Clock } from 'lucide-react';
 import type { Employee, WeekDay } from '@/lib/constants';
 import { WEEKDAYS } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { addEmployeeAction, updateEmployeeAction } from '@/app/actions/admin-actions';
+import { Label } from './ui/label';
 
 export function StaffManager({ employees }: { employees: Employee[] }) {
   const [isPending, startTransition] = useTransition();
@@ -21,12 +22,14 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
 
   const [name, setName] = useState('');
   const [weeklyOffDay, setWeeklyOffDay] = useState<WeekDay | ''>('');
+  const [standardWorkHours, setStandardWorkHours] = useState<number | ''>('');
 
   const handleAddNew = () => {
     setIsAdding(true);
     setEditingEmployee(null);
     setName('');
     setWeeklyOffDay('');
+    setStandardWorkHours('');
   };
 
   const handleEdit = (employee: Employee) => {
@@ -34,6 +37,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setIsAdding(false);
     setName(employee.name);
     setWeeklyOffDay(employee.weeklyOffDay);
+    setStandardWorkHours(employee.standardWorkHours);
   };
 
   const handleCancel = () => {
@@ -41,16 +45,19 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setEditingEmployee(null);
     setName('');
     setWeeklyOffDay('');
+    setStandardWorkHours('');
   };
 
   const handleSave = () => {
-    if (!name || !weeklyOffDay) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields.' });
+    if (!name || !weeklyOffDay || !standardWorkHours || standardWorkHours <= 0) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields with valid values.' });
       return;
     }
 
     startTransition(async () => {
-      const action = editingEmployee ? updateEmployeeAction(editingEmployee.id, name, weeklyOffDay) : addEmployeeAction(name, weeklyOffDay);
+      const action = editingEmployee ? 
+        updateEmployeeAction(editingEmployee.id, name, weeklyOffDay, standardWorkHours) : 
+        addEmployeeAction(name, weeklyOffDay, standardWorkHours);
       const result = await action;
 
       if (result.success) {
@@ -72,9 +79,13 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
       <CardContent className="space-y-4">
         {employees.map(employee => (
           <div key={employee.id} className="flex items-center justify-between p-2 border rounded-lg">
-            <div>
-              <p className="font-medium">{employee.name}</p>
-              <p className="text-sm text-muted-foreground">{employee.weeklyOffDay}</p>
+            <div className="grid grid-cols-3 items-center gap-4 text-sm w-full pr-4">
+                <p className="font-medium truncate">{employee.name}</p>
+                <p className="text-muted-foreground truncate">{employee.weeklyOffDay}</p>
+                 <div className="flex items-center gap-1 text-muted-foreground truncate">
+                    <Clock className="h-3 w-3" />
+                    <span>{employee.standardWorkHours} hrs/day</span>
+                </div>
             </div>
             <Button variant="ghost" size="icon" onClick={() => handleEdit(employee)}>
               <Edit className="h-4 w-4" />
@@ -91,25 +102,43 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
         {(isAdding || editingEmployee) && (
           <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
             <h4 className="font-medium text-sm">{editingEmployee ? 'Edit Employee' : 'Add New Employee'}</h4>
-            <Input 
-              placeholder="Employee Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isPending}
-            />
-            <Select onValueChange={(value) => setWeeklyOffDay(value as WeekDay)} value={weeklyOffDay} disabled={isPending}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Weekly Day Off" />
-              </SelectTrigger>
-              <SelectContent>
-                {WEEKDAYS.map((day) => (
-                  <SelectItem key={day} value={day}>{day}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div>
+                <Label htmlFor="employee-name">Employee Name</Label>
+                <Input 
+                  id="employee-name"
+                  placeholder="e.g. John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isPending}
+                />
+            </div>
+             <div>
+                <Label>Weekly Day Off</Label>
+                <Select onValueChange={(value) => setWeeklyOffDay(value as WeekDay)} value={weeklyOffDay} disabled={isPending}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Day" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WEEKDAYS.map((day) => (
+                      <SelectItem key={day} value={day}>{day}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+            </div>
+            <div>
+                <Label htmlFor="work-hours">Standard Work Hours/Day</Label>
+                <Input 
+                  id="work-hours"
+                  type="number"
+                  placeholder="e.g. 8"
+                  value={standardWorkHours}
+                  onChange={(e) => setStandardWorkHours(e.target.value === '' ? '' : Number(e.target.value))}
+                  disabled={isPending}
+                />
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleCancel} variant="outline" className="w-full" disabled={isPending}>Cancel</Button>
-              <Button onClick={handleSave} className="w-full" disabled={isPending || !name || !weeklyOffDay}>
+              <Button onClick={handleSave} className="w-full" disabled={isPending || !name || !weeklyOffDay || !standardWorkHours}>
                 {isPending ? <Loader2 className="animate-spin" /> : <Save />}
                 Save
               </Button>

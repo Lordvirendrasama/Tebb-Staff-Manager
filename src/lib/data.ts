@@ -2,7 +2,6 @@
 import type { User, ConsumptionLog, AttendanceLog, LeaveRequest, Employee } from './constants';
 import fs from 'fs';
 import path from 'path';
-import { USERS } from './constants';
 
 const DB_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
 
@@ -33,8 +32,8 @@ export function readDb(): Database {
         leaveRequests: [], 
         employeeOfTheWeek: null,
         employees: [
-            { id: '1', name: 'Abbas', weeklyOffDay: 'Wednesday' },
-            { id: '2', name: 'Musaib', weeklyOffDay: 'Tuesday' }
+            { id: '1', name: 'Abbas', weeklyOffDay: 'Wednesday', standardWorkHours: 6 },
+            { id: '2', name: 'Musaib', weeklyOffDay: 'Tuesday', standardWorkHours: 7 }
         ] 
     };
   }
