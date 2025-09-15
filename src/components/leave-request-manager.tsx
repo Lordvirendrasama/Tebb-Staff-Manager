@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Check, X, MailQuestion } from 'lucide-react';
+import { Loader2, Check, X } from 'lucide-react';
 import type { LeaveRequest } from '@/lib/constants';
 import { approveLeaveAction, denyLeaveAction } from '@/app/actions/attendance-actions';
 import { ScrollArea } from './ui/scroll-area';
@@ -36,8 +36,10 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
   
   const formatDateRange = (start: Date, end: Date) => {
     if (!isClient) return '...';
-    if (format(start, 'PPP') === format(end, 'PPP')) return format(start, 'PPP');
-    return `${format(start, 'PPP')} to ${format(end, 'PPP')}`;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (format(startDate, 'PPP') === format(endDate, 'PPP')) return format(startDate, 'PPP');
+    return `${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`;
   };
 
   const getStatusVariant = (status: string) => {
@@ -64,7 +66,7 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                     <TableHead>Dates</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Reason</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -74,14 +76,16 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                     <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
                     <TableCell>{req.leaveType}</TableCell>
                     <TableCell className="max-w-[150px] truncate">{req.reason}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                         {req.status === 'Pending' ? (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 justify-end">
                             <Button size="icon" variant="ghost" onClick={() => handleAction('approve', req.id)} disabled={isPending}>
                             {isPending ? <Loader2 className="animate-spin" /> : <Check className="text-green-500"/>}
+                            <span className="sr-only">Approve</span>
                             </Button>
                             <Button size="icon" variant="ghost" onClick={() => handleAction('deny', req.id)} disabled={isPending}>
                             {isPending ? <Loader2 className="animate-spin" /> : <X className="text-red-500"/>}
+                            <span className="sr-only">Deny</span>
                             </Button>
                         </div>
                         ) : (

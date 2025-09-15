@@ -27,5 +27,16 @@
       "weeklyOffDay": "Sunday",
       "standardWorkHours": 1
     }
+  ],
+  "leaveRequests": [
+    {
+      "id": "2025-09-15T15:06:31.771Zsy9l09k",
+      "employeeName": "Abbas",
+      "startDate": "2025-09-14T18:30:00.000Z",
+      "endDate": "2025-09-14T18:30:00.000Z",
+      "reason": "Birthday",
+      "leaveType": "Paid (Made Up)",
+      "status": "Pending"
+    }
   ]
 }
