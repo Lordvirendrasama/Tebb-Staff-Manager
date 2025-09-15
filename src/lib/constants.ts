@@ -19,6 +19,9 @@ export type ConsumableItem = (typeof ALL_ITEMS)[number];
 
 export const MONTHLY_DRINK_ALLOWANCE = 6;
 export const MONTHLY_MEAL_ALLOWANCE = 6;
+export const ANNUAL_LEAVE_ALLOWANCE = 7;
+export const STANDARD_WORK_HOURS = 8;
+
 
 export interface AttendanceLog {
   employeeName: User;

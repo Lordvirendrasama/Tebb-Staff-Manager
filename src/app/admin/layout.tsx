@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </Link>
         </div>
       </header>
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
         {children}
       </main>
     </div>

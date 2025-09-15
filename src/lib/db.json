@@ -1,7 +1,22 @@
-
 {
   "consumptionLogs": [],
-  "attendanceLogs": [],
-  "leaveRequests": [],
-  "employeeOfTheWeek": null
+  "attendanceLogs": [
+    {
+      "employeeName": "Abbas",
+      "clockIn": "2025-09-10T05:49:00.149Z",
+      "clockOut": "2025-09-10T11:05:34.936Z"
+    }
+  ],
+  "leaveRequests": [
+    {
+      "id": "2025-09-09T17:09:35.930Zzdspikf",
+      "employeeName": "Abbas",
+      "startDate": "2025-09-06T18:30:00.000Z",
+      "endDate": "2025-09-08T18:30:00.000Z",
+      "reason": "Had to go out of town.",
+      "leaveType": "Paid (Made Up)",
+      "status": "Approved"
+    }
+  ],
+  "employeeOfTheWeek": "Musaib"
 }
