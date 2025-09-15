@@ -98,7 +98,7 @@ export default async function UserDashboard({ params }: { params: { user: string
                     <LogItemForm user={validUser} allowances={allowances} />
                 </CardContent>
             </Card>
-            <Card className="h-full">
+            <Card>
                 <CardHeader>
                     <CardTitle>Consumption History</CardTitle>
                     <CardDescription>Your last 5 logged items this month.</CardDescription>

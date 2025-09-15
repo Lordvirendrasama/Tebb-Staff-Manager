@@ -5,6 +5,7 @@ import type { ConsumptionLog } from '@/lib/constants';
 import { Coffee, GlassWater, Milk, Soup, UtensilsCrossed } from 'lucide-react';
 import type { FC, SVGProps } from 'react';
 import { useState, useEffect } from 'react';
+import { ScrollArea } from './ui/scroll-area';
 
 const FriesIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
     <svg
@@ -65,33 +66,35 @@ export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Item</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead className="text-right">Time</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {logs.map((log, index) => {
-            const Icon = itemIcons[log.itemName] || UtensilsCrossed;
-            return (
-              <TableRow key={index}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-3">
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                    <span>{log.itemName}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}</TableCell>
-                <TableCell className="text-right">{isClient ? formatLocaleTime(log.dateTimeLogged) : '...'}</TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <ScrollArea className="h-72">
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Time</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {logs.map((log, index) => {
+              const Icon = itemIcons[log.itemName] || UtensilsCrossed;
+              return (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5 text-muted-foreground" />
+                      <span>{log.itemName}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}</TableCell>
+                  <TableCell className="text-right">{isClient ? formatLocaleTime(log.dateTimeLogged) : '...'}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </ScrollArea>
   );
 }
