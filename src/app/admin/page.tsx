@@ -1,5 +1,5 @@
 
-import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, ANNUAL_LEAVE_ALLOWANCE } from '@/lib/constants';
+import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
@@ -11,15 +11,16 @@ import { ExportDataButton } from '@/components/export-data-button';
 import { ImportDataButton } from '@/components/import-data-button';
 import { ExportCsvButton } from '@/components/export-csv-button';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
-import { getAllLeaveRequests, getLeaveBalances, getMonthlyOvertime } from '@/services/attendance-service';
+import { getAllLeaveRequests, getMonthlyOvertime, getEmployees } from '@/services/attendance-service';
 import { OvertimeTracker } from '@/components/overtime-tracker';
+import { StaffManager } from '@/components/staff-manager';
 
 export default async function AdminPage() {
   const allowanceData = await getAllUsersAllowances();
   const employeeOfTheWeek = await getEmployeeOfTheWeek();
   const leaveRequests = await getAllLeaveRequests();
-  const leaveBalances = await getLeaveBalances();
   const overtimeData = await getMonthlyOvertime();
+  const employees = await getEmployees();
 
 
   return (
@@ -65,7 +66,7 @@ export default async function AdminPage() {
               <CardDescription>Set the employee of the week.</CardDescription>
             </CardHeader>
             <CardContent>
-              <EmployeeOfTheWeekManager currentEmployee={employeeOfTheWeek} />
+              <EmployeeOfTheWeekManager currentEmployee={employeeOfTheWeek} employees={employees} />
             </CardContent>
           </Card>
            <Card>
@@ -92,28 +93,7 @@ export default async function AdminPage() {
 
         <div className="lg:col-span-1 space-y-8">
            <LeaveRequestManager requests={leaveRequests} />
-            <Card>
-              <CardHeader>
-                <CardTitle>Leave Balances</CardTitle>
-                <CardDescription>Remaining paid leave days for the year.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {leaveBalances.map(({ user, remainingDays }) => (
-                  <div key={user} className="space-y-3">
-                    <p className="font-medium">{user}</p>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-muted-foreground">Paid Leave</span>
-                        <span className="text-sm text-muted-foreground">
-                            <span className="font-bold text-foreground">{remainingDays}</span> / {ANNUAL_LEAVE_ALLOWANCE} days left
-                        </span>
-                      </div>
-                      <Progress value={(remainingDays / ANNUAL_LEAVE_ALLOWANCE) * 100} className="h-2" />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+           <StaffManager employees={employees} />
         </div>
 
          <div className="lg:col-span-1 space-y-8">

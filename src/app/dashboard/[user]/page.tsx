@@ -1,5 +1,5 @@
 
-import { USERS } from '@/lib/constants';
+import { getEmployees } from '@/services/attendance-service';
 import { redirect } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { LogItemForm } from '@/components/log-item-form';
@@ -15,7 +15,10 @@ import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser } fr
 export default async function UserDashboard({ params }: { params: { user: string } }) {
   const { user } = params;
 
-  if (!USERS.includes(user as User)) {
+  const employees = await getEmployees();
+  const employeeNames = employees.map(e => e.name);
+
+  if (!employeeNames.includes(user as User)) {
     redirect('/');
   }
 

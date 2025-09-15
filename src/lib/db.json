@@ -1,3 +1,4 @@
+
 {
   "consumptionLogs": [],
   "attendanceLogs": [
@@ -18,5 +19,17 @@
       "status": "Approved"
     }
   ],
-  "employeeOfTheWeek": "Musaib"
+  "employeeOfTheWeek": "Musaib",
+  "employees": [
+    {
+      "id": "1",
+      "name": "Abbas",
+      "weeklyOffDay": "Wednesday"
+    },
+    {
+      "id": "2",
+      "name": "Musaib",
+      "weeklyOffDay": "Tuesday"
+    }
+  ]
 }

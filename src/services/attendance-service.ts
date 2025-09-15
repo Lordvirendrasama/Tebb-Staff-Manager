@@ -1,10 +1,10 @@
 
 'use server';
 
-import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, LeaveStatus } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, Employee, WeekDay } from '@/lib/constants';
 import * as data from '@/lib/data';
-import { ANNUAL_LEAVE_ALLOWANCE, STANDARD_WORK_HOURS, USERS } from '@/lib/constants';
-import { differenceInCalendarDays, differenceInHours, startOfYear, endOfYear, startOfMonth, endOfMonth } from 'date-fns';
+import { STANDARD_WORK_HOURS } from '@/lib/constants';
+import { differenceInHours, startOfMonth, endOfMonth, startOfDay } from 'date-fns';
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const allLogs = data.getAttendanceLogs();
@@ -44,8 +44,8 @@ export async function requestLeave(user: User, startDate: Date, endDate: Date, r
     const request: LeaveRequest = {
         id: new Date().toISOString() + Math.random().toString(36).substring(2, 9), // simple unique id
         employeeName: user,
-        startDate,
-        endDate,
+        startDate: startOfDay(startDate),
+        endDate: startOfDay(endDate),
         reason,
         leaveType,
         status: 'Pending',
@@ -73,38 +73,13 @@ export async function denyLeaveRequest(id: string): Promise<void> {
     data.updateLeaveRequestStatus(id, 'Denied');
 }
 
-export async function getLeaveBalances(): Promise<Array<{ user: User, remainingDays: number }>> {
-    const now = new Date();
-    const yearStart = startOfYear(now);
-    const yearEnd = endOfYear(now);
-    
-    const allRequests = data.getLeaveRequests();
-    const approvedRequests = allRequests.filter(req => 
-        req.status === 'Approved' && 
-        req.leaveType === 'Paid (Made Up)' &&
-        new Date(req.startDate) >= yearStart &&
-        new Date(req.endDate) <= yearEnd
-    );
-
-    const balances = USERS.map(user => {
-        const userRequests = approvedRequests.filter(req => req.employeeName === user);
-        const daysTaken = userRequests.reduce((acc, req) => {
-            const days = differenceInCalendarDays(new Date(req.endDate), new Date(req.startDate)) + 1;
-            return acc + days;
-        }, 0);
-        return {
-            user,
-            remainingDays: ANNUAL_LEAVE_ALLOWANCE - daysTaken
-        };
-    });
-
-    return balances;
-}
-
 export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime: number }>> {
     const now = new Date();
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
+    
+    const employees = await getEmployees();
+    const employeeNames = employees.map(e => e.name);
 
     const attendanceLogs = data.getAttendanceLogs().filter(log => 
         log.clockOut && 
@@ -112,10 +87,11 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
         new Date(log.clockIn) <= monthEnd
     );
 
-    const overtimeByUser: Record<User, number> = {
-        'Abbas': 0,
-        'Musaib': 0,
-    };
+    const overtimeByUser: Record<User, number> = employeeNames.reduce((acc, name) => {
+        acc[name] = 0;
+        return acc;
+    }, {} as Record<User, number>);
+
 
     attendanceLogs.forEach(log => {
         if (log.clockOut) {
@@ -127,5 +103,23 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
         }
     });
 
-    return USERS.map(user => ({ name: user, overtime: overtimeByUser[user] }));
+    return employeeNames.map(user => ({ name: user, overtime: overtimeByUser[user] || 0 }));
+}
+
+// --- Employee Service Functions ---
+export async function getEmployees(): Promise<Employee[]> {
+    return data.getEmployees();
+}
+
+export async function addEmployee(name: string, weeklyOffDay: string): Promise<void> {
+    const newEmployee: Employee = {
+        id: new Date().toISOString() + Math.random().toString(36).substring(2, 9),
+        name,
+        weeklyOffDay: weeklyOffDay as any,
+    };
+    data.addEmployee(newEmployee);
+}
+
+export async function updateEmployee(id: string, name: string, weeklyOffDay: string): Promise<void> {
+    data.updateEmployee(id, { name, weeklyOffDay: weeklyOffDay as any });
 }

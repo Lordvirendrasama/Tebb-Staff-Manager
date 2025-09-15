@@ -1,7 +1,8 @@
 
-import type { User, ConsumptionLog, AttendanceLog, LeaveRequest } from './constants';
+import type { User, ConsumptionLog, AttendanceLog, LeaveRequest, Employee } from './constants';
 import fs from 'fs';
 import path from 'path';
+import { USERS } from './constants';
 
 const DB_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
 
@@ -10,6 +11,7 @@ export interface Database {
   attendanceLogs: AttendanceLog[];
   leaveRequests: LeaveRequest[];
   employeeOfTheWeek: User | null;
+  employees: Employee[];
 }
 
 export function readDb(): Database {
@@ -25,7 +27,16 @@ export function readDb(): Database {
     };
   } catch (error) {
     // If the file doesn't exist or is empty, return a default structure
-    return { consumptionLogs: [], attendanceLogs: [], leaveRequests: [], employeeOfTheWeek: null };
+    return { 
+        consumptionLogs: [], 
+        attendanceLogs: [], 
+        leaveRequests: [], 
+        employeeOfTheWeek: null,
+        employees: [
+            { id: '1', name: 'Abbas', weeklyOffDay: 'Wednesday' },
+            { id: '2', name: 'Musaib', weeklyOffDay: 'Tuesday' }
+        ] 
+    };
   }
 }
 
@@ -109,6 +120,27 @@ export const setEmployeeOfTheWeek = (user: User | null) => {
     writeDb(db);
 };
 
+// --- Employees ---
+export const getEmployees = (): Employee[] => {
+    return readDb().employees;
+}
+
+export const addEmployee = (employee: Employee) => {
+    const db = readDb();
+    db.employees.push(employee);
+    writeDb(db);
+}
+
+export const updateEmployee = (employeeId: string, updates: Partial<Employee>) => {
+    const db = readDb();
+    const employeeIndex = db.employees.findIndex(emp => emp.id === employeeId);
+    if (employeeIndex !== -1) {
+        db.employees[employeeIndex] = { ...db.employees[employeeIndex], ...updates };
+        writeDb(db);
+    }
+}
+
+
 // --- Data Export ---
 export async function getAllData() {
     const db = readDb();
@@ -117,5 +149,6 @@ export async function getAllData() {
         attendanceLogs: db.attendanceLogs,
         leaveRequests: db.leaveRequests,
         employeeOfTheWeek: db.employeeOfTheWeek,
+        employees: db.employees
     };
 }

@@ -1,15 +1,15 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { USERS, type User } from '@/lib/constants';
+import type { User, Employee } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { setEmployeeOfTheWeekAction } from '@/app/actions/admin-actions';
 import { Loader2, Award } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
-export function EmployeeOfTheWeekManager({ currentEmployee }: { currentEmployee: User | null }) {
+export function EmployeeOfTheWeekManager({ currentEmployee, employees }: { currentEmployee: User | null, employees: Employee[] }) {
   const [selectedEmployee, setSelectedEmployee] = useState<User | ''>('');
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -55,9 +55,9 @@ export function EmployeeOfTheWeekManager({ currentEmployee }: { currentEmployee:
             <SelectValue placeholder="Select Employee" />
           </SelectTrigger>
           <SelectContent>
-            {USERS.map((user) => (
-              <SelectItem key={user} value={user}>
-                {user}
+            {employees.map((user) => (
+              <SelectItem key={user.id} value={user.name}>
+                {user.name}
               </SelectItem>
             ))}
           </SelectContent>

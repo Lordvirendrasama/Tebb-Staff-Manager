@@ -3,8 +3,9 @@
 
 import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
 import * as data from '@/lib/data';
-import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, USERS } from '@/lib/constants';
+import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { getEmployees } from './attendance-service';
 
 export async function logConsumption(user: User, item: ConsumableItem): Promise<void> {
     const log: ConsumptionLog = {
@@ -46,18 +47,24 @@ export async function getAllUsersAllowances(): Promise<Array<{ user: User; allow
     const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);
+    const employees = await getEmployees();
+    const users = employees.map(e => e.name);
     
     const logs = (data.getConsumptionLogs())
         .filter(log => log.dateTimeLogged >= start && log.dateTimeLogged <= end);
 
-    const userLogs: Record<User, ConsumptionLog[]> = { 'Abbas': [], 'Musaib': [] };
+    const userLogs: Record<User, ConsumptionLog[]> = users.reduce((acc, name) => {
+        acc[name] = [];
+        return acc;
+    }, {} as Record<User, ConsumptionLog[]>);
+
     logs.forEach(log => {
         if (userLogs[log.employeeName]) {
             userLogs[log.employeeName].push(log);
         }
     });
 
-    const allowances = USERS.map(user => {
+    const allowances = users.map(user => {
         const currentUserLogs = userLogs[user] || [];
         const drinksConsumed = currentUserLogs.filter(log => DRINK_ITEMS.includes(log.itemName as DrinkItem)).length;
         const mealsConsumed = currentUserLogs.filter(log => MEAL_ITEMS.includes(log.itemName as MealItem)).length;

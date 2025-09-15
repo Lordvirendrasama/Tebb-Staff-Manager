@@ -5,8 +5,8 @@ export interface ConsumptionLog {
   dateTimeLogged: Date;
 }
 
-export const USERS = ['Abbas', 'Musaib'] as const;
-export type User = (typeof USERS)[number];
+// USERS constant is removed in favor of a dynamic list from the database.
+export type User = string;
 
 export const DRINK_ITEMS = ['Coffee', 'Cooler', 'Milkshake'] as const;
 export type DrinkItem = (typeof DRINK_ITEMS)[number];
@@ -19,7 +19,7 @@ export type ConsumableItem = (typeof ALL_ITEMS)[number];
 
 export const MONTHLY_DRINK_ALLOWANCE = 6;
 export const MONTHLY_MEAL_ALLOWANCE = 6;
-export const ANNUAL_LEAVE_ALLOWANCE = 7;
+// ANNUAL_LEAVE_ALLOWANCE is no longer needed with the new system.
 export const STANDARD_WORK_HOURS = 8;
 
 
@@ -47,4 +47,22 @@ export interface LeaveRequest {
   reason: string;
   leaveType: LeaveType;
   status: LeaveStatus;
+}
+
+export const WEEKDAYS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+] as const;
+
+export type WeekDay = (typeof WEEKDAYS)[number];
+
+export interface Employee {
+  id: string;
+  name: string;
+  weeklyOffDay: WeekDay;
 }
