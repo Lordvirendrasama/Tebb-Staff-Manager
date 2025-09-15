@@ -3,7 +3,7 @@
 
 import type { User, AttendanceStatus, AttendanceLog, LeaveRequest, LeaveType, Employee } from '@/lib/constants';
 import * as data from '@/lib/data';
-import { differenceInHours, startOfMonth, endOfMonth, startOfDay, differenceInDays, eachDayOfInterval } from 'date-fns';
+import { differenceInHours, startOfMonth, endOfMonth, startOfDay, eachDayOfInterval } from 'date-fns';
 
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const allLogs = data.getAttendanceLogs();

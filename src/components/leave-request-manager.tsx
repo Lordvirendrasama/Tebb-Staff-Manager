@@ -1,13 +1,13 @@
 
 'use client';
 
-import type { LeaveRequest, LeaveStatus } from '@/lib/constants';
+import type { LeaveRequest } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from './ui/scroll-area';
 import { format } from 'date-fns';
 import { Button } from './ui/button';
-import { useTransition } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { approveLeaveAction, denyLeaveAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X } from 'lucide-react';
@@ -16,6 +16,11 @@ import { Badge } from './ui/badge';
 export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const handleApprove = (id: string) => {
         startTransition(async () => {
@@ -75,7 +80,7 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
                                 {pendingRequests.map(req => (
                                     <TableRow key={req.id}>
                                         <TableCell className="font-medium">{req.employeeName}</TableCell>
-                                        <TableCell>{formatDateRange(req.startDate, req.endDate)}</TableCell>
+                                        <TableCell>{isClient ? formatDateRange(req.startDate, req.endDate) : '...'}</TableCell>
                                         <TableCell><Badge variant="outline" className="text-xs">{req.leaveType}</Badge></TableCell>
                                         <TableCell className="text-xs max-w-[120px] truncate text-muted-foreground">{req.reason}</TableCell>
                                         <TableCell className="text-right space-x-2">

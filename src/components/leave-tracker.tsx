@@ -31,13 +31,14 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
   }, []);
 
   const handleRequestLeave = () => {
-    if (!date || !reason || !date.from || !date.to) {
+    if (!date || !reason || !date.from) {
         toast({ variant: 'destructive', title: 'Error', description: 'Please select a date range and provide a reason.' });
         return;
     }
+    const finalDate = { from: date.from, to: date.to || date.from };
 
     startTransition(async () => {
-      const result = await requestLeaveAction(user, date, reason, leaveType);
+      const result = await requestLeaveAction(user, finalDate, reason, leaveType);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
         setDate(undefined);
@@ -130,7 +131,7 @@ export function LeaveTracker({ user, leaveRequests }: { user: User; leaveRequest
                 onChange={(e) => setReason(e.target.value)}
                 disabled={isPending}
             />
-            <Button onClick={handleRequestLeave} disabled={isPending || !date || !reason} className="w-full">
+            <Button onClick={handleRequestLeave} disabled={isPending || !date?.from || !reason} className="w-full">
                 {isPending ? <Loader2 className="animate-spin" /> : <Send />}
                 Submit Request
             </Button>
