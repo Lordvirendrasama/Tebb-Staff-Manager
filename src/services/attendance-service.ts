@@ -1,8 +1,8 @@
 
 import { 
-    collection, getDocs, query, where, orderBy, limit, doc, getDoc, updateDoc, addDoc, getFirestore, setDoc, deleteDoc
+    collection, getDocs, query, where, orderBy, limit, doc, updateDoc, addDoc
 } from 'firebase/firestore';
-import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, LeaveType, WeekDay } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, LeaveType } from '@/lib/constants';
 import { differenceInHours, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { db } from '@/lib/firebase-client';
 
@@ -129,20 +129,6 @@ export async function getEmployees(): Promise<Employee[]> {
     return docsWithDates<Employee>(querySnapshot);
 }
 
-export async function addEmployee(name: string, weeklyOffDay: WeekDay, standardWorkHours: number): Promise<void> {
-     await addDoc(collection(db, 'employees'), { name, weeklyOffDay, standardWorkHours });
-}
-
-export async function updateEmployee(id: string, name: string, weeklyOffDay: WeekDay, standardWorkHours: number): Promise<void> {
-    const docRef = doc(db, 'employees', id);
-    await updateDoc(docRef, { name, weeklyOffDay, standardWorkHours });
-}
-
-export async function deleteEmployee(id: string): Promise<void> {
-    const employeeRef = doc(db, 'employees', id);
-    await deleteDoc(employeeRef);
-}
-
 export async function requestLeave(user: User, startDate: Date, endDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
     await addDoc(collection(db, 'leaveRequests'), {
         employeeName: user,
@@ -209,8 +195,8 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
         return acc;
     }, {} as Record<User, number>);
 
-    const getWeekDayNumber = (day: WeekDay): number => {
-        const dayMap: Record<WeekDay, number> = {
+    const getWeekDayNumber = (day: 'Sunday'|'Monday'|'Tuesday'|'Wednesday'|'Thursday'|'Friday'|'Saturday'): number => {
+        const dayMap = {
             Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6,
         };
         return dayMap[day];

@@ -2,7 +2,7 @@
 'use server';
 
 import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest } from './constants';
-import { collection, getDocs, addDoc, updateDoc, doc as clientDoc, query, where, orderBy, limit, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, doc as clientDoc, query, where, orderBy, limit } from 'firebase/firestore';
 import { db as clientDb } from './firebase-client';
 import { db } from './firebase-server';
 import { getDoc, setDoc, writeBatch } from 'firebase-admin/firestore';

@@ -4,7 +4,7 @@
 import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { setEmployeeOfTheWeek } from '@/services/awards-service';
-import { addEmployee, updateEmployee, deleteEmployee } from '@/services/attendance-service';
+import { addEmployee, updateEmployee, deleteEmployee } from '@/lib/data';
 import { seedDatabase } from '@/lib/seed';
 
 export async function setEmployeeOfTheWeekAction(employeeName: User) {
@@ -21,7 +21,7 @@ export async function setEmployeeOfTheWeekAction(employeeName: User) {
 
 export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
     try {
-        await addEmployee(name, weeklyOffDay, standardWorkHours);
+        await addEmployee({name, weeklyOffDay, standardWorkHours});
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee added successfully!' };
@@ -33,7 +33,7 @@ export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, sta
 
 export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
     try {
-        await updateEmployee(id, name, weeklyOffDay, standardWorkHours);
+        await updateEmployee(id, { name, weeklyOffDay, standardWorkHours });
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };
