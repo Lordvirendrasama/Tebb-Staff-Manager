@@ -2,18 +2,24 @@
 'use server';
 
 import type { User } from '@/lib/constants';
-import * as data from '@/lib/data';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase-client';
+import { getEmployees } from './attendance-service';
 
 export async function setEmployeeOfTheWeek(employeeName: User): Promise<void> {
-    const employees = await data.getEmployees();
+    const employees = await getEmployees();
     const employeeNames = employees.map(e => e.name);
     if (employeeNames.includes(employeeName)) {
-        await data.setEmployeeOfTheWeek(employeeName);
+        await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: employeeName });
     } else {
         throw new Error("Employee not found");
     }
 }
 
 export async function getEmployeeOfTheWeek(): Promise<User | null> {
-    return data.getEmployeeOfTheWeek();
+    const docSnap = await getDoc(doc(db, 'awards', 'employeeOfTheWeek'));
+    if (docSnap.exists()) {
+        return docSnap.data()?.employeeName ?? null;
+    }
+    return null;
 }

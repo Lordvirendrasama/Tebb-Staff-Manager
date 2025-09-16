@@ -1,19 +1,42 @@
 
-'use server';
-
+import { collection, getDocs, query, where, orderBy, addDoc, startOfMonth, endOfMonth } from 'firebase/firestore';
 import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
-import * as data from '@/lib/data';
 import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
-import { startOfMonth, endOfMonth } from 'date-fns';
 import { getEmployees } from './attendance-service';
+import { db } from '@/lib/firebase-client';
+
+async function docWithDates<T>(docSnap: any): Promise<T> {
+    const data = docSnap.data();
+    if (!data) {
+        throw new Error('Document data is empty');
+    }
+    
+    const convertedData: { [key: string]: any } = { id: docSnap.id };
+    for (const key in data) {
+        const value = data[key];
+        if (value && typeof value.toDate === 'function') {
+            convertedData[key] = value.toDate();
+        } else {
+            convertedData[key] = value;
+        }
+    }
+    return convertedData as T;
+}
+
+async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
+    const promises: Promise<T>[] = [];
+    querySnapshot.forEach((doc: any) => {
+        promises.push(docWithDates<T>(doc));
+    });
+    return Promise.all(promises);
+}
 
 export async function logConsumption(user: User, item: ConsumableItem): Promise<void> {
-    const log: Omit<ConsumptionLog, 'id'> = {
+    await addDoc(collection(db, 'consumptionLogs'), {
         employeeName: user,
         itemName: item,
         dateTimeLogged: new Date(),
-    };
-    await data.addConsumptionLog(log);
+    });
 }
 
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
@@ -21,15 +44,16 @@ export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const start = startOfMonth(now);
     const end = endOfMonth(now);
 
-    const allLogs = await data.getConsumptionLogs();
+    const q = query(
+        collection(db, 'consumptionLogs'),
+        where('employeeName', '==', user),
+        where('dateTimeLogged', '>=', start),
+        where('dateTimeLogged', '<=', end),
+        orderBy('dateTimeLogged', 'desc')
+    );
 
-    return allLogs
-        .filter(log => 
-            log.employeeName === user &&
-            log.dateTimeLogged >= start &&
-            log.dateTimeLogged <= end
-        )
-        .sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
+    const querySnapshot = await getDocs(q);
+    return docsWithDates<ConsumptionLog>(querySnapshot);
 }
 
 export async function getRemainingAllowances(user: User): Promise<{ drinks: number, meals: number }> {
@@ -50,8 +74,13 @@ export async function getAllUsersAllowances(): Promise<Array<{ user: User; allow
     const employees = await getEmployees();
     const users = employees.map(e => e.name);
     
-    const logs = (await data.getConsumptionLogs())
-        .filter(log => log.dateTimeLogged >= start && log.dateTimeLogged <= end);
+    const q = query(
+        collection(db, 'consumptionLogs'),
+        where('dateTimeLogged', '>=', start),
+        where('dateTimeLogged', '<=', end)
+    );
+    const querySnapshot = await getDocs(q);
+    const logs = await docsWithDates<ConsumptionLog>(querySnapshot);
 
     const userLogs: Record<User, ConsumptionLog[]> = users.reduce((acc, name) => {
         acc[name] = [];

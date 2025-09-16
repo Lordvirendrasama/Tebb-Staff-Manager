@@ -1,27 +1,105 @@
 
-import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type User, type LeaveRequest } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
-import { getEmployeeOfTheWeek } from '@/services/awards-service';
-import { getAllUsersAllowances } from '@/services/consumption-log-service';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info, Database } from 'lucide-react';
-import { getMonthlyOvertime, getEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { SeedDatabaseButton } from '@/components/seed-database-button';
+import { getAllUsersAllowances, getMonthlyOvertime, getEmployees as fetchEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
+import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default async function AdminPage() {
-  const allowanceData = await getAllUsersAllowances();
-  const employeeOfTheWeek = await getEmployeeOfTheWeek();
-  const overtimeData = await getMonthlyOvertime();
-  const employees = await getEmployees();
-  const leaveRequests = await getAllLeaveRequests();
-  const monthlyLeaves = await getMonthlyLeaves();
+export default function AdminPage() {
+  const [allowanceData, setAllowanceData] = useState<any[]>([]);
+  const [employeeOfTheWeek, setEmployeeOfTheWeek] = useState<User | null>(null);
+  const [overtimeData, setOvertimeData] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [monthlyLeaves, setMonthlyLeaves] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [
+          allowance,
+          eow,
+          overtime,
+          emps,
+          leaves,
+          monthlyL,
+        ] = await Promise.all([
+          getAllUsersAllowances(),
+          getEmployeeOfTheWeek(),
+          getMonthlyOvertime(),
+          fetchEmployees(),
+          getAllLeaveRequests(),
+          getMonthlyLeaves(),
+        ]);
+        setAllowanceData(allowance);
+        setEmployeeOfTheWeek(eow);
+        setOvertimeData(overtime);
+        setEmployees(emps);
+        setLeaveRequests(leaves);
+        setMonthlyLeaves(monthlyL);
+      } catch (error) {
+        console.error("Failed to fetch admin data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="lg:col-span-1 space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Allowances</CardTitle>
+                <CardDescription>Remaining monthly allowance for each user.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Employee of the Week</CardTitle>
+                <CardDescription>Set the employee of the week.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-20 w-full" />
+              </CardContent>
+            </Card>
+             <Skeleton className="h-96 w-full" />
+          </div>
+          <div className="lg:col-span-1 space-y-8">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+          <div className="lg:col-span-1 space-y-8">
+             <Skeleton className="h-80 w-full" />
+             <Skeleton className="h-80 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -78,7 +156,7 @@ export default async function AdminPage() {
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
                   <CardDescription>Application data is now stored in Firebase.</CardDescription>
-              </CardHeader>
+              </Header>
               <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />

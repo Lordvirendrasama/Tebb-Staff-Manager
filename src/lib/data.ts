@@ -2,7 +2,7 @@
 'use server';
 
 import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest } from './constants';
-import { db } from './firebase';
+import { db } from './firebase-server';
 
 const getCollection = (collectionName: string) => db.collection(collectionName);
 

@@ -1,34 +1,103 @@
 
-import { getEmployees } from '@/services/attendance-service';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { redirect, useParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Ban, GlassWater, Utensils } from 'lucide-react';
-import type { User } from '@/lib/constants';
+import { Ban, GlassWater, Utensils, Loader2 } from 'lucide-react';
+import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
-import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser } from '@/services/attendance-service';
+import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, getEmployees } from '@/services/attendance-service';
 import { LeaveTracker } from '@/components/leave-tracker';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default async function UserDashboard({ params }: { params: { user: string } }) {
-  const { user } = params;
+export default function UserDashboard() {
+  const params = useParams();
+  const user = params.user as string;
+  const validUser = user as User;
 
-  const employees = await getEmployees();
-  const employeeNames = employees.map(e => e.name);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [allowances, setAllowances] = useState<{ drinks: number, meals: number } | null>(null);
+  const [logs, setLogs] = useState<ConsumptionLog[]>([]);
+  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceLog[]>([]);
+  const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isValidUser, setIsValidUser] = useState<boolean | null>(null);
 
-  if (!employeeNames.includes(user as User)) {
+  useEffect(() => {
+    const checkUserAndFetchData = async () => {
+      setLoading(true);
+      const fetchedEmployees = await getEmployees();
+      setEmployees(fetchedEmployees);
+      const employeeNames = fetchedEmployees.map(e => e.name);
+
+      if (!employeeNames.includes(user as User)) {
+        setIsValidUser(false);
+        return;
+      }
+      setIsValidUser(true);
+
+      try {
+        const [
+          allowanceData,
+          logData,
+          attendanceStatusData,
+          attendanceHistoryData,
+          leaveHistoryData
+        ] = await Promise.all([
+          getRemainingAllowances(validUser),
+          getLogsForUser(validUser),
+          getAttendanceStatus(validUser),
+          getAttendanceHistory(validUser),
+          getLeaveRequestsForUser(validUser),
+        ]);
+
+        setAllowances(allowanceData);
+        setLogs(logData);
+        setAttendanceStatus(attendanceStatusData);
+        setAttendanceHistory(attendanceHistoryData);
+        setLeaveHistory(leaveHistoryData);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUserAndFetchData();
+  }, [user, validUser]);
+
+  if (isValidUser === false) {
     redirect('/');
   }
 
-  const validUser = user as User;
-
-  const allowances = await getRemainingAllowances(validUser);
-  const logs = await getLogsForUser(validUser);
-  const attendanceStatus = await getAttendanceStatus(validUser);
-  const attendanceHistory = await getAttendanceHistory(validUser);
-  const leaveHistory = await getLeaveRequestsForUser(validUser);
+  if (loading || isValidUser === null || !allowances || !attendanceStatus) {
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <Skeleton className="h-10 w-64" />
+        </div>
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-1 space-y-8">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+          </div>
+          <div className="md:col-span-1 space-y-8">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+          <div className="md:col-span-1">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const recentLogs = logs.slice(0, 6);
   const hasAllowance = allowances.drinks > 0 || allowances.meals > 0;
@@ -40,7 +109,6 @@ export default async function UserDashboard({ params }: { params: { user: string
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
-        {/* Column 1 */}
         <div className="md:col-span-1 space-y-8">
           <Card>
             <CardHeader>
@@ -87,7 +155,6 @@ export default async function UserDashboard({ params }: { params: { user: string
           </Card>
         </div>
         
-        {/* Column 2 */}
         <div className="md:col-span-1 space-y-8">
              <Card>
                 <CardHeader>
@@ -109,7 +176,6 @@ export default async function UserDashboard({ params }: { params: { user: string
             </Card>
         </div>
 
-        {/* Column 3 */}
         <div className="md:col-span-1">
            <LeaveTracker user={validUser} history={leaveHistory} />
         </div>
