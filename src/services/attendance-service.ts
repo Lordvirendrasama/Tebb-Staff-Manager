@@ -1,10 +1,13 @@
 
+'use client';
+
 import { 
-    collection, getDocs, query, where, orderBy, limit, doc, updateDoc, addDoc
+    collection, getDocs, query, where, orderBy, limit, doc, updateDoc, addDoc, writeBatch, getDoc, deleteDoc
 } from 'firebase/firestore';
 import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, LeaveType } from '@/lib/constants';
 import { differenceInHours, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { db } from '@/lib/firebase-client';
+import { getEmployeeOfTheWeek, setEmployeeOfTheWeek } from './awards-service';
 
 async function docWithDates<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -124,10 +127,49 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
     return employees.map(emp => ({ name: emp.name, overtime: overtimeByUser[emp.name] || 0 }));
 }
 
-export async function getEmployees(): Promise<Employee[]> {
-    const querySnapshot = await getDocs(collection(db, 'employees'));
-    return docsWithDates<Employee>(querySnapshot);
+export const getEmployees = async (): Promise<Employee[]> => {
+    const snapshot = await getDocs(collection(db, 'employees'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
 }
+
+export const addEmployee = async (employee: Omit<Employee, 'id'>) => {
+    await addDoc(collection(db, 'employees'), employee);
+}
+
+export const updateEmployee = async (employeeId: string, updates: Partial<Omit<Employee, 'id'>>) => {
+    await updateDoc(doc(db, 'employees', employeeId), updates);
+}
+
+export const deleteEmployee = async (employeeId: string) => {
+    const employeeRef = doc(db, 'employees', employeeId);
+    const employeeDoc = await getDoc(employeeRef);
+    if (!employeeDoc.exists()) return;
+
+    const employeeName = employeeDoc.data()?.name;
+    
+    await deleteDoc(employeeRef);
+
+    if (!employeeName) return;
+
+    const batch = writeBatch(db);
+    const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
+    
+    for (const collectionName of collectionsToDelete) {
+        const q = query(collection(db, collectionName), where('employeeName', '==', employeeName));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        }
+    }
+    
+    await batch.commit();
+
+    const eow = await getEmployeeOfTheWeek();
+    if (eow === employeeName) {
+        await setEmployeeOfTheWeek(null);
+    }
+}
+
 
 export async function requestLeave(user: User, startDate: Date, endDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
     await addDoc(collection(db, 'leaveRequests'), {

@@ -1,7 +1,9 @@
 
 'use server';
 
-import { getEmployees, addEmployee, setEmployeeOfTheWeek } from './data';
+import { getEmployees, addEmployee } from '@/services/attendance-service';
+import { setEmployeeOfTheWeek } from '@/services/awards-service';
+
 
 const DEFAULT_EMPLOYEES = [
   { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8 },

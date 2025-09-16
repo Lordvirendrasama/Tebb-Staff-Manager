@@ -4,7 +4,7 @@
 import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { setEmployeeOfTheWeek } from '@/services/awards-service';
-import { addEmployee, updateEmployee, deleteEmployee } from '@/lib/data';
+import { addEmployee, updateEmployee, deleteEmployee } from '@/services/attendance-service';
 import { seedDatabase } from '@/lib/seed';
 
 export async function setEmployeeOfTheWeekAction(employeeName: User) {
