@@ -6,12 +6,13 @@ import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-mana
 import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { getAllUsersAllowances } from '@/services/consumption-log-service';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Info, Database } from 'lucide-react';
 import { getMonthlyOvertime, getEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
+import { SeedDatabaseButton } from '@/components/seed-database-button';
 
 export default async function AdminPage() {
   const allowanceData = await getAllUsersAllowances();
@@ -78,7 +79,7 @@ export default async function AdminPage() {
                   <CardTitle>Data Management</CardTitle>
                   <CardDescription>Application data is now stored in Firebase.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertTitle>Firebase Firestore Enabled</AlertTitle>
@@ -86,6 +87,15 @@ export default async function AdminPage() {
                       All application data is now stored in a secure, cloud-based Firestore database. You can manage your data directly in the Firebase console.
                     </AlertDescription>
                   </Alert>
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><Database/> Seed Database</CardTitle>
+                        <CardDescription>If the database is empty, you can use this button to populate it with default employee data.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <SeedDatabaseButton />
+                    </CardContent>
+                  </Card>
               </CardContent>
             </Card>
         </div>

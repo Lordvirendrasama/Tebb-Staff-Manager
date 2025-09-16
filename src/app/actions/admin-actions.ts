@@ -5,6 +5,7 @@ import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { setEmployeeOfTheWeek } from '@/services/awards-service';
 import { addEmployee, updateEmployee, deleteEmployee } from '@/services/attendance-service';
+import { seedDatabase } from '@/lib/seed';
 
 export async function setEmployeeOfTheWeekAction(employeeName: User) {
     try {
@@ -51,5 +52,17 @@ export async function deleteEmployeeAction(id: string) {
     } catch (error) {
         console.error(error);
         return { success: false, message: 'Failed to remove employee.' };
+    }
+}
+
+export async function seedDatabaseAction() {
+    try {
+        await seedDatabase();
+        revalidatePath('/admin');
+        revalidatePath('/');
+        return { success: true, message: 'Database seeded successfully!' };
+    } catch (error) {
+        console.error('Seeding failed:', error);
+        return { success: false, message: 'Failed to seed database.' };
     }
 }

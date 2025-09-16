@@ -7,8 +7,12 @@ import { db } from './firebase';
 const getCollection = (collectionName: string) => db.collection(collectionName);
 
 function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
-    const data = doc.data() || {};
-    const convertedData: any = { id: doc.id };
+    const data = doc.data();
+    if (!data) {
+        return { id: doc.id } as T;
+    }
+    
+    const convertedData: { [key: string]: any } = { id: doc.id };
     for (const key in data) {
         const value = data[key];
         if (value && typeof value.toDate === 'function') {
@@ -19,6 +23,7 @@ function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
     }
     return convertedData as T;
 }
+
 
 export const getConsumptionLogs = async (): Promise<ConsumptionLog[]> => {
     const snapshot = await getCollection('consumptionLogs').get();
@@ -59,6 +64,7 @@ export const getEmployeeOfTheWeek = async (): Promise<User | null> => {
     return null;
 };
 
+
 export const setEmployeeOfTheWeek = async (user: User | null) => {
     await getCollection('awards').doc('employeeOfTheWeek').set({ employeeName: user });
 };
@@ -88,7 +94,7 @@ export const deleteEmployee = async (employeeId: string) => {
     if (!employeeName) return;
 
     const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
-
+    
     for (const collectionName of collectionsToDelete) {
         const snapshot = await getCollection(collectionName).where('employeeName', '==', employeeName).get();
         if (snapshot.empty) continue;
@@ -97,7 +103,7 @@ export const deleteEmployee = async (employeeId: string) => {
         snapshot.docs.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
     }
-
+    
     const eow = await getEmployeeOfTheWeek();
     if (eow === employeeName) {
         await setEmployeeOfTheWeek(null);
