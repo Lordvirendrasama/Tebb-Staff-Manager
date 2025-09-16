@@ -46,7 +46,8 @@ export async function clockOutAction(user: User) {
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            const docRef = doc(db, 'attendanceLogs', querySnapshot.docs[0].id);
+            const latestLogDoc = querySnapshot.docs[0];
+            const docRef = doc(db, 'attendanceLogs', latestLogDoc.id);
             await updateDoc(docRef, { clockOut: new Date() });
         }
 
@@ -113,3 +114,4 @@ export async function markAsUnpaidAction(requestId: string) {
         return { success: false, message: 'Failed to update leave type.' };
     }
 }
+
