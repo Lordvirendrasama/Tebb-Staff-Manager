@@ -9,7 +9,7 @@ const getCollection = (collectionName: string) => db.collection(collectionName);
 function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
     const data = doc.data();
     if (!data) {
-        return { id: doc.id } as T;
+        throw new Error('Document data is empty');
     }
     
     const convertedData: { [key: string]: any } = { id: doc.id };

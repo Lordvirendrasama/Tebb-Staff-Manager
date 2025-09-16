@@ -12,20 +12,14 @@ type GlobalWithApp = typeof globalThis & {
 function getAdminApp(): App {
   const globalWithApp = global as GlobalWithApp;
   if (globalWithApp[FIREBASE_APP_NAME]) {
-    return globalWithApp[FIREBA_APP_NAME];
+    return globalWithApp[FIREBASE_APP_NAME];
   }
 
-  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccountString) {
-    throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
-  }
-
-  const serviceAccount = JSON.parse(serviceAccountString);
-
-  const app = initializeApp({
-    credential: cert(serviceAccount),
-    projectId: serviceAccount.project_id,
-  });
+  // When running in a Google Cloud environment (like App Hosting), the SDK
+  // will automatically discover the service account credentials.
+  // For local development, you should set up Application Default Credentials by running
+  // `gcloud auth application-default login` in your terminal.
+  const app = initializeApp();
 
   globalWithApp[FIREBASE_APP_NAME] = app;
   return app;
