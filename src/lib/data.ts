@@ -1,21 +1,17 @@
 
-import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest, WeekDay } from './constants';
+'use server';
+
+import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest } from './constants';
 import { db } from './firebase';
 
 const getCollection = (collectionName: string) => db.collection(collectionName);
 
-// Helper to convert Firestore timestamps to Dates in documents
 function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
-    const data = doc.data();
-
-    if (!data) {
-        return { id: doc.id } as T;
-    }
-
+    const data = doc.data() || {};
     const convertedData: any = { id: doc.id };
     for (const key in data) {
         const value = data[key];
-        if (value instanceof Object && 'toDate' in value && typeof value.toDate === 'function') {
+        if (value && typeof value.toDate === 'function') {
             convertedData[key] = value.toDate();
         } else {
             convertedData[key] = value;
@@ -24,8 +20,6 @@ function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
     return convertedData as T;
 }
 
-
-// --- Consumption Logs ---
 export const getConsumptionLogs = async (): Promise<ConsumptionLog[]> => {
     const snapshot = await getCollection('consumptionLogs').get();
     return snapshot.docs.map(doc => docWithDates<ConsumptionLog>(doc));
@@ -35,7 +29,6 @@ export const addConsumptionLog = async (log: Omit<ConsumptionLog, 'id'>) => {
     await getCollection('consumptionLogs').add(log);
 };
 
-// --- Attendance Logs ---
 export const getAttendanceLogs = async (): Promise<AttendanceLog[]> => {
     const snapshot = await getCollection('attendanceLogs').get();
     return snapshot.docs.map(doc => docWithDates<AttendanceLog>(doc));
@@ -58,7 +51,6 @@ export const updateLatestAttendanceLogForUser = async (user: User, updates: Part
     }
 };
 
-// --- Awards ---
 export const getEmployeeOfTheWeek = async (): Promise<User | null> => {
     const doc = await getCollection('awards').doc('employeeOfTheWeek').get();
     if (doc.exists) {
@@ -71,7 +63,6 @@ export const setEmployeeOfTheWeek = async (user: User | null) => {
     await getCollection('awards').doc('employeeOfTheWeek').set({ employeeName: user });
 };
 
-// --- Employees ---
 export const getEmployees = async (): Promise<Employee[]> => {
     const snapshot = await getCollection('employees').get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
@@ -92,15 +83,11 @@ export const deleteEmployee = async (employeeId: string) => {
 
     const employeeName = employeeDoc.data()?.name;
     
-    // Delete employee
     await employeeRef.delete();
 
-    // Delete associated data in batches
-    const collectionsToDelete = [
-        'consumptionLogs',
-        'attendanceLogs',
-        'leaveRequests',
-    ];
+    if (!employeeName) return;
+
+    const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
 
     for (const collectionName of collectionsToDelete) {
         const snapshot = await getCollection(collectionName).where('employeeName', '==', employeeName).get();
@@ -111,7 +98,6 @@ export const deleteEmployee = async (employeeId: string) => {
         await batch.commit();
     }
 
-    // Check if the deleted employee was employee of the week
     const eow = await getEmployeeOfTheWeek();
     if (eow === employeeName) {
         await setEmployeeOfTheWeek(null);
@@ -119,7 +105,6 @@ export const deleteEmployee = async (employeeId: string) => {
 }
 
 
-// --- Leave Requests ---
 export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
     const snapshot = await getCollection('leaveRequests').get();
     return snapshot.docs.map(doc => docWithDates<LeaveRequest>(doc));
