@@ -61,13 +61,11 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', user),
+        orderBy('clockIn', 'desc'),
         limit(50)
     );
     const querySnapshot = await getDocs(q);
     const logs = await docsWithDates<AttendanceLog>(querySnapshot);
-    
-    // Sort logs by clockIn time in descending order
-    logs.sort((a, b) => new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime());
     
     return logs.slice(0, 10);
 }
@@ -115,11 +113,12 @@ export const getEmployees = async (): Promise<Employee[]> => {
 export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
     const q = query(
         collection(db, 'leaveRequests'),
-        where('employeeName', '==', user)
+        where('employeeName', '==', user),
+        orderBy('startDate', 'desc')
     );
     const querySnapshot = await getDocs(q);
     const requests = await docsWithDates<LeaveRequest>(querySnapshot);
-    return requests.sort((a,b) => b.startDate.getTime() - a.startDate.getTime());
+    return requests;
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
@@ -140,18 +139,15 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
     const employees = await getEmployees();
     const employeeMap = new Map(employees.map(e => [e.name, e]));
     
-    // Simplified query to fetch potentially relevant leave requests
     const q = query(
         collection(db, 'leaveRequests'),
+        where('status', '==', 'Approved'),
         where('startDate', '<=', monthEnd)
     );
     const querySnapshot = await getDocs(q);
     const allLeaveRequests = await docsWithDates<LeaveRequest>(querySnapshot);
 
-    // Filter in code to get approved requests that overlap with the current month
-    const leaveRequests = allLeaveRequests.filter(req => 
-        req.status === 'Approved' && new Date(req.endDate) >= monthStart
-    );
+    const leaveRequests = allLeaveRequests.filter(req => new Date(req.endDate) >= monthStart);
 
     const leaveDaysByUser: Record<User, number> = employees.reduce((acc, emp) => {
         acc[emp.name] = 0;
