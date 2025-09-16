@@ -53,7 +53,7 @@ export default async function Home() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-4xl">
-        {employees.map(employee => (
+        {employees && employees.map(employee => (
             <EmployeeCard key={employee.id} employee={employee} />
         ))}
         <Link href="/admin" className="block">
