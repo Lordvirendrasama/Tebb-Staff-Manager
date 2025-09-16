@@ -8,15 +8,17 @@ const getCollection = (collectionName: string) => db.collection(collectionName);
 function docWithDates<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
     const data = doc.data();
 
+    if (!data) {
+        return { id: doc.id } as T;
+    }
+
     const convertedData: any = { id: doc.id };
-    if (data) {
-        for (const key in data) {
-            const value = data[key];
-            if (value instanceof Object && 'toDate' in value && typeof value.toDate === 'function') {
-                convertedData[key] = value.toDate();
-            } else {
-                convertedData[key] = value;
-            }
+    for (const key in data) {
+        const value = data[key];
+        if (value instanceof Object && 'toDate' in value && typeof value.toDate === 'function') {
+            convertedData[key] = value.toDate();
+        } else {
+            convertedData[key] = value;
         }
     }
     return convertedData as T;
@@ -89,12 +91,11 @@ export const deleteEmployee = async (employeeId: string) => {
     if (!employeeDoc.exists) return;
 
     const employeeName = employeeDoc.data()?.name;
-    const batch = db.batch();
-
+    
     // Delete employee
-    batch.delete(employeeRef);
+    await employeeRef.delete();
 
-    // Delete associated data
+    // Delete associated data in batches
     const collectionsToDelete = [
         'consumptionLogs',
         'attendanceLogs',
@@ -103,7 +104,11 @@ export const deleteEmployee = async (employeeId: string) => {
 
     for (const collectionName of collectionsToDelete) {
         const snapshot = await getCollection(collectionName).where('employeeName', '==', employeeName).get();
+        if (snapshot.empty) continue;
+        
+        const batch = db.batch();
         snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
     }
 
     // Check if the deleted employee was employee of the week
@@ -111,8 +116,6 @@ export const deleteEmployee = async (employeeId: string) => {
     if (eow === employeeName) {
         await setEmployeeOfTheWeek(null);
     }
-    
-    await batch.commit();
 }
 
 
