@@ -2,7 +2,8 @@
 'use server';
 
 import { getEmployees, addEmployee } from '@/services/attendance-service';
-import { setEmployeeOfTheWeek } from '@/services/awards-service';
+import { setDoc, doc } from 'firebase/firestore';
+import { db } from './firebase-client';
 
 
 const DEFAULT_EMPLOYEES = [
@@ -10,6 +11,10 @@ const DEFAULT_EMPLOYEES = [
   { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8 },
   { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6 },
 ];
+
+async function setEmployeeOfTheWeek(employeeName: string | null): Promise<void> {
+    await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName });
+}
 
 export const seedDatabase = async () => {
     console.log('Seeding database...');
@@ -22,7 +27,6 @@ export const seedDatabase = async () => {
         }
         console.log('Default employees seeded.');
 
-        // Set a default employee of the week
         await setEmployeeOfTheWeek(DEFAULT_EMPLOYEES[0].name);
         console.log('Default employee of the week set.');
     } else {

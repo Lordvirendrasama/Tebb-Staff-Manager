@@ -7,7 +7,7 @@ import {
 import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, LeaveType } from '@/lib/constants';
 import { differenceInHours, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { db } from '@/lib/firebase-client';
-import { getEmployeeOfTheWeek, setEmployeeOfTheWeek } from './awards-service';
+import { getEmployeeOfTheWeek } from './awards-service';
 
 async function docWithDates<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -166,7 +166,9 @@ export const deleteEmployee = async (employeeId: string) => {
 
     const eow = await getEmployeeOfTheWeek();
     if (eow === employeeName) {
-        await setEmployeeOfTheWeek(null);
+        // This needs to be a server action call
+        const { setEmployeeOfTheWeekAction } = await import('@/app/actions/admin-actions');
+        await setEmployeeOfTheWeekAction(null as any); // This is tricky, might need a dedicated action
     }
 }
 

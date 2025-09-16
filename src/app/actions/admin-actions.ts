@@ -3,9 +3,26 @@
 
 import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
-import { setEmployeeOfTheWeek } from '@/services/awards-service';
 import { addEmployee, updateEmployee, deleteEmployee } from '@/services/attendance-service';
 import { seedDatabase } from '@/lib/seed';
+import { setDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase-client';
+import { getEmployees } from '@/services/attendance-service';
+
+async function setEmployeeOfTheWeek(employeeName: User | null): Promise<void> {
+    if (employeeName) {
+        const employees = await getEmployees();
+        const employeeNames = employees.map(e => e.name);
+        if (employeeNames.includes(employeeName)) {
+            await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: employeeName });
+        } else {
+            throw new Error("Employee not found");
+        }
+    } else {
+        await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: null });
+    }
+}
+
 
 export async function setEmployeeOfTheWeekAction(employeeName: User) {
     try {
