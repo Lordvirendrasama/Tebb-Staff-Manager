@@ -14,7 +14,7 @@ import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { SeedDatabaseButton } from '@/components/seed-database-button';
 import { getAllUsersAllowances, getMonthlyOvertime, getEmployees as fetchEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
-import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminPage() {
@@ -39,7 +39,7 @@ export default function AdminPage() {
           monthlyL,
         ] = await Promise.all([
           getAllUsersAllowances(),
-          getEmployeeOfTheWeek(),
+          getEmployeeOfTheWeekAction(),
           getMonthlyOvertime(),
           fetchEmployees(),
           getAllLeaveRequests(),

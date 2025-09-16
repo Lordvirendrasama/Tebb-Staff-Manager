@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getAttendanceStatus, getEmployees } from '@/services/attendance-service';
-import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
 import type { Employee, User, AttendanceStatus } from '@/lib/constants';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,7 +70,7 @@ export default function Home() {
 
         if (fetchedEmployees.length > 0) {
             const statusPromises = fetchedEmployees.map(emp => getAttendanceStatus(emp.name));
-            const eowPromise = getEmployeeOfTheWeek();
+            const eowPromise = getEmployeeOfTheWeekAction();
 
             const [statusesResults, eowResult] = await Promise.all([
                 Promise.all(statusPromises),

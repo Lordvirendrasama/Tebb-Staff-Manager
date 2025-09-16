@@ -1,14 +1,8 @@
 
-'use client';
+'use server';
+import { getEmployeeOfTheWeek } from '@/app/actions/admin-actions';
 
-import type { User } from '@/lib/constants';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
-
-export async function getEmployeeOfTheWeek(): Promise<User | null> {
-    const docSnap = await getDoc(doc(db, 'awards', 'employeeOfTheWeek'));
-    if (docSnap.exists()) {
-        return docSnap.data()?.employeeName ?? null;
-    }
-    return null;
+// This is a wrapper so client components can call the server action
+export async function getEmployeeOfTheWeekAction() {
+    return getEmployeeOfTheWeek();
 }

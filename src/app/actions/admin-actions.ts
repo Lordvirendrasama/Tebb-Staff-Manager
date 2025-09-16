@@ -3,25 +3,28 @@
 
 import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
-import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { getEmployeeOfTheWeek } from '@/services/awards-service';
 import { DEFAULT_EMPLOYEES } from '@/lib/constants';
 
+// This function must be in a server-only file.
+async function getEmployeeOfTheWeek(): Promise<User | null> {
+    const docSnap = await getDoc(doc(db, 'awards', 'employeeOfTheWeek'));
+    if (docSnap.exists()) {
+        return docSnap.data()?.employeeName ?? null;
+    }
+    return null;
+}
 
 async function setEmployeeOfTheWeek(employeeName: User | null): Promise<void> {
-    if (employeeName) {
-        const employees = await getDocs(collection(db, 'employees'));
-        const employeeNames = employees.docs.map(d => d.data().name);
+    const employeesSnapshot = await getDocs(collection(db, 'employees'));
+    const employeeNames = employeesSnapshot.docs.map(d => d.data().name);
 
-        if (employeeNames.includes(employeeName)) {
-            await updateDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: employeeName });
-        } else {
-            throw new Error("Employee not found");
-        }
-    } else {
-        await updateDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: null });
+    if (employeeName && !employeeNames.includes(employeeName)) {
+        throw new Error("Employee not found");
     }
+    
+    await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: employeeName });
 }
 
 
@@ -126,3 +129,4 @@ export async function seedDatabaseAction() {
     }
 }
 
+export { getEmployeeOfTheWeek };
