@@ -41,16 +41,16 @@ export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
 
     const q = query(
         collection(db, 'consumptionLogs'),
-        where('employeeName', '==', user),
         where('dateTimeLogged', '>=', start),
         where('dateTimeLogged', '<=', end)
     );
 
     const querySnapshot = await getDocs(q);
-    const logs = await docsWithDates<ConsumptionLog>(querySnapshot);
+    const allLogs = await docsWithDates<ConsumptionLog>(querySnapshot);
     
-    // Sort logs by date in descending order after fetching
-    return logs.sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
+    const userLogs = allLogs.filter(log => log.employeeName === user);
+
+    return userLogs.sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
 }
 
 export async function getRemainingAllowances(user: User): Promise<{ drinks: number, meals: number }> {
