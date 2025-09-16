@@ -1,5 +1,6 @@
 
-import { collection, getDocs, query, where, orderBy, addDoc, startOfMonth, endOfMonth } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, addDoc } from 'firebase/firestore';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
 import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 import { getEmployees } from './attendance-service';
