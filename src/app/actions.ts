@@ -3,8 +3,10 @@
 
 import type { User, ConsumableItem } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
-import { logConsumption, getRemainingAllowances } from '@/services/consumption-log-service';
+import { getRemainingAllowances } from '@/services/consumption-log-service';
 import { MEAL_ITEMS, DRINK_ITEMS } from '@/lib/constants';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase-client';
 
 export async function logItemAction(user: User, itemName: ConsumableItem) {
     try {
@@ -16,7 +18,12 @@ export async function logItemAction(user: User, itemName: ConsumableItem) {
             return { success: false, message: 'No allowance left for this item.' };
         }
 
-        await logConsumption(user, itemName);
+        await addDoc(collection(db, 'consumptionLogs'), {
+            employeeName: user,
+            itemName: itemName,
+            dateTimeLogged: new Date(),
+        });
+
         revalidatePath(`/dashboard/${user}`);
         revalidatePath('/admin');
         return { success: true, message: `${itemName} logged successfully.` };

@@ -3,33 +3,34 @@
 
 import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
-import { addEmployee, updateEmployee, deleteEmployee } from '@/services/attendance-service';
-import { seedDatabase } from '@/lib/seed';
-import { setDoc, doc } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { getEmployees } from '@/services/attendance-service';
+import { getEmployeeOfTheWeek } from '@/services/awards-service';
+import { DEFAULT_EMPLOYEES } from '@/lib/constants';
+
 
 async function setEmployeeOfTheWeek(employeeName: User | null): Promise<void> {
     if (employeeName) {
-        const employees = await getEmployees();
-        const employeeNames = employees.map(e => e.name);
+        const employees = await getDocs(collection(db, 'employees'));
+        const employeeNames = employees.docs.map(d => d.data().name);
+
         if (employeeNames.includes(employeeName)) {
-            await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: employeeName });
+            await updateDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: employeeName });
         } else {
             throw new Error("Employee not found");
         }
     } else {
-        await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: null });
+        await updateDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: null });
     }
 }
 
 
-export async function setEmployeeOfTheWeekAction(employeeName: User) {
+export async function setEmployeeOfTheWeekAction(employeeName: User | null) {
     try {
         await setEmployeeOfTheWeek(employeeName);
         revalidatePath('/');
         revalidatePath('/admin');
-        return { success: true, message: `${employeeName} is now Employee of the Week!` };
+        return { success: true, message: employeeName ? `${employeeName} is now Employee of the Week!` : 'Employee of the Week has been cleared.' };
     } catch (error) {
         console.error(error);
         return { success: false, message: 'Failed to set Employee of the Week.' };
@@ -38,7 +39,7 @@ export async function setEmployeeOfTheWeekAction(employeeName: User) {
 
 export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
     try {
-        await addEmployee({name, weeklyOffDay, standardWorkHours});
+        await addDoc(collection(db, 'employees'), {name, weeklyOffDay, standardWorkHours});
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee added successfully!' };
@@ -50,7 +51,7 @@ export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, sta
 
 export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
     try {
-        await updateEmployee(id, { name, weeklyOffDay, standardWorkHours });
+        await updateDoc(doc(db, 'employees', id), { name, weeklyOffDay, standardWorkHours });
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };
@@ -62,7 +63,32 @@ export async function updateEmployeeAction(id: string, name: string, weeklyOffDa
 
 export async function deleteEmployeeAction(id: string) {
     try {
-        await deleteEmployee(id);
+        const employeeRef = doc(db, 'employees', id);
+        const employeeDoc = await getDoc(employeeRef);
+        if (!employeeDoc.exists()) return { success: false, message: 'Employee not found.'};
+
+        const employeeName = employeeDoc.data()?.name;
+        
+        await deleteDoc(employeeRef);
+
+        if (employeeName) {
+            const batch = writeBatch(db);
+            const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
+            
+            for (const collectionName of collectionsToDelete) {
+                const q = query(collection(db, collectionName), where('employeeName', '==', employeeName));
+                const snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                }
+            }
+            await batch.commit();
+
+            const eow = await getEmployeeOfTheWeek();
+            if (eow === employeeName) {
+                await setEmployeeOfTheWeek(null);
+            }
+        }
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee removed successfully!' };
@@ -74,7 +100,23 @@ export async function deleteEmployeeAction(id: string) {
 
 export async function seedDatabaseAction() {
     try {
-        await seedDatabase();
+        console.log('Seeding database...');
+        const employeesSnapshot = await getDocs(collection(db, 'employees'));
+        
+        if (employeesSnapshot.empty) {
+            console.log('No employees found. Seeding default employees...');
+            for (const emp of DEFAULT_EMPLOYEES) {
+                await addDoc(collection(db, 'employees'), emp);
+            }
+            console.log('Default employees seeded.');
+
+            await setEmployeeOfTheWeek(DEFAULT_EMPLOYEES[0].name);
+            console.log('Default employee of the week set.');
+        } else {
+            console.log('Employees already exist. Skipping seeding.');
+        }
+        console.log('Database seeding process complete.');
+        
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Database seeded successfully!' };
@@ -83,3 +125,4 @@ export async function seedDatabaseAction() {
         return { success: false, message: 'Failed to seed database.' };
     }
 }
+

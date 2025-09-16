@@ -1,5 +1,7 @@
 
-import { collection, getDocs, query, where, orderBy, addDoc } from 'firebase/firestore';
+'use client';
+
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
 import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
@@ -30,14 +32,6 @@ async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
         promises.push(docWithDates<T>(doc));
     });
     return Promise.all(promises);
-}
-
-export async function logConsumption(user: User, item: ConsumableItem): Promise<void> {
-    await addDoc(collection(db, 'consumptionLogs'), {
-        employeeName: user,
-        itemName: item,
-        dateTimeLogged: new Date(),
-    });
 }
 
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {

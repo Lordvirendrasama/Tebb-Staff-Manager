@@ -2,12 +2,11 @@
 'use client';
 
 import { 
-    collection, getDocs, query, where, orderBy, limit, doc, updateDoc, addDoc, writeBatch, getDoc, deleteDoc
+    collection, getDocs, query, where, orderBy, limit
 } from 'firebase/firestore';
-import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, LeaveType } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest } from '@/lib/constants';
 import { differenceInHours, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { db } from '@/lib/firebase-client';
-import { getEmployeeOfTheWeek } from './awards-service';
 
 async function docWithDates<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -55,30 +54,6 @@ export async function getAttendanceStatus(user: User): Promise<AttendanceStatus>
     }
 
     return { status: 'Clocked Out' };
-}
-
-export async function clockIn(user: User): Promise<void> {
-    const now = new Date();
-    await addDoc(collection(db, 'attendanceLogs'), {
-        employeeName: user,
-        clockIn: now,
-        clockOut: null,
-    });
-}
-
-export async function clockOut(user: User): Promise<void> {
-    const q = query(
-        collection(db, 'attendanceLogs'),
-        where('employeeName', '==', user),
-        orderBy('clockIn', 'desc'),
-        limit(1)
-    );
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-        const docRef = doc(db, 'attendanceLogs', querySnapshot.docs[0].id);
-        await updateDoc(docRef, { clockOut: new Date() });
-    }
 }
 
 export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]> {
@@ -132,58 +107,6 @@ export const getEmployees = async (): Promise<Employee[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
 }
 
-export const addEmployee = async (employee: Omit<Employee, 'id'>) => {
-    await addDoc(collection(db, 'employees'), employee);
-}
-
-export const updateEmployee = async (employeeId: string, updates: Partial<Omit<Employee, 'id'>>) => {
-    await updateDoc(doc(db, 'employees', employeeId), updates);
-}
-
-export const deleteEmployee = async (employeeId: string) => {
-    const employeeRef = doc(db, 'employees', employeeId);
-    const employeeDoc = await getDoc(employeeRef);
-    if (!employeeDoc.exists()) return;
-
-    const employeeName = employeeDoc.data()?.name;
-    
-    await deleteDoc(employeeRef);
-
-    if (!employeeName) return;
-
-    const batch = writeBatch(db);
-    const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
-    
-    for (const collectionName of collectionsToDelete) {
-        const q = query(collection(db, collectionName), where('employeeName', '==', employeeName));
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        }
-    }
-    
-    await batch.commit();
-
-    const eow = await getEmployeeOfTheWeek();
-    if (eow === employeeName) {
-        // This needs to be a server action call
-        const { setEmployeeOfTheWeekAction } = await import('@/app/actions/admin-actions');
-        await setEmployeeOfTheWeekAction(null as any); // This is tricky, might need a dedicated action
-    }
-}
-
-
-export async function requestLeave(user: User, startDate: Date, endDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
-    await addDoc(collection(db, 'leaveRequests'), {
-        employeeName: user,
-        startDate,
-        endDate,
-        reason,
-        leaveType,
-        status: 'Pending',
-    });
-}
-
 export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
     const q = query(
         collection(db, 'leaveRequests'),
@@ -203,20 +126,6 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
     return docsWithDates<LeaveRequest>(querySnapshot);
 }
 
-export async function approveLeave(requestId: string): Promise<void> {
-    const docRef = doc(db, 'leaveRequests', requestId);
-    await updateDoc(docRef, { status: 'Approved' });
-}
-
-export async function denyLeave(requestId: string): Promise<void> {
-    const docRef = doc(db, 'leaveRequests', requestId);
-    await updateDoc(docRef, { status: 'Denied' });
-}
-
-export async function updateLeaveType(requestId: string, leaveType: LeaveType): Promise<void> {
-    const docRef = doc(db, 'leaveRequests', requestId);
-    await updateDoc(docRef, { leaveType });
-}
 
 export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays: number }>> {
     const now = new Date();

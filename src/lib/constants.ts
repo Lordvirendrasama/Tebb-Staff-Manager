@@ -68,3 +68,9 @@ export interface LeaveRequest {
   leaveType: LeaveType;
   status: LeaveStatus;
 }
+
+export const DEFAULT_EMPLOYEES = [
+  { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8 },
+  { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8 },
+  { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6 },
+];
