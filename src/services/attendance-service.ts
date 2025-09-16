@@ -37,9 +37,7 @@ export async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const q = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', user),
-        orderBy('clockIn', 'desc'),
-        limit(1)
+        where('employeeName', '==', user)
     );
     const querySnapshot = await getDocs(q);
     
@@ -47,7 +45,8 @@ export async function getAttendanceStatus(user: User): Promise<AttendanceStatus>
         return { status: 'Clocked Out' };
     }
     
-    const latestLog = await docWithDates<AttendanceLog>(querySnapshot.docs[0]);
+    const logs = await docsWithDates<AttendanceLog>(querySnapshot);
+    const latestLog = logs.sort((a,b) => b.clockIn.getTime() - a.clockIn.getTime())[0];
 
     if (latestLog && !latestLog.clockOut) {
         return { status: 'Clocked In', clockInTime: latestLog.clockIn };
