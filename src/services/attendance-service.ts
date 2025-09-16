@@ -61,11 +61,13 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', user),
-        orderBy('clockIn', 'desc'),
         limit(50)
     );
     const querySnapshot = await getDocs(q);
     const logs = await docsWithDates<AttendanceLog>(querySnapshot);
+    
+    // Sort logs by clockIn time in descending order
+    logs.sort((a, b) => new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime());
     
     return logs.slice(0, 10);
 }
