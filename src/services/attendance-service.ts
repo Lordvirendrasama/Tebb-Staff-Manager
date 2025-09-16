@@ -115,12 +115,12 @@ export const getEmployees = async (): Promise<Employee[]> => {
 export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
     const q = query(
         collection(db, 'leaveRequests'),
-        where('employeeName', '==', user),
-        orderBy('startDate', 'desc')
+        where('employeeName', '==', user)
     );
     const querySnapshot = await getDocs(q);
     const requests = await docsWithDates<LeaveRequest>(querySnapshot);
-    return requests;
+    // Sort in-memory to avoid composite index
+    return requests.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
