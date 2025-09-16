@@ -3,15 +3,15 @@
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCog, Trophy, Loader2 } from 'lucide-react';
+import { Users, UserCog, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getAttendanceStatus, getEmployees } from '@/services/attendance-service';
 import { getEmployeeOfTheWeek } from '@/services/awards-service';
-import type { Employee, User } from '@/lib/constants';
+import type { Employee, User, AttendanceStatus } from '@/lib/constants';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-function EmployeeCard({ employee, status, employeeOfTheWeek }: { employee: Employee; status: any, employeeOfTheWeek: User | null }) {
+function EmployeeCard({ employee, status, employeeOfTheWeek }: { employee: Employee; status: AttendanceStatus | null, employeeOfTheWeek: User | null }) {
   return (
     <Link href={`/dashboard/${employee.name}`} className="block">
       <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1 h-full">
@@ -22,7 +22,7 @@ function EmployeeCard({ employee, status, employeeOfTheWeek }: { employee: Emplo
           <CardTitle className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
             {employee.name}
           </CardTitle>
-          {status.status === 'Clocked In' && (
+          {status?.status === 'Clocked In' && (
             <div className="flex items-center gap-2 mt-2 text-sm text-green-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -57,7 +57,7 @@ function EmployeeCardSkeleton() {
 
 export default function Home() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [statuses, setStatuses] = useState<Record<string, any>>({});
+  const [statuses, setStatuses] = useState<Record<string, AttendanceStatus | null>>({});
   const [employeeOfTheWeek, setEmployeeOfTheWeek] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -68,22 +68,23 @@ export default function Home() {
         const fetchedEmployees = await getEmployees();
         setEmployees(fetchedEmployees);
 
-        const statusPromises = fetchedEmployees.map(emp => getAttendanceStatus(emp.name));
-        const eowPromise = getEmployeeOfTheWeek();
+        if (fetchedEmployees.length > 0) {
+            const statusPromises = fetchedEmployees.map(emp => getAttendanceStatus(emp.name));
+            const eowPromise = getEmployeeOfTheWeek();
 
-        const [statusesResults, eowResult] = await Promise.all([
-            Promise.all(statusPromises),
-            eowPromise
-        ]);
+            const [statusesResults, eowResult] = await Promise.all([
+                Promise.all(statusPromises),
+                eowPromise
+            ]);
 
-        const newStatuses: Record<string, any> = {};
-        fetchedEmployees.forEach((emp, index) => {
-            newStatuses[emp.name] = statusesResults[index];
-        });
+            const newStatuses: Record<string, any> = {};
+            fetchedEmployees.forEach((emp, index) => {
+                newStatuses[emp.name] = statusesResults[index];
+            });
 
-        setStatuses(newStatuses);
-        setEmployeeOfTheWeek(eowResult);
-
+            setStatuses(newStatuses);
+            setEmployeeOfTheWeek(eowResult);
+        }
       } catch (error) {
           console.error("Failed to fetch initial data", error);
       } finally {

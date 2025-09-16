@@ -1,6 +1,6 @@
 
 import { 
-    collection, getDocs, query, where, orderBy, limit, doc, getDoc, updateDoc, addDoc, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getFirestore
+    collection, getDocs, query, where, orderBy, limit, doc, getDoc, updateDoc, addDoc, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getFirestore, setDoc, deleteDoc
 } from 'firebase/firestore';
 import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, LeaveType, WeekDay } from '@/lib/constants';
 import { differenceInHours } from 'date-fns';
@@ -59,6 +59,7 @@ export async function clockIn(user: User): Promise<void> {
     await addDoc(collection(db, 'attendanceLogs'), {
         employeeName: user,
         clockIn: now,
+        clockOut: null,
     });
 }
 
@@ -139,18 +140,7 @@ export async function updateEmployee(id: string, name: string, weeklyOffDay: Wee
 
 export async function deleteEmployee(id: string): Promise<void> {
     const employeeRef = doc(db, 'employees', id);
-    const employeeDoc = await getDoc(employeeRef);
-    if (!employeeDoc.exists()) return;
-
-    const employeeName = employeeDoc.data()?.name;
-    
-    await updateDoc(employeeRef, {}); // This is a delete in Firestore with web sdk
-
-    if (!employeeName) return;
-
-    // This part of deletion is complex with client-side permissions, 
-    // it's better to handle this with a cloud function for security.
-    // For now, we will leave the related data as is.
+    await deleteDoc(employeeRef);
 }
 
 export async function requestLeave(user: User, startDate: Date, endDate: Date, reason: string, leaveType: LeaveType): Promise<void> {
