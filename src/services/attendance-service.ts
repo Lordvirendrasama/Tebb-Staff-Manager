@@ -60,11 +60,15 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', user),
-        orderBy('clockIn', 'desc'),
-        limit(10)
+        limit(50) // Fetch a reasonable number of recent logs to sort on the client
     );
     const querySnapshot = await getDocs(q);
-    return docsWithDates<AttendanceLog>(querySnapshot);
+    const logs = await docsWithDates<AttendanceLog>(querySnapshot);
+    
+    // Sort logs by clock-in time descending and take the most recent 10
+    return logs
+        .sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime())
+        .slice(0, 10);
 }
 
 export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime: number }>> {
@@ -110,11 +114,11 @@ export const getEmployees = async (): Promise<Employee[]> => {
 export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
     const q = query(
         collection(db, 'leaveRequests'),
-        where('employeeName', '==', user),
-        orderBy('startDate', 'desc')
+        where('employeeName', '==', user)
     );
     const querySnapshot = await getDocs(q);
-    return docsWithDates<LeaveRequest>(querySnapshot);
+    const requests = await docsWithDates<LeaveRequest>(querySnapshot);
+    return requests.sort((a,b) => b.startDate.getTime() - a.startDate.getTime());
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
