@@ -1,9 +1,7 @@
 
 'use server';
 
-import { db } from './firebase';
-import { getEmployees, addEmployee } from './data';
-import { setEmployeeOfTheWeek } from './data';
+import { getEmployees, addEmployee, setEmployeeOfTheWeek } from './data';
 
 const DEFAULT_EMPLOYEES = [
   { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8 },

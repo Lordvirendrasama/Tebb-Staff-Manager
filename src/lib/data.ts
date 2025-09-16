@@ -2,10 +2,11 @@
 'use server';
 
 import type { User, ConsumptionLog, AttendanceLog, Employee, LeaveRequest } from './constants';
-import { collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, limit, deleteDoc, writeBatch } from 'firebase/firestore';
-import { db } from './firebase-client';
+import { collection, getDocs, addDoc, updateDoc, doc as clientDoc, query, where, orderBy, limit, deleteDoc, writeBatch as clientWriteBatch, getDoc as clientGetDoc } from 'firebase/firestore';
+import { db as clientDb } from './firebase-client';
+import { db } from './firebase-server';
+import { getDoc, setDoc, writeBatch } from 'firebase-admin/firestore';
 
-const getCollection = (collectionName: string) => collection(db, collectionName);
 
 function docWithDates<T>(docSnap: any): T {
     const data = docSnap.data();
@@ -26,25 +27,25 @@ function docWithDates<T>(docSnap: any): T {
 }
 
 export const getConsumptionLogs = async (): Promise<ConsumptionLog[]> => {
-    const snapshot = await getDocs(getCollection('consumptionLogs'));
+    const snapshot = await getDocs(collection(clientDb, 'consumptionLogs'));
     return snapshot.docs.map(doc => docWithDates<ConsumptionLog>(doc));
 };
 
 export const addConsumptionLog = async (log: Omit<ConsumptionLog, 'id'>) => {
-    await addDoc(getCollection('consumptionLogs'), log);
+    await addDoc(collection(clientDb, 'consumptionLogs'), log);
 };
 
 export const getAttendanceLogs = async (): Promise<AttendanceLog[]> => {
-    const snapshot = await getDocs(getCollection('attendanceLogs'));
+    const snapshot = await getDocs(collection(clientDb, 'attendanceLogs'));
     return snapshot.docs.map(doc => docWithDates<AttendanceLog>(doc));
 };
 
 export const addAttendanceLog = async (log: Omit<AttendanceLog, 'id'>) => {
-    await addDoc(getCollection('attendanceLogs'), log);
+    await addDoc(collection(clientDb, 'attendanceLogs'), log);
 };
 
 export const updateLatestAttendanceLogForUser = async (user: User, updates: Partial<AttendanceLog>) => {
-    const q = query(getCollection('attendanceLogs'),
+    const q = query(collection(clientDb, 'attendanceLogs'),
         where('employeeName', '==', user),
         orderBy('clockIn', 'desc'),
         limit(1));
@@ -52,14 +53,14 @@ export const updateLatestAttendanceLogForUser = async (user: User, updates: Part
     const snapshot = await getDocs(q);
     if (!snapshot.empty) {
         const docId = snapshot.docs[0].id;
-        await updateDoc(doc(db, 'attendanceLogs', docId), updates);
+        await updateDoc(clientDoc(clientDb, 'attendanceLogs', docId), updates);
     }
 };
 
 export const getEmployeeOfTheWeek = async (): Promise<User | null> => {
-    const docRef = doc(db, 'awards', 'employeeOfTheWeek');
+    const docRef = db.collection('awards').doc('employeeOfTheWeek');
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
         return docSnap.data()?.employeeName ?? null;
     }
     return null;
@@ -67,39 +68,38 @@ export const getEmployeeOfTheWeek = async (): Promise<User | null> => {
 
 
 export const setEmployeeOfTheWeek = async (user: User | null) => {
-    await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: user });
+    await setDoc(db.collection('awards').doc('employeeOfTheWeek'), { employeeName: user });
 };
 
 export const getEmployees = async (): Promise<Employee[]> => {
-    const snapshot = await getDocs(getCollection('employees'));
+    const snapshot = await db.collection('employees').get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
 }
 
 export const addEmployee = async (employee: Omit<Employee, 'id'>) => {
-    await addDoc(getCollection('employees'), employee);
+    await db.collection('employees').add(employee);
 }
 
 export const updateEmployee = async (employeeId: string, updates: Partial<Omit<Employee, 'id'>>) => {
-    await updateDoc(doc(db, 'employees', employeeId), updates);
+    await db.collection('employees').doc(employeeId).update(updates);
 }
 
 export const deleteEmployee = async (employeeId: string) => {
-    const employeeRef = doc(db, 'employees', employeeId);
+    const employeeRef = db.collection('employees').doc(employeeId);
     const employeeDoc = await getDoc(employeeRef);
-    if (!employeeDoc.exists()) return;
+    if (!employeeDoc.exists) return;
 
     const employeeName = employeeDoc.data()?.name;
     
-    await deleteDoc(employeeRef);
+    await employeeRef.delete();
 
     if (!employeeName) return;
 
-    const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
     const batch = writeBatch(db);
+    const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
     
     for (const collectionName of collectionsToDelete) {
-        const q = query(getCollection(collectionName), where('employeeName', '==', employeeName));
-        const snapshot = await getDocs(q);
+        const snapshot = await db.collection(collectionName).where('employeeName', '==', employeeName).get();
         if (!snapshot.empty) {
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
         }
@@ -115,14 +115,14 @@ export const deleteEmployee = async (employeeId: string) => {
 
 
 export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
-    const snapshot = await getDocs(getCollection('leaveRequests'));
+    const snapshot = await getDocs(collection(clientDb, 'leaveRequests'));
     return snapshot.docs.map(doc => docWithDates<LeaveRequest>(doc));
 }
 
 export const addLeaveRequest = async (request: Omit<LeaveRequest, 'id'>) => {
-    await addDoc(getCollection('leaveRequests'), request);
+    await addDoc(collection(clientDb, 'leaveRequests'), request);
 }
 
 export const updateLeaveRequest = async (requestId: string, updates: Partial<Omit<LeaveRequest, 'id'>>) => {
-    await updateDoc(doc(db, 'leaveRequests', requestId), updates);
+    await updateDoc(clientDoc(clientDb, 'leaveRequests', requestId), updates);
 }
