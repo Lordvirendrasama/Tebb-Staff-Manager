@@ -16,6 +16,7 @@ import { SeedDatabaseButton } from '@/components/seed-database-button';
 import { getAllUsersAllowances, getMonthlyOvertime, getEmployees as fetchEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
 import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ExportDataButton } from '@/components/export-data-button';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -165,13 +166,22 @@ export default function AdminPage() {
                       All application data is now stored in a secure, cloud-based Firestore database. You can manage your data directly in the Firebase console.
                     </AlertDescription>
                   </Alert>
-                  <Card>
+                   <Card>
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2"><Database/> Seed Database</CardTitle>
-                        <CardDescription>If the database is empty, you can use this button to populate it with default employee data.</CardDescription>
+                        <CardDescription>Populate the database with default employee data if it's empty.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <SeedDatabaseButton />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">Export Data</CardTitle>
+                        <CardDescription>Download all application data as CSV files.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ExportDataButton />
                     </CardContent>
                   </Card>
               </CardContent>

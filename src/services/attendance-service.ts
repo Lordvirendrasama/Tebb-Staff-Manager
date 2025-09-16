@@ -26,7 +26,7 @@ async function docWithDates<T>(docSnap: any): Promise<T> {
     return convertedData as T;
 }
 
-async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
+export async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
     const promises: Promise<T>[] = [];
     querySnapshot.forEach((doc: any) => {
         promises.push(docWithDates<T>(doc));
