@@ -42,7 +42,11 @@ export async function setEmployeeOfTheWeekAction(employeeName: User | null) {
 
 export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
     try {
-        await addDoc(collection(db, 'employees'), {name, weeklyOffDay, standardWorkHours});
+        const batch = writeBatch(db);
+        const newEmployeeRef = doc(collection(db, 'employees'));
+        batch.set(newEmployeeRef, { name, weeklyOffDay, standardWorkHours });
+        await batch.commit();
+
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee added successfully!' };
@@ -108,9 +112,12 @@ export async function seedDatabaseAction() {
         
         if (employeesSnapshot.empty) {
             console.log('No employees found. Seeding default employees...');
+            const batch = writeBatch(db);
             for (const emp of DEFAULT_EMPLOYEES) {
-                await addDoc(collection(db, 'employees'), emp);
+                const newEmployeeRef = doc(collection(db, 'employees'));
+                batch.set(newEmployeeRef, emp);
             }
+            await batch.commit();
             console.log('Default employees seeded.');
 
             await setEmployeeOfTheWeek(DEFAULT_EMPLOYEES[0].name);
