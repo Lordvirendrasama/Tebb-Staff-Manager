@@ -49,6 +49,8 @@ export async function clockOutAction(user: User) {
             const latestLogDoc = querySnapshot.docs[0];
             const docRef = doc(db, 'attendanceLogs', latestLogDoc.id);
             await updateDoc(docRef, { clockOut: new Date() });
+        } else {
+            return { success: false, message: 'No clock-in record found to clock out.' };
         }
 
         revalidatePath(`/dashboard/${user}`);
@@ -114,4 +116,3 @@ export async function markAsUnpaidAction(requestId: string) {
         return { success: false, message: 'Failed to update leave type.' };
     }
 }
-
