@@ -37,9 +37,7 @@ export async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const q = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', user),
-        orderBy('clockIn', 'desc'),
-        limit(1)
+        where('employeeName', '==', user)
     );
     const querySnapshot = await getDocs(q);
 
@@ -48,6 +46,10 @@ export async function getAttendanceStatus(user: User): Promise<AttendanceStatus>
     }
     
     const logs = await docsWithDates<AttendanceLog>(querySnapshot);
+    
+    // Sort logs in-memory to find the most recent one
+    logs.sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime());
+    
     const latestLog = logs[0];
 
     if (latestLog && !latestLog.clockOut) {
@@ -141,13 +143,16 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
     
     const q = query(
         collection(db, 'leaveRequests'),
-        where('status', '==', 'Approved'),
         where('startDate', '<=', monthEnd)
     );
     const querySnapshot = await getDocs(q);
     const allLeaveRequests = await docsWithDates<LeaveRequest>(querySnapshot);
 
-    const leaveRequests = allLeaveRequests.filter(req => new Date(req.endDate) >= monthStart);
+    const leaveRequests = allLeaveRequests.filter(req => {
+        const reqEndDate = new Date(req.endDate);
+        return reqEndDate >= monthStart && req.status === 'Approved';
+    });
+
 
     const leaveDaysByUser: Record<User, number> = employees.reduce((acc, emp) => {
         acc[emp.name] = 0;
