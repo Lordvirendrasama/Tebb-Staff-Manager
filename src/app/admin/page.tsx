@@ -156,7 +156,7 @@ export default function AdminPage() {
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
                   <CardDescription>Application data is now stored in Firebase.</CardDescription>
-              </Header>
+              </CardHeader>
               <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
