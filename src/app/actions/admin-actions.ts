@@ -36,7 +36,8 @@ export async function setEmployeeOfTheWeekAction(employeeName: User | null) {
         return { success: true, message: employeeName ? `${employeeName} is now Employee of the Week!` : 'Employee of the Week has been cleared.' };
     } catch (error) {
         console.error(error);
-        return { success: false, message: 'Failed to set Employee of the Week.' };
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to set Employee of the Week: ${errorMessage}` };
     }
 }
 
@@ -52,7 +53,8 @@ export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, sta
         return { success: true, message: 'Employee added successfully!' };
     } catch (error) {
         console.error(error);
-        return { success: false, message: 'Failed to add employee.' };
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to add employee: ${errorMessage}` };
     }
 }
 
@@ -64,7 +66,8 @@ export async function updateEmployeeAction(id: string, name: string, weeklyOffDa
         return { success: true, message: 'Employee updated successfully!' };
     } catch (error) {
         console.error(error);
-        return { success: false, message: 'Failed to update employee.' };
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to update employee: ${errorMessage}` };
     }
 }
 
@@ -101,7 +104,8 @@ export async function deleteEmployeeAction(id: string) {
         return { success: true, message: 'Employee removed successfully!' };
     } catch (error) {
         console.error(error);
-        return { success: false, message: 'Failed to remove employee.' };
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to remove employee: ${errorMessage}` };
     }
 }
 
@@ -124,6 +128,9 @@ export async function seedDatabaseAction() {
             console.log('Default employee of the week set.');
         } else {
             console.log('Employees already exist. Skipping seeding.');
+             revalidatePath('/admin');
+             revalidatePath('/');
+            return { success: true, message: 'Database already contains employee data. Seeding skipped.' };
         }
         console.log('Database seeding process complete.');
         
@@ -132,7 +139,8 @@ export async function seedDatabaseAction() {
         return { success: true, message: 'Database seeded successfully!' };
     } catch (error) {
         console.error('Seeding failed:', error);
-        return { success: false, message: 'Failed to seed database.' };
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to seed database: ${errorMessage}` };
     }
 }
 
