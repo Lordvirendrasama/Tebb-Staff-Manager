@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getAttendanceStatus, getEmployees } from '@/services/attendance-service';
+import { getAttendanceStatus, getEmployees } from '@/services/client/attendance-service';
 import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
 import type { Employee, User, AttendanceStatus } from '@/lib/constants';
 import { useEffect, useState } from 'react';

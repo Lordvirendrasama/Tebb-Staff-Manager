@@ -10,8 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, GlassWater, Utensils, Loader2 } from 'lucide-react';
 import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
-import { getRemainingAllowances, getLogsForUser } from '@/services/consumption-log-service';
-import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, getEmployees } from '@/services/attendance-service';
+import { getRemainingAllowances, getLogsForUser } from '@/services/client/consumption-log-service';
+import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, getEmployees } from '@/services/client/attendance-service';
 import { LeaveTracker } from '@/components/leave-tracker';
 import { Skeleton } from '@/components/ui/skeleton';
 

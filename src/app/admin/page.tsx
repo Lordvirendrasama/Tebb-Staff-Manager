@@ -13,7 +13,7 @@ import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { SeedDatabaseButton } from '@/components/seed-database-button';
-import { getAllUsersAllowances, getMonthlyOvertime, getEmployees as fetchEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/attendance-service';
+import { getAllUsersAllowances, getMonthlyOvertime, getEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/client/attendance-service';
 import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExportDataButton } from '@/components/export-data-button';
@@ -42,7 +42,7 @@ export default function AdminPage() {
           getAllUsersAllowances(),
           getEmployeeOfTheWeekAction(),
           getMonthlyOvertime(),
-          fetchEmployees(),
+          getEmployees(),
           getAllLeaveRequests(),
           getMonthlyLeaves(),
         ]);
