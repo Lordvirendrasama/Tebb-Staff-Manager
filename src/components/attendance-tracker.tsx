@@ -23,9 +23,10 @@ interface AttendanceTrackerProps {
     status: AttendanceStatus;
     history: AttendanceLog[];
     setStatus: Dispatch<SetStateAction<AttendanceStatus | null>>;
+    setHistory: Dispatch<SetStateAction<AttendanceLog[]>>;
 }
 
-export function AttendanceTracker({ user, status, history, setStatus }: AttendanceTrackerProps) {
+export function AttendanceTracker({ user, status, history, setStatus, setHistory }: AttendanceTrackerProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
@@ -51,7 +52,14 @@ export function AttendanceTracker({ user, status, history, setStatus }: Attendan
       const result = await clockInAction(user);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
-        setStatus({ status: 'Clocked In', clockInTime: new Date() });
+        const newClockInTime = new Date();
+        setStatus({ status: 'Clocked In', clockInTime: newClockInTime });
+        const newLog: AttendanceLog = {
+          id: `new-${Date.now()}`,
+          employeeName: user,
+          clockIn: newClockInTime,
+        };
+        setHistory(prevHistory => [newLog, ...prevHistory]);
         router.refresh();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message });
@@ -65,6 +73,14 @@ export function AttendanceTracker({ user, status, history, setStatus }: Attendan
       if (result.success) {
         toast({ title: 'Success', description: result.message });
         setStatus({ status: 'Clocked Out' });
+        setHistory(prevHistory => {
+            const updatedHistory = [...prevHistory];
+            const latestLog = updatedHistory.find(log => !log.clockOut);
+            if(latestLog) {
+                latestLog.clockOut = new Date();
+            }
+            return updatedHistory;
+        });
         router.refresh();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message });
@@ -113,8 +129,8 @@ export function AttendanceTracker({ user, status, history, setStatus }: Attendan
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {history.slice(0, 5).map((log, index) => (
-                        <TableRow key={index}>
+                    {history.slice(0, 5).map((log) => (
+                        <TableRow key={log.id}>
                             <TableCell>{isClient ? formatLocaleDate(log.clockIn) : '...'}</TableCell>
                             <TableCell>{isClient ? formatLocaleTime(log.clockIn) : '...'}</TableCell>
                             <TableCell>{isClient ? formatLocaleTime(log.clockOut) : '...'}</TableCell>

@@ -121,6 +121,7 @@ export default function UserDashboard() {
                 status={attendanceStatus} 
                 history={attendanceHistory}
                 setStatus={setAttendanceStatus}
+                setHistory={setAttendanceHistory}
               />
             </CardContent>
           </Card>
