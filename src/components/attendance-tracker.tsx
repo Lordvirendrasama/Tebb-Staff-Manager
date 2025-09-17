@@ -2,6 +2,7 @@
 'use client';
 
 import { useTransition, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { clockInAction, clockOutAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +22,7 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
@@ -42,6 +44,7 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
       const result = await clockInAction(user);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
+        router.refresh();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message });
       }
@@ -53,6 +56,7 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
       const result = await clockOutAction(user);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
+        router.refresh();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message });
       }
