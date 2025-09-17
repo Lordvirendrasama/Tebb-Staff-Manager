@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useTransition, useState, useEffect } from 'react';
+import { useTransition, useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { clockInAction, clockOutAction } from '@/app/actions/attendance-actions';
@@ -18,7 +18,14 @@ import {
 } from '@/components/ui/table';
 import { ScrollArea } from './ui/scroll-area';
 
-export function AttendanceTracker({ user, status, history }: { user: User; status: AttendanceStatus, history: AttendanceLog[] }) {
+interface AttendanceTrackerProps {
+    user: User;
+    status: AttendanceStatus;
+    history: AttendanceLog[];
+    setStatus: Dispatch<SetStateAction<AttendanceStatus | null>>;
+}
+
+export function AttendanceTracker({ user, status, history, setStatus }: AttendanceTrackerProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
@@ -44,6 +51,7 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
       const result = await clockInAction(user);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
+        setStatus({ status: 'Clocked In', clockInTime: new Date() });
         router.refresh();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message });
@@ -56,6 +64,7 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
       const result = await clockOutAction(user);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
+        setStatus({ status: 'Clocked Out' });
         router.refresh();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message });
@@ -79,11 +88,11 @@ export function AttendanceTracker({ user, status, history }: { user: User; statu
             </div>
              <div className="grid grid-cols-2 gap-2">
                 <Button onClick={handleClockIn} disabled={isPending || isClockedIn} >
-                    {isPending ? <Loader2 className="animate-spin" /> : <LogIn />}
+                    {isPending && isClockedIn === false ? <Loader2 className="animate-spin" /> : <LogIn />}
                     Clock In
                 </Button>
                 <Button onClick={handleClockOut} disabled={isPending || !isClockedIn} variant="destructive">
-                    {isPending ? <Loader2 className="animate-spin" /> : <LogOut />}
+                    {isPending && isClockedIn === true ? <Loader2 className="animate-spin" /> : <LogOut />}
                     Clock Out
                 </Button>
             </div>

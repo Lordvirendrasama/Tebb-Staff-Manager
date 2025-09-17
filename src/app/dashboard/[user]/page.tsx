@@ -116,7 +116,12 @@ export default function UserDashboard() {
               <CardDescription>Clock in and out for your shift.</CardDescription>
             </CardHeader>
             <CardContent>
-              <AttendanceTracker user={validUser} status={attendanceStatus} history={attendanceHistory} />
+              <AttendanceTracker 
+                user={validUser} 
+                status={attendanceStatus} 
+                history={attendanceHistory}
+                setStatus={setAttendanceStatus}
+              />
             </CardContent>
           </Card>
           
