@@ -2,9 +2,9 @@
 'use client';
 
 import { 
-    collection, getDocs, query, where, orderBy, limit
+    collection, getDocs, query, where, orderBy, limit, addDoc
 } from 'firebase/firestore';
-import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, WeekDay } from '@/lib/constants';
 import { differenceInHours, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { db } from '@/lib/firebase-client';
 
@@ -109,6 +109,10 @@ export const getEmployees = async (): Promise<Employee[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
 }
 
+export const addEmployee = async (employee: { name: string; weeklyOffDay: WeekDay; standardWorkHours: number; }): Promise<void> => {
+    await addDoc(collection(db, 'employees'), employee);
+}
+
 export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
     const q = query(
         collection(db, 'leaveRequests'),
@@ -135,7 +139,6 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
     const monthEnd = endOfMonth(now);
     
     const employees = await getEmployees();
-    const employeeMap = new Map(employees.map(e => [e.name, e]));
     
     const q = query(
         collection(db, 'leaveRequests'),
@@ -162,6 +165,8 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
         };
         return dayMap[day];
     };
+    
+    const employeeMap = new Map(employees.map(e => [e.name, e]));
 
     leaveRequests.forEach(req => {
         const interval = {
