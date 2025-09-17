@@ -25,8 +25,9 @@ export async function clockInAction(user: User) {
         revalidatePath('/');
         return { success: true, message: 'Clocked in successfully.' };
     } catch (error) {
-        console.error(error)
-        return { success: false, message: 'An error occurred.' };
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to clock in: ${errorMessage}` };
     }
 }
 
