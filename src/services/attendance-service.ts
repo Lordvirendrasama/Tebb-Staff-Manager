@@ -37,7 +37,9 @@ export async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const q = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', user)
+        where('employeeName', '==', user),
+        orderBy('clockIn', 'desc'),
+        limit(1)
     );
     const querySnapshot = await getDocs(q);
 
@@ -45,12 +47,7 @@ export async function getAttendanceStatus(user: User): Promise<AttendanceStatus>
         return { status: 'Clocked Out' };
     }
     
-    const logs = await docsWithDates<AttendanceLog>(querySnapshot);
-    
-    // Sort logs in-memory to find the most recent one
-    logs.sort((a, b) => b.clockIn.getTime() - a.clockIn.getTime());
-    
-    const latestLog = logs[0];
+    const latestLog = await docWithDates<AttendanceLog>(querySnapshot.docs[0]);
 
     if (latestLog && !latestLog.clockOut) {
         return { status: 'Clocked In', clockInTime: latestLog.clockIn };
@@ -115,12 +112,11 @@ export const getEmployees = async (): Promise<Employee[]> => {
 export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[]> {
     const q = query(
         collection(db, 'leaveRequests'),
-        where('employeeName', '==', user)
+        where('employeeName', '==', user),
+        orderBy('startDate', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    const requests = await docsWithDates<LeaveRequest>(querySnapshot);
-    // Sort in-memory to avoid composite index
-    return requests.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    return docsWithDates<LeaveRequest>(querySnapshot);
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
@@ -143,6 +139,7 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
     
     const q = query(
         collection(db, 'leaveRequests'),
+        where('status', '==', 'Approved'),
         where('startDate', '<=', monthEnd)
     );
     const querySnapshot = await getDocs(q);
@@ -150,7 +147,7 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
 
     const leaveRequests = allLeaveRequests.filter(req => {
         const reqEndDate = new Date(req.endDate);
-        return reqEndDate >= monthStart && req.status === 'Approved';
+        return reqEndDate >= monthStart;
     });
 
 
