@@ -59,7 +59,8 @@ export async function clockOutAction(user: User) {
         return { success: true, message: 'Clocked out successfully.' };
     } catch (error) {
         console.error(error)
-        return { success: false, message: 'An error occurred.' };
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to clock out: ${errorMessage}` };
     }
 }
 
