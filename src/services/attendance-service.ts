@@ -30,9 +30,11 @@ async function docWithDates<T>(docSnap: any): Promise<T> {
 
 export async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
     const promises: Promise<T>[] = [];
-    querySnapshot.forEach((doc: any) => {
-        promises.push(docWithDates<T>(doc));
-    });
+    if (querySnapshot.docs) {
+        for (const doc of querySnapshot.docs) {
+            promises.push(docWithDates<T>(doc));
+        }
+    }
     return Promise.all(promises);
 }
 

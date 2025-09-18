@@ -3,7 +3,7 @@
 
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import type { ConsumptionLog, User, ConsumableItem, DrinkItem, MealItem } from '@/lib/constants';
+import type { ConsumptionLog, User, DrinkItem, MealItem } from '@/lib/constants';
 import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 import { db } from '@/lib/firebase-client';
 
@@ -27,9 +27,11 @@ async function docWithDates<T>(docSnap: any): Promise<T> {
 
 async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
     const promises: Promise<T>[] = [];
-    querySnapshot.forEach((doc: any) => {
-        promises.push(docWithDates<T>(doc));
-    });
+    if (querySnapshot.docs) {
+        for (const doc of querySnapshot.docs) {
+            promises.push(docWithDates<T>(doc));
+        }
+    }
     return Promise.all(promises);
 }
 
