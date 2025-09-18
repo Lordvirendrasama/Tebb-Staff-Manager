@@ -25,16 +25,6 @@ async function docWithDates<T>(docSnap: any): Promise<T> {
     return convertedData as T;
 }
 
-async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
-    const promises: Promise<T>[] = [];
-    if (querySnapshot.docs) {
-        for (const doc of querySnapshot.docs) {
-            promises.push(docWithDates<T>(doc));
-        }
-    }
-    return Promise.all(promises);
-}
-
 export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const now = new Date();
     const start = startOfMonth(now);
@@ -49,7 +39,7 @@ export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     );
 
     const querySnapshot = await getDocs(q);
-    const userLogs = await docsWithDates<ConsumptionLog>(querySnapshot);
+    const userLogs = await Promise.all(querySnapshot.docs.map(doc => docWithDates<ConsumptionLog>(doc)));
     
     return userLogs.sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
 }

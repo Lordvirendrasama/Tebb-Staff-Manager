@@ -4,8 +4,26 @@
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { saveAs } from 'file-saver';
 import { db } from '@/lib/firebase-client';
-import { docsWithDates } from './attendance-service';
 import type { Employee, ConsumptionLog, AttendanceLog, LeaveRequest } from '@/lib/constants';
+
+async function docWithDates<T>(docSnap: any): Promise<T> {
+    const data = docSnap.data();
+    if (!data) {
+        throw new Error('Document data is empty');
+    }
+    
+    const convertedData: { [key: string]: any } = { id: docSnap.id };
+    for (const key in data) {
+        const value = data[key];
+        if (value && typeof value.toDate === 'function') {
+            convertedData[key] = value.toDate();
+        } else {
+            convertedData[key] = value;
+        }
+    }
+    return convertedData as T;
+}
+
 
 function convertToCSV(data: any[], headers: string[]): string {
     const headerRow = headers.join(',');
@@ -30,7 +48,7 @@ async function fetchAllData<T>(collectionName: string, dateField?: string): Prom
     const collRef = collection(db, collectionName);
     const q = dateField ? query(collRef, orderBy(dateField, 'desc')) : query(collRef);
     const snapshot = await getDocs(q);
-    return docsWithDates<T>(snapshot);
+    return Promise.all(snapshot.docs.map(doc => docWithDates<T>(doc)));
 }
 
 export async function exportAllData() {

@@ -28,16 +28,6 @@ async function docWithDates<T>(docSnap: any): Promise<T> {
     return convertedData as T;
 }
 
-export async function docsWithDates<T>(querySnapshot: any): Promise<T[]> {
-    const promises: Promise<T>[] = [];
-    if (querySnapshot.docs) {
-        for (const doc of querySnapshot.docs) {
-            promises.push(docWithDates<T>(doc));
-        }
-    }
-    return Promise.all(promises);
-}
-
 export async function getAttendanceStatus(user: User): Promise<AttendanceStatus> {
     const q = query(
         collection(db, 'attendanceLogs'),
@@ -68,7 +58,7 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
         limit(50)
     );
     const querySnapshot = await getDocs(q);
-    const logs = await docsWithDates<AttendanceLog>(querySnapshot);
+    const logs = await Promise.all(querySnapshot.docs.map(doc => docWithDates<AttendanceLog>(doc)));
     
     return logs.slice(0, 10);
 }
@@ -85,7 +75,7 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
         where('clockIn', '>=', monthStart)
     );
     const attendanceSnapshot = await getDocs(attendanceQuery);
-    const attendanceLogs = await docsWithDates<AttendanceLog>(attendanceSnapshot);
+    const attendanceLogs = await Promise.all(attendanceSnapshot.docs.map(doc => docWithDates<AttendanceLog>(doc)));
     
     const filteredLogs = attendanceLogs.filter(log => log.clockOut);
 
@@ -124,7 +114,7 @@ export async function getLeaveRequestsForUser(user: User): Promise<LeaveRequest[
         orderBy('startDate', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    return docsWithDates<LeaveRequest>(querySnapshot);
+    return Promise.all(querySnapshot.docs.map(doc => docWithDates<LeaveRequest>(doc)));
 }
 
 export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
@@ -133,7 +123,7 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
         orderBy('startDate', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    return docsWithDates<LeaveRequest>(querySnapshot);
+    return Promise.all(querySnapshot.docs.map(doc => docWithDates<LeaveRequest>(doc)));
 }
 
 
@@ -149,7 +139,7 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
         where('startDate', '<=', monthEnd)
     );
     const querySnapshot = await getDocs(q);
-    const allLeaveRequests = await docsWithDates<LeaveRequest>(querySnapshot);
+    const allLeaveRequests = await Promise.all(querySnapshot.docs.map(doc => docWithDates<LeaveRequest>(doc)));
 
     const leaveRequests = allLeaveRequests.filter(req => {
         const reqEndDate = new Date(req.endDate);
@@ -212,7 +202,7 @@ export async function getAllUsersAllowances(): Promise<Array<{ user: User; allow
         where('dateTimeLogged', '<=', end)
     );
     const querySnapshot = await getDocs(q);
-    const logs = await docsWithDates<ConsumptionLog>(querySnapshot);
+    const logs = await Promise.all(querySnapshot.docs.map(doc => docWithDates<ConsumptionLog>(doc)));
 
     const userLogs: Record<User, ConsumptionLog[]> = users.reduce((acc, name) => {
         acc[name] = [];
