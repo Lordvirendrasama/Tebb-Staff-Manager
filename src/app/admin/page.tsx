@@ -159,13 +159,6 @@ export default function AdminPage() {
                   <CardDescription>Manage and export application data.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Firebase Firestore Enabled</AlertTitle>
-                    <AlertDescription>
-                      All application data is stored in a secure, cloud-based Firestore database.
-                    </AlertDescription>
-                  </Alert>
                   <Card>
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">Export Data</CardTitle>
