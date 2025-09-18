@@ -144,7 +144,6 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
     
     const q = query(
         collection(db, 'leaveRequests'),
-        where('status', '==', 'Approved'),
         where('startDate', '<=', monthEnd)
     );
     const querySnapshot = await getDocs(q);
@@ -152,7 +151,9 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
 
     const leaveRequests = allLeaveRequests.filter(req => {
         const reqEndDate = new Date(req.endDate);
-        return reqEndDate >= monthStart;
+        const isApproved = req.status === 'Approved';
+        const isInMonth = reqEndDate >= monthStart;
+        return isApproved && isInMonth;
     });
 
 
