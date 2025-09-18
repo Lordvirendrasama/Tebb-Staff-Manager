@@ -11,8 +11,9 @@ import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
-import { getAllUsersAllowances, getMonthlyOvertime, onEmployeesSnapshot, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
+import { getMonthlyOvertime, onEmployeesSnapshot, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
+import { onConsumptionLogsSnapshot } from '@/services/client/consumption-log-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExportDataButton } from '@/components/export-data-button';
 import { ResetDataButton } from '@/components/reset-data-button';
@@ -30,23 +31,23 @@ export default function AdminPage() {
     let unsubEmployees: () => void;
     let unsubLeaves: () => void;
     let unsubEow: () => void;
+    let unsubConsumption: () => void;
 
     const fetchAndSubscribe = async () => {
       setLoading(true);
       try {
-        const [allowance, overtime, monthlyL] = await Promise.all([
-          getAllUsersAllowances(),
+        const [overtime, monthlyL] = await Promise.all([
           getMonthlyOvertime(),
           getMonthlyLeaves(),
         ]);
 
-        setAllowanceData(allowance);
         setOvertimeData(overtime);
         setMonthlyLeaves(monthlyL);
         
         unsubEmployees = onEmployeesSnapshot(setEmployees, (err) => console.error(err));
         unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
         unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
+        unsubConsumption = onConsumptionLogsSnapshot(setAllowanceData, (err) => console.error(err));
 
       } catch (error) {
         console.error("Failed to fetch initial admin data or subscribe:", error);
@@ -61,6 +62,7 @@ export default function AdminPage() {
       unsubEmployees?.();
       unsubLeaves?.();
       unsubEow?.();
+      unsubConsumption?.();
     };
   }, []);
 
