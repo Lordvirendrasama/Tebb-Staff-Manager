@@ -5,6 +5,8 @@ import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { saveAs } from 'file-saver';
 import { db } from '@/lib/firebase-client';
 import type { Employee, ConsumptionLog, AttendanceLog, LeaveRequest } from '@/lib/constants';
+import { differenceInHours } from 'date-fns';
+import { getAllUsersAllowances, getMonthlyOvertime } from './client/attendance-service';
 
 async function docWithDates<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -53,28 +55,58 @@ async function fetchAllData<T>(collectionName: string, dateField?: string): Prom
 
 export async function exportAllData() {
     // 1. Fetch all data concurrently
-    const [employees, consumptionLogs, attendanceLogs, leaveRequests] = await Promise.all([
+    const [
+        employees,
+        consumptionLogs,
+        attendanceLogs,
+        leaveRequests,
+        overtimeData,
+        allowanceData
+    ] = await Promise.all([
         fetchAllData<Employee>('employees'),
         fetchAllData<ConsumptionLog>('consumptionLogs', 'dateTimeLogged'),
         fetchAllData<AttendanceLog>('attendanceLogs', 'clockIn'),
-        fetchAllData<LeaveRequest>('leaveRequests', 'startDate')
+        fetchAllData<LeaveRequest>('leaveRequests', 'startDate'),
+        getMonthlyOvertime(),
+        getAllUsersAllowances(),
     ]);
 
-    // 2. Define headers
+    // 2. Process attendance logs to add hours worked
+    const processedAttendanceLogs = attendanceLogs.map(log => {
+        let hoursWorked = 0;
+        if (log.clockIn && log.clockOut) {
+            hoursWorked = differenceInHours(new Date(log.clockOut), new Date(log.clockIn));
+        }
+        return { ...log, hoursWorked };
+    });
+
+    // 3. Define headers
     const employeeHeaders = ['id', 'name', 'weeklyOffDay', 'standardWorkHours'];
     const consumptionHeaders = ['id', 'employeeName', 'itemName', 'dateTimeLogged'];
-    const attendanceHeaders = ['id', 'employeeName', 'clockIn', 'clockOut'];
+    const attendanceHeaders = ['id', 'employeeName', 'clockIn', 'clockOut', 'hoursWorked'];
     const leaveHeaders = ['id', 'employeeName', 'startDate', 'endDate', 'leaveType', 'status', 'reason'];
+    const overtimeHeaders = ['name', 'overtime'];
+    const allowanceHeaders = ['user', 'drinks', 'meals'];
 
-    // 3. Convert to CSV
+    // 4. Convert to CSV
     const employeesCSV = convertToCSV(employees, employeeHeaders);
     const consumptionCSV = convertToCSV(consumptionLogs, consumptionHeaders);
-    const attendanceCSV = convertToCSV(attendanceLogs, attendanceHeaders);
+    const attendanceCSV = convertToCSV(processedAttendanceLogs, attendanceHeaders);
     const leaveCSV = convertToCSV(leaveRequests, leaveHeaders);
+    const overtimeCSV = convertToCSV(overtimeData, overtimeHeaders);
     
-    // 4. Save files
+    const flattenedAllowanceData = allowanceData.map(item => ({
+        user: item.user,
+        drinks: item.allowances.drinks,
+        meals: item.allowances.meals
+    }));
+    const allowancesCSV = convertToCSV(flattenedAllowanceData, allowanceHeaders);
+    
+    // 5. Save files
     saveAs(new Blob([employeesCSV], { type: 'text/csv;charset=utf-8' }), 'employees.csv');
     saveAs(new Blob([consumptionCSV], { type: 'text/csv;charset=utf-8' }), 'consumption_logs.csv');
     saveAs(new Blob([attendanceCSV], { type: 'text/csv;charset=utf-8' }), 'attendance_logs.csv');
     saveAs(new Blob([leaveCSV], { type: 'text/csv;charset-utf-8' }), 'leave_requests.csv');
+    saveAs(new Blob([overtimeCSV], { type: 'text/csv;charset=utf-8' }), 'monthly_overtime.csv');
+    saveAs(new Blob([allowancesCSV], { type: 'text/csv;charset=utf-8' }), 'monthly_allowances.csv');
 }
