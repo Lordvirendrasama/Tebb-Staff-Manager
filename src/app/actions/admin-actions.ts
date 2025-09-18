@@ -144,4 +144,35 @@ export async function seedDatabaseAction() {
     }
 }
 
+async function deleteCollection(collectionPath: string) {
+    const collectionRef = collection(db, collectionPath);
+    const snapshot = await getDocs(collectionRef);
+    if (snapshot.empty) return;
+    
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+}
+
+export async function resetDataAction() {
+    try {
+        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests'];
+        for (const collectionPath of collectionsToDelete) {
+            await deleteCollection(collectionPath);
+        }
+
+        await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: null });
+
+        revalidatePath('/');
+        revalidatePath('/admin');
+        return { success: true, message: 'All application data has been reset successfully.' };
+    } catch (error) {
+        console.error('Data reset failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to reset data: ${errorMessage}` };
+    }
+}
+
 export { getEmployeeOfTheWeek };

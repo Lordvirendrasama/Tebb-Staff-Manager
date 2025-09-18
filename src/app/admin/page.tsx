@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Info, Database } from 'lucide-react';
+import { Info, Database, Trash2 } from 'lucide-react';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
@@ -17,6 +17,7 @@ import { getAllUsersAllowances, getMonthlyOvertime, getEmployees, getAllLeaveReq
 import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExportDataButton } from '@/components/export-data-button';
+import { ResetDataButton } from '@/components/reset-data-button';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -156,14 +157,14 @@ export default function AdminPage() {
              <Card>
               <CardHeader>
                   <CardTitle>Data Management</CardTitle>
-                  <CardDescription>Application data is now stored in Firebase.</CardDescription>
+                  <CardDescription>Manage and export application data.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertTitle>Firebase Firestore Enabled</AlertTitle>
                     <AlertDescription>
-                      All application data is now stored in a secure, cloud-based Firestore database. You can manage your data directly in the Firebase console.
+                      All application data is stored in a secure, cloud-based Firestore database.
                     </AlertDescription>
                   </Alert>
                    <Card>
@@ -178,10 +179,19 @@ export default function AdminPage() {
                   <Card>
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">Export Data</CardTitle>
-                        <CardDescription>Download all application data as CSV files.</CardDescription>
+                        <CardDescription>Download all application data as a single CSV file.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ExportDataButton />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><Trash2 className="text-destructive"/> Reset Application Data</CardTitle>
+                        <CardDescription>Permanently delete all data from the application.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResetDataButton />
                     </CardContent>
                   </Card>
               </CardContent>
