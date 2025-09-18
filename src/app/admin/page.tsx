@@ -12,8 +12,8 @@ import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
-import { getAllUsersAllowances, getMonthlyOvertime, getEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/client/attendance-service';
-import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
+import { getAllUsersAllowances, getMonthlyOvertime, onEmployeesSnapshot, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
+import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExportDataButton } from '@/components/export-data-button';
 import { ResetDataButton } from '@/components/reset-data-button';
@@ -28,38 +28,53 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchStaticData = async () => {
       try {
-        const [
-          allowance,
-          eow,
-          overtime,
-          emps,
-          leaves,
-          monthlyL,
-        ] = await Promise.all([
+        const [allowance, overtime, monthlyL] = await Promise.all([
           getAllUsersAllowances(),
-          getEmployeeOfTheWeekAction(),
           getMonthlyOvertime(),
-          getEmployees(),
-          getAllLeaveRequests(),
           getMonthlyLeaves(),
         ]);
         setAllowanceData(allowance);
-        setEmployeeOfTheWeek(eow);
         setOvertimeData(overtime);
-        setEmployees(emps);
-        setLeaveRequests(leaves);
         setMonthlyLeaves(monthlyL);
       } catch (error) {
         console.error("Failed to fetch admin data:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchStaticData();
+
+    const unsubscribeEmployees = onEmployeesSnapshot(setEmployees, (error) => {
+      console.error("Failed to listen for employee updates:", error);
+      setLoading(false);
+    });
+    
+    const unsubscribeLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (error) => {
+      console.error("Failed to listen for leave request updates:", error);
+      setLoading(false);
+    });
+
+    const unsubscribeEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (error) => {
+      console.error("Failed to listen for EOW updates:", error);
+      setLoading(false);
+    });
+
+    Promise.all([
+        new Promise(resolve => onEmployeesSnapshot(emps => { setEmployees(emps); resolve(true); })),
+        new Promise(resolve => onLeaveRequestsSnapshot(reqs => { setLeaveRequests(reqs); resolve(true); })),
+        new Promise(resolve => onEmployeeOfTheWeekSnapshot(eow => { setEmployeeOfTheWeek(eow); resolve(true); })),
+        fetchStaticData()
+    ]).then(() => {
+        setLoading(false);
+    });
+
+
+    return () => {
+      unsubscribeEmployees();
+      unsubscribeLeaves();
+      unsubscribeEow();
+    };
   }, []);
 
   if (loading) {
