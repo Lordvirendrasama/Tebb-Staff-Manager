@@ -154,7 +154,7 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
       </CardHeader>
       <CardContent>
          <Tabs defaultValue="pending">
-            <TabsList>
+            <TabsList className="flex-wrap h-auto">
                 <TabsTrigger value="pending">Pending</TabsTrigger>
                 <TabsTrigger value="approved">Approved</TabsTrigger>
                 <TabsTrigger value="denied">Denied</TabsTrigger>
