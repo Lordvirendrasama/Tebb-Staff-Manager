@@ -92,7 +92,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
       <CardContent className="space-y-4">
         {employees.map(employee => (
           <div key={employee.id} className="flex items-center justify-between p-2 border rounded-lg">
-             <div className="flex-1 w-full pr-4 text-sm">
+             <div className="flex-1 min-w-0 pr-4 text-sm">
                 <p className="font-medium truncate">{employee.name}</p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs">
                     <span>{employee.weeklyOffDay}</span>
@@ -102,7 +102,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
                     </div>
                 </div>
             </div>
-            <div className="flex">
+            <div className="flex flex-shrink-0">
               <Button variant="ghost" size="icon" onClick={() => handleEdit(employee)} disabled={isPending}>
                 <Edit className="h-4 w-4" />
               </Button>
