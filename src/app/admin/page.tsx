@@ -19,7 +19,7 @@ import { ResetDataButton } from '@/components/reset-data-button';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
-  const [employeeOfTheWeek, setEmployeeOfTheWeek]_ = useState<User | null>(null);
+  const [employeeOfTheWeek, setEmployeeOfTheWeek] = useState<User | null>(null);
   const [overtimeData, setOvertimeData] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -32,27 +32,27 @@ export default function AdminPage() {
     let unsubEow: () => void;
 
     const fetchAndSubscribe = async () => {
-        setLoading(true);
-        try {
-            const [allowance, overtime, monthlyL] = await Promise.all([
-                getAllUsersAllowances(),
-                getMonthlyOvertime(),
-                getMonthlyLeaves(),
-            ]);
+      setLoading(true);
+      try {
+        const [allowance, overtime, monthlyL] = await Promise.all([
+          getAllUsersAllowances(),
+          getMonthlyOvertime(),
+          getMonthlyLeaves(),
+        ]);
 
-            setAllowanceData(allowance);
-            setOvertimeData(overtime);
-            setMonthlyLeaves(monthlyL);
+        setAllowanceData(allowance);
+        setOvertimeData(overtime);
+        setMonthlyLeaves(monthlyL);
+        
+        unsubEmployees = onEmployeesSnapshot(setEmployees, (err) => console.error(err));
+        unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
+        unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
 
-            unsubEmployees = onEmployeesSnapshot(setEmployees, (err) => console.error(err));
-            unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
-            unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek_, (err) => console.error(err));
-
-        } catch (error) {
-            console.error("Failed to fetch initial admin data or subscribe:", error);
-        } finally {
-            setLoading(false);
-        }
+      } catch (error) {
+        console.error("Failed to fetch initial admin data or subscribe:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     
     fetchAndSubscribe();
