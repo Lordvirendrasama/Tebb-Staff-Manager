@@ -8,12 +8,13 @@ import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, GlassWater, Utensils } from 'lucide-react';
-import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee } from '@/lib/constants';
+import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee, DrinkItem, MealItem } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
-import { getRemainingAllowances, getLogsForUser } from '@/services/client/consumption-log-service';
+import { getLogsForUser, onUserConsumptionLogsSnapshot } from '@/services/client/consumption-log-service';
 import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, getEmployees } from '@/services/client/attendance-service';
 import { LeaveTracker } from '@/components/leave-tracker';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 
 export default function UserDashboard() {
   const params = useParams();
@@ -30,12 +31,14 @@ export default function UserDashboard() {
   const [isValidUser, setIsValidUser] = useState<boolean | null>(null);
 
   useEffect(() => {
+    let unsubLogs: (() => void) | undefined;
+  
     const checkUserAndFetchData = async () => {
       setLoading(true);
       
       const fetchedEmployees = await getEmployees();
       const employeeNames = fetchedEmployees.map(e => e.name);
-
+  
       if (!employeeNames.includes(user as User)) {
         setIsValidUser(false);
         setLoading(false);
@@ -44,35 +47,52 @@ export default function UserDashboard() {
       
       setEmployees(fetchedEmployees);
       setIsValidUser(true);
-
+  
       try {
         const [
-          allowanceData,
-          logData,
           attendanceStatusData,
           attendanceHistoryData,
           leaveHistoryData
         ] = await Promise.all([
-          getRemainingAllowances(validUser),
-          getLogsForUser(validUser),
           getAttendanceStatus(validUser),
           getAttendanceHistory(validUser),
           getLeaveRequestsForUser(validUser),
         ]);
-
-        setAllowances(allowanceData);
-        setLogs(logData);
+  
         setAttendanceStatus(attendanceStatusData);
         setAttendanceHistory(attendanceHistoryData);
         setLeaveHistory(leaveHistoryData);
+  
+        // Set up real-time listener for consumption logs
+        unsubLogs = onUserConsumptionLogsSnapshot(
+          validUser,
+          (updatedLogs) => {
+            setLogs(updatedLogs);
+            const drinksConsumed = updatedLogs.filter(log => DRINK_ITEMS.includes(log.itemName as DrinkItem)).length;
+            const mealsConsumed = updatedLogs.filter(log => MEAL_ITEMS.includes(log.itemName as MealItem)).length;
+            setAllowances({
+              drinks: MONTHLY_DRINK_ALLOWANCE - drinksConsumed,
+              meals: MONTHLY_MEAL_ALLOWANCE - mealsConsumed,
+            });
+          },
+          (error) => {
+            console.error("Failed to listen to consumption logs:", error);
+          }
+        );
+  
       } catch (error) {
         console.error("Failed to fetch user data:", error);
       } finally {
         setLoading(false);
       }
     };
-
+  
     checkUserAndFetchData();
+  
+    // Cleanup subscription on unmount
+    return () => {
+      unsubLogs?.();
+    };
   }, [user, validUser]);
 
   if (isValidUser === false) {
