@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type User, type LeaveRequest } from '@/lib/constants';
+import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type User, type LeaveRequest, type ConsumableItemDef } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
@@ -13,11 +13,12 @@ import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { getMonthlyOvertime, onEmployeesSnapshot, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
-import { onConsumptionLogsSnapshot } from '@/services/client/consumption-log-service';
+import { onConsumptionLogsSnapshot, onConsumableItemsSnapshot } from '@/services/client/consumption-log-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExportDataButton } from '@/components/export-data-button';
 import { ResetDataButton } from '@/components/reset-data-button';
 import { AdminAuth } from '@/components/admin-auth';
+import { ItemManager } from '@/components/item-manager';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -26,6 +27,7 @@ export default function AdminPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [monthlyLeaves, setMonthlyLeaves] = useState<any[]>([]);
+  const [consumableItems, setConsumableItems] = useState<ConsumableItemDef[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function AdminPage() {
     let unsubLeaves: () => void;
     let unsubEow: () => void;
     let unsubConsumption: () => void;
+    let unsubItems: () => void;
 
     const fetchAndSubscribe = async () => {
       setLoading(true);
@@ -49,6 +52,7 @@ export default function AdminPage() {
         unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
         unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
         unsubConsumption = onConsumptionLogsSnapshot(setAllowanceData, (err) => console.error(err));
+        unsubItems = onConsumableItemsSnapshot(setConsumableItems, (err) => console.error(err));
 
       } catch (error) {
         console.error("Failed to fetch initial admin data or subscribe:", error);
@@ -64,6 +68,7 @@ export default function AdminPage() {
       unsubLeaves?.();
       unsubEow?.();
       unsubConsumption?.();
+      unsubItems?.();
     };
   }, []);
 
@@ -160,7 +165,8 @@ export default function AdminPage() {
             </div>
 
             <div className="lg:col-span-1 space-y-8">
-            <StaffManager employees={employees} />
+                <StaffManager employees={employees} />
+                <ItemManager items={consumableItems} />
                 <Card>
                 <CardHeader>
                     <CardTitle>Data Management</CardTitle>

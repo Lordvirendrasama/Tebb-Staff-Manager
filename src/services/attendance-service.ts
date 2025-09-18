@@ -4,11 +4,9 @@
 import { 
     collection, getDocs, query, where, orderBy, limit, addDoc
 } from 'firebase/firestore';
-import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, WeekDay, ConsumptionLog, DrinkItem, MealItem } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, Employee, LeaveRequest, WeekDay } from '@/lib/constants';
 import { differenceInHours, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { db } from '@/lib/firebase-client';
-import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
-
 
 async function docWithDates<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -187,46 +185,4 @@ export async function getMonthlyLeaves(): Promise<Array<{ name: User; leaveDays:
     });
     
     return employees.map(emp => ({ name: emp.name, leaveDays: leaveDaysByUser[emp.name] || 0 }));
-}
-
-export async function getAllUsersAllowances(): Promise<Array<{ user: User; allowances: { drinks: number; meals: number } }>> {
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
-    const employees = await getEmployees();
-    const users = employees.map(e => e.name);
-    
-    const q = query(
-        collection(db, 'consumptionLogs'),
-        where('dateTimeLogged', '>=', start),
-        where('dateTimeLogged', '<=', end)
-    );
-    const querySnapshot = await getDocs(q);
-    const logs = await Promise.all(querySnapshot.docs.map(doc => docWithDates<ConsumptionLog>(doc)));
-
-    const userLogs: Record<User, ConsumptionLog[]> = users.reduce((acc, name) => {
-        acc[name] = [];
-        return acc;
-    }, {} as Record<User, ConsumptionLog[]>);
-
-    logs.forEach(log => {
-        if (userLogs[log.employeeName]) {
-            userLogs[log.employeeName].push(log);
-        }
-    });
-
-    const allowances = users.map(user => {
-        const currentUserLogs = userLogs[user] || [];
-        const drinksConsumed = currentUserLogs.filter(log => DRINK_ITEMS.includes(log.itemName as DrinkItem)).length;
-        const mealsConsumed = currentUserLogs.filter(log => MEAL_ITEMS.includes(log.itemName as MealItem)).length;
-        return {
-            user: user,
-            allowances: {
-                drinks: MONTHLY_DRINK_ALLOWANCE - drinksConsumed,
-                meals: MONTHLY_MEAL_ALLOWANCE - mealsConsumed,
-            }
-        };
-    });
-
-    return allowances;
 }

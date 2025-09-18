@@ -8,13 +8,13 @@ import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, GlassWater, Utensils } from 'lucide-react';
-import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee, DrinkItem, MealItem } from '@/lib/constants';
+import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee, ConsumableItemDef } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
-import { getLogsForUser, onUserConsumptionLogsSnapshot } from '@/services/client/consumption-log-service';
+import { onUserConsumptionLogsSnapshot, getConsumableItems } from '@/services/client/consumption-log-service';
 import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, getEmployees } from '@/services/client/attendance-service';
 import { LeaveTracker } from '@/components/leave-tracker';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DRINK_ITEMS, MEAL_ITEMS, MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
+import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
 
 export default function UserDashboard() {
   const params = useParams();
@@ -27,6 +27,7 @@ export default function UserDashboard() {
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceLog[]>([]);
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
+  const [consumableItems, setConsumableItems] = useState<ConsumableItemDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [isValidUser, setIsValidUser] = useState<boolean | null>(null);
 
@@ -52,24 +53,28 @@ export default function UserDashboard() {
         const [
           attendanceStatusData,
           attendanceHistoryData,
-          leaveHistoryData
+          leaveHistoryData,
+          items
         ] = await Promise.all([
           getAttendanceStatus(validUser),
           getAttendanceHistory(validUser),
           getLeaveRequestsForUser(validUser),
+          getConsumableItems(),
         ]);
   
         setAttendanceStatus(attendanceStatusData);
         setAttendanceHistory(attendanceHistoryData);
         setLeaveHistory(leaveHistoryData);
+        setConsumableItems(items);
   
-        // Set up real-time listener for consumption logs
         unsubLogs = onUserConsumptionLogsSnapshot(
           validUser,
           (updatedLogs) => {
             setLogs(updatedLogs);
-            const drinksConsumed = updatedLogs.filter(log => DRINK_ITEMS.includes(log.itemName as DrinkItem)).length;
-            const mealsConsumed = updatedLogs.filter(log => MEAL_ITEMS.includes(log.itemName as MealItem)).length;
+            const drinkItems = items.filter(i => i.type === 'Drink').map(i => i.name);
+            const mealItems = items.filter(i => i.type === 'Meal').map(i => i.name);
+            const drinksConsumed = updatedLogs.filter(log => drinkItems.includes(log.itemName)).length;
+            const mealsConsumed = updatedLogs.filter(log => mealItems.includes(log.itemName)).length;
             setAllowances({
               drinks: MONTHLY_DRINK_ALLOWANCE - drinksConsumed,
               meals: MONTHLY_MEAL_ALLOWANCE - mealsConsumed,
@@ -89,7 +94,6 @@ export default function UserDashboard() {
   
     checkUserAndFetchData();
   
-    // Cleanup subscription on unmount
     return () => {
       unsubLogs?.();
     };
@@ -191,7 +195,7 @@ export default function UserDashboard() {
                     <CardDescription>Select an item you've consumed.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <LogItemForm user={validUser} allowances={allowances} />
+                    <LogItemForm user={validUser} allowances={allowances} items={consumableItems} />
                 </CardContent>
             </Card>
             <Card>

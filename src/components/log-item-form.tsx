@@ -7,20 +7,19 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ALL_ITEMS, MEAL_ITEMS, DRINK_ITEMS } from '@/lib/constants';
-import type { User, ConsumableItem } from '@/lib/constants';
+import { type User, type ConsumableItem, type ConsumableItemDef } from '@/lib/constants';
 import { logItemAction } from '@/app/actions';
 import { useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const FormSchema = z.object({
-  itemName: z.enum(ALL_ITEMS, {
+  itemName: z.string({
     required_error: "You need to select an item.",
   }),
 });
 
-export function LogItemForm({ user, allowances }: { user: User; allowances: { drinks: number, meals: number } }) {
+export function LogItemForm({ user, allowances, items }: { user: User; allowances: { drinks: number, meals: number }; items: ConsumableItemDef[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -47,15 +46,17 @@ export function LogItemForm({ user, allowances }: { user: User; allowances: { dr
     });
   }
   
-  const selectedItem = form.watch('itemName');
-  const isDrink = DRINK_ITEMS.includes(selectedItem as any);
-  const isMeal = MEAL_ITEMS.includes(selectedItem as any);
+  const selectedItemName = form.watch('itemName');
+  const selectedItemDef = items.find(i => i.name === selectedItemName);
 
-  let disabled = !selectedItem;
-  if(isDrink && allowances.drinks <= 0) disabled = true;
-  if(isMeal && allowances.meals <= 0) disabled = true;
+  let disabled = !selectedItemName;
+  if(selectedItemDef) {
+    const isDrink = selectedItemDef.type === 'Drink';
+    const isMeal = selectedItemDef.type === 'Meal';
+    if(isDrink && allowances.drinks <= 0) disabled = true;
+    if(isMeal && allowances.meals <= 0) disabled = true;
+  }
   if (isPending) disabled = true;
-
 
   return (
     <Form {...form}>
@@ -73,16 +74,16 @@ export function LogItemForm({ user, allowances }: { user: User; allowances: { dr
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {ALL_ITEMS.map((item) => {
-                    const isDrink = DRINK_ITEMS.includes(item as any);
-                    const isMeal = MEAL_ITEMS.includes(item as any);
+                  {items.map((item) => {
+                    const isDrink = item.type === 'Drink';
+                    const isMeal = item.type === 'Meal';
                     let itemDisabled = false;
                     if (isDrink && allowances.drinks <= 0) itemDisabled = true;
                     if (isMeal && allowances.meals <= 0) itemDisabled = true;
 
                     return (
-                        <SelectItem key={item} value={item} disabled={itemDisabled}>
-                          {item}
+                        <SelectItem key={item.id} value={item.name} disabled={itemDisabled}>
+                          {item.name}
                         </SelectItem>
                     )
                   })}

@@ -18,7 +18,6 @@ export const addEmployee = serverService.addEmployee;
 export const getLeaveRequestsForUser = serverService.getLeaveRequestsForUser;
 export const getAllLeaveRequests = serverService.getAllLeaveRequests;
 export const getMonthlyLeaves = serverService.getMonthlyLeaves;
-export const getAllUsersAllowances = serverService.getAllUsersAllowances;
 
 function snapshotToDocs<T>(snapshot: any): T[] {
     if (!snapshot.docs) return [];

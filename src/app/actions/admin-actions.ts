@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { User, WeekDay } from '@/lib/constants';
+import type { User, WeekDay, ItemType } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
@@ -122,7 +122,7 @@ async function deleteCollection(collectionPath: string) {
 
 export async function resetDataAction() {
     try {
-        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests'];
+        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems'];
         for (const collectionPath of collectionsToDelete) {
             await deleteCollection(collectionPath);
         }
@@ -136,6 +136,45 @@ export async function resetDataAction() {
         console.error('Data reset failed:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return { success: false, message: `Failed to reset data: ${errorMessage}` };
+    }
+}
+
+export async function addItemAction(name: string, type: ItemType) {
+    try {
+        await addDoc(collection(db, 'consumableItems'), { name, type });
+        revalidatePath('/admin');
+        revalidatePath('/dashboard');
+        return { success: true, message: 'Item added successfully!' };
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to add item: ${errorMessage}` };
+    }
+}
+
+export async function updateItemAction(id: string, name: string, type: ItemType) {
+    try {
+        await updateDoc(doc(db, 'consumableItems', id), { name, type });
+        revalidatePath('/admin');
+        revalidatePath('/dashboard');
+        return { success: true, message: 'Item updated successfully!' };
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to update item: ${errorMessage}` };
+    }
+}
+
+export async function deleteItemAction(id: string) {
+    try {
+        await deleteDoc(doc(db, 'consumableItems', id));
+        revalidatePath('/admin');
+        revalidatePath('/dashboard');
+        return { success: true, message: 'Item removed successfully!' };
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to remove item: ${errorMessage}` };
     }
 }
 

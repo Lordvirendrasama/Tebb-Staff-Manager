@@ -5,15 +5,12 @@ import * as serverService from '../consumption-log-service';
 import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import type { ConsumptionLog, User } from '@/lib/constants';
-
-// This file exports server functions for client-side use.
-// This is the correct way to expose server functions to client components
-// without marking the entire service file as a client module.
+import type { ConsumptionLog, User, ConsumableItemDef } from '@/lib/constants';
 
 export const getLogsForUser = serverService.getLogsForUser;
 export const getRemainingAllowances = serverService.getRemainingAllowances;
 export const getAllUsersAllowances = serverService.getAllUsersAllowances;
+export const getConsumableItems = serverService.getConsumableItems;
 
 function snapshotToDocs<T>(snapshot: any): T[] {
     if (!snapshot.docs) return [];
@@ -80,5 +77,22 @@ export const onUserConsumptionLogsSnapshot = (
             callback(logs);
         },
         onError
+    );
+};
+
+export const onConsumableItemsSnapshot = (
+    callback: (items: ConsumableItemDef[]) => void,
+    onError: (error: Error) => void
+) => {
+    const q = query(collection(db, 'consumableItems'), orderBy('name'));
+    return onSnapshot(q,
+        (snapshot) => {
+            const items = snapshotToDocs<ConsumableItemDef>(snapshot);
+            callback(items);
+        },
+        (error) => {
+            console.error("Error listening to consumable items collection:", error);
+            onError(error);
+        }
     );
 };

@@ -3,16 +3,22 @@
 
 import type { User, ConsumableItem } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
-import { getRemainingAllowances } from '@/services/consumption-log-service';
-import { MEAL_ITEMS, DRINK_ITEMS } from '@/lib/constants';
+import { getRemainingAllowances, getConsumableItems } from '@/services/consumption-log-service';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 
 export async function logItemAction(user: User, itemName: ConsumableItem) {
     try {
         const allowances = await getRemainingAllowances(user);
-        const isMeal = MEAL_ITEMS.includes(itemName as any);
-        const isDrink = DRINK_ITEMS.includes(itemName as any);
+        const allItems = await getConsumableItems();
+        const itemDef = allItems.find(i => i.name === itemName);
+
+        if (!itemDef) {
+            return { success: false, message: 'Item not found.' };
+        }
+
+        const isMeal = itemDef.type === 'Meal';
+        const isDrink = itemDef.type === 'Drink';
 
         if ((isMeal && allowances.meals <= 0) || (isDrink && allowances.drinks <= 0)) {
             return { success: false, message: 'No allowance left for this item.' };

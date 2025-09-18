@@ -74,3 +74,13 @@ export const DEFAULT_EMPLOYEES = [
   { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8 },
   { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6 },
 ];
+
+export const ITEM_TYPES = ['Drink', 'Meal'] as const;
+export type ItemType = (typeof ITEM_TYPES)[number];
+
+export interface ConsumableItemDef {
+  id: string;
+  name: string;
+  type: ItemType;
+}
+
