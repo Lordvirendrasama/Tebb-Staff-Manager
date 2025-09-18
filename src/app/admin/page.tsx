@@ -7,12 +7,11 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Info, Database, Trash2 } from 'lucide-react';
+import { Info, Trash2 } from 'lucide-react';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
-import { SeedDatabaseButton } from '@/components/seed-database-button';
 import { getAllUsersAllowances, getMonthlyOvertime, getEmployees, getAllLeaveRequests, getMonthlyLeaves } from '@/services/client/attendance-service';
 import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -167,15 +166,6 @@ export default function AdminPage() {
                       All application data is stored in a secure, cloud-based Firestore database.
                     </AlertDescription>
                   </Alert>
-                   <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2"><Database/> Seed Database</CardTitle>
-                        <CardDescription>Populate the database with default employee data if it's empty.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <SeedDatabaseButton />
-                    </CardContent>
-                  </Card>
                   <Card>
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">Export Data</CardTitle>

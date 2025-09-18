@@ -5,7 +5,6 @@ import type { User, WeekDay } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { DEFAULT_EMPLOYEES } from '@/lib/constants';
 
 // This function must be in a server-only file.
 async function getEmployeeOfTheWeek(): Promise<User | null> {
@@ -106,41 +105,6 @@ export async function deleteEmployeeAction(id: string) {
         console.error(error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
         return { success: false, message: `Failed to remove employee: ${errorMessage}` };
-    }
-}
-
-export async function seedDatabaseAction() {
-    try {
-        console.log('Seeding database...');
-        const employeesSnapshot = await getDocs(collection(db, 'employees'));
-        
-        if (employeesSnapshot.empty) {
-            console.log('No employees found. Seeding default employees...');
-            const batch = writeBatch(db);
-            for (const emp of DEFAULT_EMPLOYEES) {
-                const newEmployeeRef = doc(collection(db, 'employees'));
-                batch.set(newEmployeeRef, emp);
-            }
-            await batch.commit();
-            console.log('Default employees seeded.');
-
-            await setEmployeeOfTheWeek(DEFAULT_EMPLOYEES[0].name);
-            console.log('Default employee of the week set.');
-        } else {
-            console.log('Employees already exist. Skipping seeding.');
-             revalidatePath('/admin');
-             revalidatePath('/');
-            return { success: true, message: 'Database already contains employee data. Seeding skipped.' };
-        }
-        console.log('Database seeding process complete.');
-        
-        revalidatePath('/admin');
-        revalidatePath('/');
-        return { success: true, message: 'Database seeded successfully!' };
-    } catch (error) {
-        console.error('Seeding failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        return { success: false, message: `Failed to seed database: ${errorMessage}` };
     }
 }
 
