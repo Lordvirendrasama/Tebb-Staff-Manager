@@ -104,7 +104,7 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
+      <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h2>
       
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-8">

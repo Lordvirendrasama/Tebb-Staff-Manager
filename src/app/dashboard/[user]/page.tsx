@@ -82,7 +82,7 @@ export default function UserDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <Skeleton className="h-10 w-64" />
         </div>
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           <div className="md:col-span-1 space-y-8">
             <Skeleton className="h-48 w-full" />
             <Skeleton className="h-48 w-full" />
@@ -105,11 +105,11 @@ export default function UserDashboard() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-3xl font-bold tracking-tight">Welcome, {user}!</h2>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome, {user}!</h2>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-1 space-y-8">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-1 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Attendance</CardTitle>
@@ -161,7 +161,7 @@ export default function UserDashboard() {
           </Card>
         </div>
         
-        <div className="md:col-span-1 space-y-8">
+        <div className="lg:col-span-1 space-y-8">
              <Card>
                 <CardHeader>
                     <CardTitle>Log an Item</CardTitle>
@@ -182,7 +182,7 @@ export default function UserDashboard() {
             </Card>
         </div>
 
-        <div className="md:col-span-1">
+        <div className="lg:col-span-1">
            <LeaveTracker user={validUser} history={leaveHistory} />
         </div>
       </div>
