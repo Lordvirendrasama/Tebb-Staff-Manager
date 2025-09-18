@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getAttendanceStatus, getEmployees } from '@/services/client/attendance-service';
-import { getEmployeeOfTheWeekAction } from '@/services/awards-service';
+import { getEmployeeOfTheWeekAction } from '@/services/client/awards-service';
 import type { Employee, User, AttendanceStatus } from '@/lib/constants';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,25 +65,23 @@ export default function Home() {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        const fetchedEmployees = await getEmployees();
+        const [fetchedEmployees, eowResult] = await Promise.all([
+            getEmployees(),
+            getEmployeeOfTheWeekAction()
+        ]);
+        
         setEmployees(fetchedEmployees);
+        setEmployeeOfTheWeek(eowResult);
 
         if (fetchedEmployees.length > 0) {
             const statusPromises = fetchedEmployees.map(emp => getAttendanceStatus(emp.name));
-            const eowPromise = getEmployeeOfTheWeekAction();
-
-            const [statusesResults, eowResult] = await Promise.all([
-                Promise.all(statusPromises),
-                eowPromise
-            ]);
+            const statusesResults = await Promise.all(statusPromises);
 
             const newStatuses: Record<string, any> = {};
             fetchedEmployees.forEach((emp, index) => {
                 newStatuses[emp.name] = statusesResults[index];
             });
-
             setStatuses(newStatuses);
-            setEmployeeOfTheWeek(eowResult);
         }
       } catch (error) {
           console.error("Failed to fetch initial data", error);

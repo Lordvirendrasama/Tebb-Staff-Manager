@@ -6,8 +6,7 @@ import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type Us
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Info, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
@@ -20,7 +19,7 @@ import { ResetDataButton } from '@/components/reset-data-button';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
-  const [employeeOfTheWeek, setEmployeeOfTheWeek] = useState<User | null>(null);
+  const [employeeOfTheWeek, setEmployeeOfTheWeek]_ = useState<User | null>(null);
   const [overtimeData, setOvertimeData] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -28,52 +27,40 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStaticData = async () => {
-      try {
-        const [allowance, overtime, monthlyL] = await Promise.all([
-          getAllUsersAllowances(),
-          getMonthlyOvertime(),
-          getMonthlyLeaves(),
-        ]);
-        setAllowanceData(allowance);
-        setOvertimeData(overtime);
-        setMonthlyLeaves(monthlyL);
-      } catch (error) {
-        console.error("Failed to fetch admin data:", error);
-      }
+    let unsubEmployees: () => void;
+    let unsubLeaves: () => void;
+    let unsubEow: () => void;
+
+    const fetchAndSubscribe = async () => {
+        setLoading(true);
+        try {
+            const [allowance, overtime, monthlyL] = await Promise.all([
+                getAllUsersAllowances(),
+                getMonthlyOvertime(),
+                getMonthlyLeaves(),
+            ]);
+
+            setAllowanceData(allowance);
+            setOvertimeData(overtime);
+            setMonthlyLeaves(monthlyL);
+
+            unsubEmployees = onEmployeesSnapshot(setEmployees, (err) => console.error(err));
+            unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
+            unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek_, (err) => console.error(err));
+
+        } catch (error) {
+            console.error("Failed to fetch initial admin data or subscribe:", error);
+        } finally {
+            setLoading(false);
+        }
     };
-
-    fetchStaticData();
-
-    const unsubscribeEmployees = onEmployeesSnapshot(setEmployees, (error) => {
-      console.error("Failed to listen for employee updates:", error);
-      setLoading(false);
-    });
     
-    const unsubscribeLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (error) => {
-      console.error("Failed to listen for leave request updates:", error);
-      setLoading(false);
-    });
-
-    const unsubscribeEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (error) => {
-      console.error("Failed to listen for EOW updates:", error);
-      setLoading(false);
-    });
-
-    Promise.all([
-        new Promise(resolve => onEmployeesSnapshot(emps => { setEmployees(emps); resolve(true); })),
-        new Promise(resolve => onLeaveRequestsSnapshot(reqs => { setLeaveRequests(reqs); resolve(true); })),
-        new Promise(resolve => onEmployeeOfTheWeekSnapshot(eow => { setEmployeeOfTheWeek(eow); resolve(true); })),
-        fetchStaticData()
-    ]).then(() => {
-        setLoading(false);
-    });
-
+    fetchAndSubscribe();
 
     return () => {
-      unsubscribeEmployees();
-      unsubscribeLeaves();
-      unsubscribeEow();
+      unsubEmployees?.();
+      unsubLeaves?.();
+      unsubEow?.();
     };
   }, []);
 

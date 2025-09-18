@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Ban, GlassWater, Utensils, Loader2 } from 'lucide-react';
+import { Ban, GlassWater, Utensils } from 'lucide-react';
 import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { getRemainingAllowances, getLogsForUser } from '@/services/client/consumption-log-service';
@@ -32,14 +32,17 @@ export default function UserDashboard() {
   useEffect(() => {
     const checkUserAndFetchData = async () => {
       setLoading(true);
+      
       const fetchedEmployees = await getEmployees();
-      setEmployees(fetchedEmployees);
       const employeeNames = fetchedEmployees.map(e => e.name);
 
       if (!employeeNames.includes(user as User)) {
         setIsValidUser(false);
+        setLoading(false);
         return;
       }
+      
+      setEmployees(fetchedEmployees);
       setIsValidUser(true);
 
       try {
