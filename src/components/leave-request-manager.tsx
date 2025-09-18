@@ -154,7 +154,7 @@ export function LeaveRequestManager({ requests }: { requests: LeaveRequest[] }) 
       </CardHeader>
       <CardContent>
          <Tabs defaultValue="pending">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList>
                 <TabsTrigger value="pending">Pending</TabsTrigger>
                 <TabsTrigger value="approved">Approved</TabsTrigger>
                 <TabsTrigger value="denied">Denied</TabsTrigger>
