@@ -1,7 +1,7 @@
 
 'use client';
 
-import { collection, getDocs, orderBy } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { saveAs } from 'file-saver';
 import { db } from '@/lib/firebase-client';
 import { docsWithDates } from './attendance-service';
@@ -58,5 +58,5 @@ export async function exportAllData() {
     saveAs(new Blob([employeesCSV], { type: 'text/csv;charset=utf-8' }), 'employees.csv');
     saveAs(new Blob([consumptionCSV], { type: 'text/csv;charset=utf-8' }), 'consumption_logs.csv');
     saveAs(new Blob([attendanceCSV], { type: 'text/csv;charset=utf-8' }), 'attendance_logs.csv');
-    saveAs(new Blob([leaveCSV], { type: 'text/csv;charset=utf-8' }), 'leave_requests.csv');
+    saveAs(new Blob([leaveCSV], { type: 'text/csv;charset-utf-8' }), 'leave_requests.csv');
 }
