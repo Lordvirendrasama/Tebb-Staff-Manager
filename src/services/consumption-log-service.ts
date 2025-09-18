@@ -42,13 +42,13 @@ export async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
         collection(db, 'consumptionLogs'),
         where('employeeName', '==', user),
         where('dateTimeLogged', '>=', start),
-        where('dateTimeLogged', '<=', end)
+        where('dateTimeLogged', '<=', end),
+        orderBy('dateTimeLogged', 'asc')
     );
 
     const querySnapshot = await getDocs(q);
     const userLogs = await docsWithDates<ConsumptionLog>(querySnapshot);
     
-    // Sort logs by date in descending order (most recent first) within the application code
     return userLogs.sort((a, b) => b.dateTimeLogged.getTime() - a.dateTimeLogged.getTime());
 }
 
