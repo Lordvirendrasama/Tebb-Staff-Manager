@@ -179,16 +179,17 @@ export function LeaveTracker({ user, history }: { user: User; history: LeaveRequ
                     <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead>Dates</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Details</TableHead>
                         <TableHead className="text-right">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {history.map(request => (
                         <TableRow key={request.id}>
-                            <TableCell className="whitespace-nowrap">{isClient ? formatDateRange(request.startDate, request.endDate) : '...'}</TableCell>
-                            <TableCell className="whitespace-nowrap">{request.leaveType}</TableCell>
+                            <TableCell className="font-medium">
+                              <div className="truncate">{isClient ? formatDateRange(request.startDate, request.endDate) : '...'}</div>
+                              <div className="text-xs text-muted-foreground truncate">{request.leaveType}</div>
+                            </TableCell>
                             <TableCell className="text-right">
                                <Badge variant={getStatusVariant(request.status)}>{request.status}</Badge>
                             </TableCell>

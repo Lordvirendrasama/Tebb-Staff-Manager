@@ -110,15 +110,15 @@ export default function UserDashboard() {
           <Skeleton className="h-10 w-64" />
         </div>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          <div className="md:col-span-1 space-y-8">
+          <div className="lg:col-span-1 space-y-8">
             <Skeleton className="h-48 w-full" />
             <Skeleton className="h-48 w-full" />
           </div>
-          <div className="md:col-span-1 space-y-8">
+          <div className="lg:col-span-1 space-y-8">
             <Skeleton className="h-64 w-full" />
             <Skeleton className="h-64 w-full" />
           </div>
-          <div className="md:col-span-1">
+          <div className="lg:col-span-1">
             <Skeleton className="h-96 w-full" />
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function UserDashboard() {
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome, {user}!</h2>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-8">
           <Card>
             <CardHeader>
@@ -202,14 +202,14 @@ export default function UserDashboard() {
                 <CardHeader>
                     <CardTitle>Consumption History</CardTitle>
                     <CardDescription>Your last 6 logged items this month.</CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                     <ConsumptionHistory logs={recentLogs} />
                 </CardContent>
             </Card>
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-8">
            <LeaveTracker user={validUser} history={leaveHistory} />
         </div>
       </div>

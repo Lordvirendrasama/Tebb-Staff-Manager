@@ -68,32 +68,35 @@ export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
   return (
     <ScrollArea className="h-72 w-full">
       <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead className="whitespace-nowrap">Date</TableHead>
-              <TableHead className="text-right">Time</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {logs.map((log, index) => {
-              const Icon = itemIcons[log.itemName] || UtensilsCrossed;
-              return (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5 text-muted-foreground" />
-                      <span className="truncate">{log.itemName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">{isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}</TableCell>
-                  <TableCell className="text-right whitespace-nowrap">{isClient ? formatLocaleTime(log.dateTimeLogged) : '...'}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                <TableHead className="text-right">Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map((log, index) => {
+                const Icon = itemIcons[log.itemName] || UtensilsCrossed;
+                return (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5 text-muted-foreground" />
+                        <span className="truncate">{log.itemName}</span>
+                      </div>
+                      <div className="sm:hidden text-xs text-muted-foreground mt-1">
+                        {isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell whitespace-nowrap">{isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">{isClient ? formatLocaleTime(log.dateTimeLogged) : '...'}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
       </div>
     </ScrollArea>
   );

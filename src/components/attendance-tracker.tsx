@@ -120,12 +120,13 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
                 <h4 className="font-medium text-sm">Recent Activity</h4>
             </div>
             <ScrollArea className="h-48 w-full">
+              <div className="relative w-full overflow-auto">
                 <Table>
                     <TableHeader>
                     <TableRow>
-                        <TableHead className="w-1/3">Date</TableHead>
-                        <TableHead className="w-1/3">In</TableHead>
-                        <TableHead className="w-1/3">Out</TableHead>
+                        <TableHead className="w-[33%]">Date</TableHead>
+                        <TableHead className="w-[33%]">In</TableHead>
+                        <TableHead className="w-[33%] text-right">Out</TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -133,11 +134,12 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
                         <TableRow key={log.id}>
                             <TableCell className="truncate">{isClient ? formatLocaleDate(log.clockIn) : '...'}</TableCell>
                             <TableCell className="truncate">{isClient ? formatLocaleTime(log.clockIn) : '...'}</TableCell>
-                            <TableCell className="truncate">{isClient ? formatLocaleTime(log.clockOut) : '...'}</TableCell>
+                            <TableCell className="truncate text-right">{isClient ? formatLocaleTime(log.clockOut) : '...'}</TableCell>
                         </TableRow>
                     ))}
                     </TableBody>
                 </Table>
+              </div>
             </ScrollArea>
       </div>
     </div>
