@@ -102,14 +102,14 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
                     }
                 </p>
             </div>
-             <div className="grid grid-cols-2 gap-2">
-                <Button onClick={handleClockIn} disabled={isPending || isClockedIn} >
+             <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={handleClockIn} disabled={isPending || isClockedIn} className="w-full">
                     {isPending && isClockedIn === false ? <Loader2 className="animate-spin" /> : <LogIn />}
-                    Clock In
+                    <span className="sm:inline">Clock In</span>
                 </Button>
-                <Button onClick={handleClockOut} disabled={isPending || !isClockedIn} variant="destructive">
+                <Button onClick={handleClockOut} disabled={isPending || !isClockedIn} variant="destructive" className="w-full">
                     {isPending && isClockedIn === true ? <Loader2 className="animate-spin" /> : <LogOut />}
-                    Clock Out
+                    <span className="sm:inline">Clock Out</span>
                 </Button>
             </div>
         </div>
