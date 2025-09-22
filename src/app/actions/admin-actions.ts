@@ -5,6 +5,7 @@ import type { User, WeekDay, ItemType } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
+import { DEFAULT_EMPLOYEES, ALL_ITEMS, ITEM_TYPES } from '@/lib/constants';
 
 // This function must be in a server-only file.
 async function getEmployeeOfTheWeek(): Promise<User | null> {
@@ -120,18 +121,50 @@ async function deleteCollection(collectionPath: string) {
     await batch.commit();
 }
 
+async function seedDefaultData() {
+    const batch = writeBatch(db);
+
+    // Seed employees
+    const employeesCollection = collection(db, 'employees');
+    DEFAULT_EMPLOYEES.forEach(employee => {
+        const docRef = doc(employeesCollection);
+        batch.set(docRef, employee);
+    });
+
+    // Seed consumable items
+    const itemsCollection = collection(db, 'consumableItems');
+    const defaultItems = [
+        { name: 'Coffee', type: 'Drink' },
+        { name: 'Cooler', type: 'Drink' },
+        { name: 'Milkshake', type: 'Drink' },
+        { name: 'Maggie', type: 'Meal' },
+        { name: 'Fries', type: 'Meal' },
+        { name: 'Pasta', type: 'Meal' },
+    ];
+    defaultItems.forEach(item => {
+        const docRef = doc(itemsCollection);
+        batch.set(docRef, item);
+    });
+
+    await batch.commit();
+}
+
+
 export async function resetDataAction() {
     try {
+        // Clear existing data
         const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems'];
         for (const collectionPath of collectionsToDelete) {
             await deleteCollection(collectionPath);
         }
-
         await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: null });
+
+        // Seed new default data
+        await seedDefaultData();
 
         revalidatePath('/');
         revalidatePath('/admin');
-        return { success: true, message: 'All application data has been reset successfully.' };
+        return { success: true, message: 'Application data has been reset and seeded with default values.' };
     } catch (error) {
         console.error('Data reset failed:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
