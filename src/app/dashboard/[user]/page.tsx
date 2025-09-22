@@ -20,7 +20,6 @@ export default function UserDashboard() {
   const user = params.user as string;
   const validUser = user as User;
 
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [allowances, setAllowances] = useState<{ drinks: number, meals: number } | null>(null);
   const [logs, setLogs] = useState<ConsumptionLog[]>([]);
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
@@ -45,7 +44,6 @@ export default function UserDashboard() {
         return;
       }
       
-      setEmployees(fetchedEmployees);
       setIsValidUser(true);
   
       try {
