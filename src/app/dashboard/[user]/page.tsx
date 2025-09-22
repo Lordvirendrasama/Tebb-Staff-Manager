@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,7 +36,6 @@ export default function UserDashboard() {
     const initializeDashboard = async () => {
       setLoading(true);
 
-      // 1. Validate User
       const allEmployees = await getEmployees();
       const userExists = allEmployees.some(employee => employee.name === user);
 
@@ -46,7 +46,6 @@ export default function UserDashboard() {
       }
       setIsValidUser(true);
 
-      // 2. Fetch all initial data in parallel
       try {
         const [
           statusData,
@@ -65,7 +64,6 @@ export default function UserDashboard() {
         setLeaveHistory(leaveData);
         setConsumableItems(itemsData);
 
-        // 3. Set up Firestore listener for real-time consumption logs
         unsubscribeLogs = onUserConsumptionLogsSnapshot(
           user,
           (updatedLogs) => {
@@ -91,9 +89,10 @@ export default function UserDashboard() {
       }
     };
 
-    initializeDashboard();
+    if (user) {
+      initializeDashboard();
+    }
 
-    // Cleanup listener on component unmount
     return () => {
       unsubscribeLogs?.();
     };
@@ -202,7 +201,7 @@ export default function UserDashboard() {
                 <CardHeader>
                     <CardTitle>Consumption History</CardTitle>
                     <CardDescription>Your last 6 logged items this month.</CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                     <ConsumptionHistory logs={recentLogs} />
                 </CardContent>
