@@ -66,13 +66,13 @@ export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
   }
 
   return (
-    <ScrollArea className="h-72">
+    <ScrollArea className="h-72 w-full">
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead className="whitespace-nowrap">Date</TableHead>
               <TableHead className="text-right">Time</TableHead>
             </TableRow>
           </TableHeader>
@@ -84,11 +84,11 @@ export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Icon className="h-5 w-5 text-muted-foreground" />
-                      <span>{log.itemName}</span>
+                      <span className="truncate">{log.itemName}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}</TableCell>
-                  <TableCell className="text-right">{isClient ? formatLocaleTime(log.dateTimeLogged) : '...'}</TableCell>
+                  <TableCell className="whitespace-nowrap">{isClient ? formatLocaleDate(log.dateTimeLogged) : '...'}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap">{isClient ? formatLocaleTime(log.dateTimeLogged) : '...'}</TableCell>
                 </TableRow>
               );
             })}

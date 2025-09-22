@@ -175,7 +175,7 @@ export function LeaveTracker({ user, history }: { user: User; history: LeaveRequ
         </CardHeader>
         <CardContent>
              {history.length > 0 ? (
-                <ScrollArea className="h-72">
+                <ScrollArea className="h-72 w-full">
                     <Table>
                     <TableHeader>
                         <TableRow>
@@ -187,8 +187,8 @@ export function LeaveTracker({ user, history }: { user: User; history: LeaveRequ
                     <TableBody>
                         {history.map(request => (
                         <TableRow key={request.id}>
-                            <TableCell>{isClient ? formatDateRange(request.startDate, request.endDate) : '...'}</TableCell>
-                            <TableCell>{request.leaveType}</TableCell>
+                            <TableCell className="whitespace-nowrap">{isClient ? formatDateRange(request.startDate, request.endDate) : '...'}</TableCell>
+                            <TableCell className="whitespace-nowrap">{request.leaveType}</TableCell>
                             <TableCell className="text-right">
                                <Badge variant={getStatusVariant(request.status)}>{request.status}</Badge>
                             </TableCell>

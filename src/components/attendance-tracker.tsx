@@ -119,21 +119,21 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
                 <History className="h-5 w-5 text-muted-foreground"/>
                 <h4 className="font-medium text-sm">Recent Activity</h4>
             </div>
-            <ScrollArea className="h-48">
+            <ScrollArea className="h-48 w-full">
                 <Table>
                     <TableHeader>
                     <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>In</TableHead>
-                        <TableHead>Out</TableHead>
+                        <TableHead className="w-1/3">Date</TableHead>
+                        <TableHead className="w-1/3">In</TableHead>
+                        <TableHead className="w-1/3">Out</TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
                     {history.slice(0, 5).map((log) => (
                         <TableRow key={log.id}>
-                            <TableCell>{isClient ? formatLocaleDate(log.clockIn) : '...'}</TableCell>
-                            <TableCell>{isClient ? formatLocaleTime(log.clockIn) : '...'}</TableCell>
-                            <TableCell>{isClient ? formatLocaleTime(log.clockOut) : '...'}</TableCell>
+                            <TableCell className="truncate">{isClient ? formatLocaleDate(log.clockIn) : '...'}</TableCell>
+                            <TableCell className="truncate">{isClient ? formatLocaleTime(log.clockIn) : '...'}</TableCell>
+                            <TableCell className="truncate">{isClient ? formatLocaleTime(log.clockOut) : '...'}</TableCell>
                         </TableRow>
                     ))}
                     </TableBody>
