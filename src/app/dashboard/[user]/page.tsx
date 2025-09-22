@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, GlassWater, Utensils } from 'lucide-react';
-import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Employee, ConsumableItemDef } from '@/lib/constants';
+import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, ConsumableItemDef } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { onUserConsumptionLogsSnapshot, getConsumableItems } from '@/services/client/consumption-log-service';
 import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, getEmployees } from '@/services/client/attendance-service';
@@ -17,59 +18,61 @@ import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants
 
 export default function UserDashboard() {
   const params = useParams();
-  const user = params.user as string;
-  const validUser = user as User;
+  const user = params.user as User;
 
+  const [loading, setLoading] = useState(true);
+  const [isValidUser, setIsValidUser] = useState<boolean | null>(null);
+  
   const [allowances, setAllowances] = useState<{ drinks: number, meals: number } | null>(null);
   const [logs, setLogs] = useState<ConsumptionLog[]>([]);
+  const [consumableItems, setConsumableItems] = useState<ConsumableItemDef[]>([]);
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceLog[]>([]);
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
-  const [consumableItems, setConsumableItems] = useState<ConsumableItemDef[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isValidUser, setIsValidUser] = useState<boolean | null>(null);
 
   useEffect(() => {
-    let unsubLogs: (() => void) | undefined;
-  
-    const checkUserAndFetchData = async () => {
+    let unsubscribeLogs: (() => void) | undefined;
+
+    const initializeDashboard = async () => {
       setLoading(true);
-      
-      const fetchedEmployees = await getEmployees();
-      const employeeNames = fetchedEmployees.map(e => e.name);
-  
-      if (!employeeNames.includes(user as User)) {
+
+      // 1. Validate User
+      const allEmployees = await getEmployees();
+      const userExists = allEmployees.some(employee => employee.name === user);
+
+      if (!userExists) {
         setIsValidUser(false);
         setLoading(false);
         return;
       }
-      
       setIsValidUser(true);
-  
+
+      // 2. Fetch all initial data in parallel
       try {
         const [
-          attendanceStatusData,
-          attendanceHistoryData,
-          leaveHistoryData,
-          items
+          statusData,
+          historyData,
+          leaveData,
+          itemsData,
         ] = await Promise.all([
-          getAttendanceStatus(validUser),
-          getAttendanceHistory(validUser),
-          getLeaveRequestsForUser(validUser),
+          getAttendanceStatus(user),
+          getAttendanceHistory(user),
+          getLeaveRequestsForUser(user),
           getConsumableItems(),
         ]);
-  
-        setAttendanceStatus(attendanceStatusData);
-        setAttendanceHistory(attendanceHistoryData);
-        setLeaveHistory(leaveHistoryData);
-        setConsumableItems(items);
-  
-        unsubLogs = onUserConsumptionLogsSnapshot(
-          validUser,
+
+        setAttendanceStatus(statusData);
+        setAttendanceHistory(historyData);
+        setLeaveHistory(leaveData);
+        setConsumableItems(itemsData);
+
+        // 3. Set up Firestore listener for real-time consumption logs
+        unsubscribeLogs = onUserConsumptionLogsSnapshot(
+          user,
           (updatedLogs) => {
             setLogs(updatedLogs);
-            const drinkItems = items.filter(i => i.type === 'Drink').map(i => i.name);
-            const mealItems = items.filter(i => i.type === 'Meal').map(i => i.name);
+            const drinkItems = itemsData.filter(i => i.type === 'Drink').map(i => i.name);
+            const mealItems = itemsData.filter(i => i.type === 'Meal').map(i => i.name);
             const drinksConsumed = updatedLogs.filter(log => drinkItems.includes(log.itemName)).length;
             const mealsConsumed = updatedLogs.filter(log => mealItems.includes(log.itemName)).length;
             setAllowances({
@@ -81,26 +84,27 @@ export default function UserDashboard() {
             console.error("Failed to listen to consumption logs:", error);
           }
         );
-  
+
       } catch (error) {
-        console.error("Failed to fetch user data:", error);
+        console.error("Failed to fetch initial dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
-  
-    checkUserAndFetchData();
-  
+
+    initializeDashboard();
+
+    // Cleanup listener on component unmount
     return () => {
-      unsubLogs?.();
+      unsubscribeLogs?.();
     };
-  }, [user, validUser]);
+  }, [user]);
 
   if (isValidUser === false) {
     redirect('/');
   }
 
-  if (loading || isValidUser === null || !allowances || !attendanceStatus) {
+  if (loading || !allowances || !attendanceStatus) {
     return (
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -108,15 +112,15 @@ export default function UserDashboard() {
         </div>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           <div className="lg:col-span-1 space-y-8">
-            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-64 w-full" />
             <Skeleton className="h-48 w-full" />
           </div>
           <div className="lg:col-span-1 space-y-8">
-            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-56 w-full" />
             <Skeleton className="h-64 w-full" />
           </div>
           <div className="lg:col-span-1">
-            <Skeleton className="h-96 w-full" />
+            <Skeleton className="h-[40rem] w-full" />
           </div>
         </div>
       </div>
@@ -141,7 +145,7 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <AttendanceTracker 
-                user={validUser} 
+                user={user} 
                 status={attendanceStatus} 
                 history={attendanceHistory}
                 setStatus={setAttendanceStatus}
@@ -186,14 +190,14 @@ export default function UserDashboard() {
         </div>
         
         <div className="lg:col-span-1 space-y-8">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Log an Item</CardTitle>
-                    <CardDescription>Select an item you've consumed.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <LogItemForm user={validUser} allowances={allowances} items={consumableItems} />
-                </CardContent>
+            <Card>
+              <CardHeader>
+                  <CardTitle>Log an Item</CardTitle>
+                  <CardDescription>Select an item you've consumed.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <LogItemForm user={user} allowances={allowances} items={consumableItems} />
+              </CardContent>
             </Card>
             <Card>
                 <CardHeader>
@@ -207,7 +211,7 @@ export default function UserDashboard() {
         </div>
 
         <div className="lg:col-span-1 space-y-8">
-           <LeaveTracker user={validUser} history={leaveHistory} />
+           <LeaveTracker user={user} history={leaveHistory} />
         </div>
       </div>
     </div>
