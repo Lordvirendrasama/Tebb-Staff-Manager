@@ -25,6 +25,9 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
   const [name, setName] = useState('');
   const [weeklyOffDay, setWeeklyOffDay] = useState<WeekDay | ''>('');
   const [standardWorkHours, setStandardWorkHours] = useState<number | ''>('');
+  const [shiftStartTime, setShiftStartTime] = useState<string>('');
+  const [shiftEndTime, setShiftEndTime] = useState<string>('');
+
 
   const handleAddNew = () => {
     setIsAdding(true);
@@ -32,6 +35,8 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setName('');
     setWeeklyOffDay('');
     setStandardWorkHours('');
+    setShiftStartTime('');
+    setShiftEndTime('');
   };
 
   const handleEdit = (employee: Employee) => {
@@ -40,6 +45,8 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setName(employee.name);
     setWeeklyOffDay(employee.weeklyOffDay);
     setStandardWorkHours(employee.standardWorkHours);
+    setShiftStartTime(employee.shiftStartTime || '');
+    setShiftEndTime(employee.shiftEndTime || '');
   };
 
   const handleCancel = () => {
@@ -48,6 +55,8 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setName('');
     setWeeklyOffDay('');
     setStandardWorkHours('');
+    setShiftStartTime('');
+    setShiftEndTime('');
   };
 
   const handleSave = () => {
@@ -58,8 +67,8 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
 
     startTransition(async () => {
       const action = editingEmployee ? 
-        updateEmployeeAction(editingEmployee.id, name, weeklyOffDay as WeekDay, standardWorkHours) : 
-        addEmployeeAction(name, weeklyOffDay as WeekDay, standardWorkHours);
+        updateEmployeeAction(editingEmployee.id, name, weeklyOffDay as WeekDay, standardWorkHours, shiftStartTime, shiftEndTime) : 
+        addEmployeeAction(name, weeklyOffDay as WeekDay, standardWorkHours, shiftStartTime, shiftEndTime);
       const result = await action;
 
       if (result.success) {
@@ -100,6 +109,11 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
                         <Clock className="h-3 w-3" />
                         <span>{employee.standardWorkHours} hrs/day</span>
                     </div>
+                    {(employee.shiftStartTime && employee.shiftEndTime) && (
+                         <div className="flex items-center gap-1">
+                            <span>{employee.shiftStartTime} - {employee.shiftEndTime}</span>
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="flex flex-shrink-0">
@@ -173,6 +187,28 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
                   onChange={(e) => setStandardWorkHours(e.target.value === '' ? '' : Number(e.target.value))}
                   disabled={isPending}
                 />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <Label htmlFor="shift-start">Shift Start</Label>
+                    <Input 
+                      id="shift-start"
+                      type="time"
+                      value={shiftStartTime}
+                      onChange={(e) => setShiftStartTime(e.target.value)}
+                      disabled={isPending}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="shift-end">Shift End</Label>
+                    <Input 
+                      id="shift-end"
+                      type="time"
+                      value={shiftEndTime}
+                      onChange={(e) => setShiftEndTime(e.target.value)}
+                      disabled={isPending}
+                    />
+                </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={handleCancel} variant="outline" className="w-full" disabled={isPending}>Cancel</Button>

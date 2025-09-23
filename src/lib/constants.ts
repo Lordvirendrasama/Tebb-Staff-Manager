@@ -51,6 +51,8 @@ export interface Employee {
   name: string;
   weeklyOffDay: WeekDay;
   standardWorkHours: number;
+  shiftStartTime?: string;
+  shiftEndTime?: string;
 }
 
 export const LEAVE_TYPES = ['Paid (Scheduled)', 'Paid (Made Up)', 'Unpaid'] as const;
@@ -70,9 +72,9 @@ export interface LeaveRequest {
 }
 
 export const DEFAULT_EMPLOYEES = [
-  { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8 },
-  { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8 },
-  { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6 },
+  { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8, shiftStartTime: '09:00', shiftEndTime: '17:00' },
+  { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8, shiftStartTime: '09:00', shiftEndTime: '17:00' },
+  { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6, shiftStartTime: '12:00', shiftEndTime: '18:00' },
 ];
 
 export const ITEM_TYPES = ['Drink', 'Meal'] as const;
@@ -83,4 +85,3 @@ export interface ConsumableItemDef {
   name: string;
   type: ItemType;
 }
-

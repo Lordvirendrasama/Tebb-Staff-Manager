@@ -41,11 +41,11 @@ export async function setEmployeeOfTheWeekAction(employeeName: User | null) {
     }
 }
 
-export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
+export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, standardWorkHours: number, shiftStartTime?: string, shiftEndTime?: string) {
     try {
         const batch = writeBatch(db);
         const newEmployeeRef = doc(collection(db, 'employees'));
-        batch.set(newEmployeeRef, { name, weeklyOffDay, standardWorkHours });
+        batch.set(newEmployeeRef, { name, weeklyOffDay, standardWorkHours, shiftStartTime, shiftEndTime });
         await batch.commit();
 
         revalidatePath('/admin');
@@ -58,9 +58,9 @@ export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, sta
     }
 }
 
-export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: WeekDay, standardWorkHours: number) {
+export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: WeekDay, standardWorkHours: number, shiftStartTime?: string, shiftEndTime?: string) {
     try {
-        await updateDoc(doc(db, 'employees', id), { name, weeklyOffDay, standardWorkHours });
+        await updateDoc(doc(db, 'employees', id), { name, weeklyOffDay, standardWorkHours, shiftStartTime, shiftEndTime });
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };
