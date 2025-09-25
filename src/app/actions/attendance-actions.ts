@@ -147,7 +147,7 @@ export async function updateAttendanceForDayAction(employeeId: string, day: Date
         if (worked && !existingLog) {
             // Add a new log for the day
             if (!employee.shiftStartTime || !employee.shiftEndTime) {
-                return { success: false, message: 'Employee shift times are not set.' };
+                return { success: false, message: "Employee shift times are not set. Please configure them in the Staff Manager." };
             }
             const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
             const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
