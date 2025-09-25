@@ -6,9 +6,9 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { generatePayrollForEmployee } from '@/services/payroll-service';
 
-export async function generatePayrollAction(employeeId: string, employeeName: string, forDate?: Date) {
+export async function generatePayrollAction(employeeId: string, employeeName: string, dateRange: { from: Date, to: Date }) {
     try {
-        await generatePayrollForEmployee(employeeId, employeeName, forDate);
+        await generatePayrollForEmployee(employeeId, employeeName, dateRange);
         revalidatePath('/admin');
         return { success: true, message: `Payroll generated successfully for ${employeeName}.` };
     } catch (error) {

@@ -28,13 +28,14 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 
 export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], employees: Employee[] }) {
     const [isPending, startTransition] = useTransition();
     const [isDeleting, startDeleteTransition] = useTransition();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-    const [payrollForDate, setPayrollForDate] = useState<Date | undefined>(new Date());
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const { toast } = useToast();
 
     const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
@@ -46,13 +47,18 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
             return;
         }
 
+        if (!dateRange || !dateRange.from || !dateRange.to) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a date range.' });
+            return;
+        }
+
         if (!isPayrollConfigured || !selectedEmployee) {
              toast({ variant: 'destructive', title: 'Error', description: 'Selected employee does not have complete payroll configuration.' });
             return;
         }
 
         startTransition(async () => {
-            const result = await generatePayrollAction(selectedEmployeeId, selectedEmployee.name, payrollForDate);
+            const result = await generatePayrollAction(selectedEmployeeId, selectedEmployee.name, {from: dateRange.from!, to: dateRange.to!});
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
             } else {
@@ -111,27 +117,40 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                             </SelectContent>
                         </Select>
                         <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn('justify-start text-left font-normal', !payrollForDate && 'text-muted-foreground')}
-                              disabled={isPending}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {payrollForDate ? format(payrollForDate, 'PPP') : <span>Pick a date</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={payrollForDate}
-                              onSelect={setPayrollForDate}
-                              initialFocus
-                              captionLayout="dropdown-buttons" 
-                              fromYear={2020} 
-                              toYear={new Date().getFullYear() + 1}
-                            />
-                          </PopoverContent>
+                            <PopoverTrigger asChild>
+                                <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !dateRange && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange?.from ? (
+                                    dateRange.to ? (
+                                    <>
+                                        {format(dateRange.from, "LLL dd, y")} -{" "}
+                                        {format(dateRange.to, "LLL dd, y")}
+                                    </>
+                                    ) : (
+                                    format(dateRange.from, "LLL dd, y")
+                                    )
+                                ) : (
+                                    <span>Pick a date range</span>
+                                )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={dateRange?.from}
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                                numberOfMonths={2}
+                                />
+                            </PopoverContent>
                         </Popover>
                         <Button onClick={handleGeneratePayroll} disabled={isPending || !selectedEmployeeId || !isPayrollConfigured} className="w-full lg:w-auto">
                             {isPending ? <Loader2 className="animate-spin" /> : <FileText />}
