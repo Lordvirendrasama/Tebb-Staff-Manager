@@ -6,60 +6,57 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Calendar } from './ui/calendar';
 import { Button } from './ui/button';
-import type { Employee, AttendanceLog } from '@/lib/constants';
+import type { Employee } from '@/lib/constants';
 import { getAttendanceForMonth } from '@/services/client/attendance-service';
-import { updateAttendanceForDayAction } from '@/app/actions/attendance-actions';
+import { updateAttendanceForRangeAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
 import { addMonths, format, startOfMonth } from 'date-fns';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { Skeleton } from './ui/skeleton';
+import { ChevronLeft, ChevronRight, Loader2, X, Check } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
 
 export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
     const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
     const [workedDays, setWorkedDays] = useState<Date[]>([]);
+    const [range, setRange] = useState<DateRange | undefined>();
+    
     const [loading, setLoading] = useState(false);
     const [isUpdating, startUpdateTransition] = useTransition();
     const { toast } = useToast();
 
+    const employee = employees.find(e => e.id === selectedEmployeeId);
+
     useEffect(() => {
-        if (selectedEmployeeId) {
+        if (selectedEmployeeId && employee) {
             setLoading(true);
-            const employee = employees.find(e => e.id === selectedEmployeeId);
-            if(employee){
-                getAttendanceForMonth(employee.name, currentMonth).then(logs => {
-                    setWorkedDays(logs.map(log => new Date(log.clockIn)));
-                    setLoading(false);
-                });
-            }
-        }
-    }, [selectedEmployeeId, currentMonth, employees]);
-
-    const handleDayClick = (day: Date | undefined) => {
-        if (!day || !selectedEmployeeId) return;
-
-        const isWorked = workedDays.some(d => d.toDateString() === day.toDateString());
-        
-        // Optimistic UI update
-        if (isWorked) {
-            setWorkedDays(prev => prev.filter(d => d.toDateString() !== day.toDateString()));
+            getAttendanceForMonth(employee.name, currentMonth).then(logs => {
+                setWorkedDays(logs.map(log => new Date(log.clockIn)));
+                setLoading(false);
+            });
         } else {
-            setWorkedDays(prev => [...prev, day]);
+            setWorkedDays([]);
         }
-        
+        setRange(undefined);
+    }, [selectedEmployeeId, currentMonth, employee]);
+
+    const handleRangeUpdate = (worked: boolean) => {
+        if (!range?.from || !range.to || !selectedEmployeeId) return;
+
         startUpdateTransition(async () => {
-            const result = await updateAttendanceForDayAction(selectedEmployeeId, day, !isWorked);
+            const result = await updateAttendanceForRangeAction(selectedEmployeeId, range.from!, range.to!, worked);
             
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
+                if (employee) {
+                    setLoading(true);
+                     getAttendanceForMonth(employee.name, currentMonth).then(logs => {
+                        setWorkedDays(logs.map(log => new Date(log.clockIn)));
+                        setLoading(false);
+                    });
+                }
+                setRange(undefined);
             } else {
                 toast({ variant: 'destructive', title: 'Error', description: result.message });
-                // Revert optimistic update on failure
-                if (isWorked) {
-                    setWorkedDays(prev => [...prev, day]);
-                } else {
-                    setWorkedDays(prev => prev.filter(d => d.toDateString() !== day.toDateString()));
-                }
             }
         });
     };
@@ -67,12 +64,23 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     const changeMonth = (offset: number) => {
         setCurrentMonth(prev => addMonths(prev, offset));
     };
+
+    const modifiers = {
+        worked: workedDays,
+    };
+
+    const modifiersStyles = {
+        worked: {
+            backgroundColor: 'hsl(var(--primary))',
+            color: 'hsl(var(--primary-foreground))',
+        },
+    };
     
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Attendance Editor</CardTitle>
-                <CardDescription>Select an employee and click on a day to mark it as worked or not worked.</CardDescription>
+                <CardDescription>Select a date range to mark days as worked or not worked.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -98,7 +106,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                 </div>
 
                 <div className="p-1 border rounded-lg relative">
-                    {(loading) && (
+                    {(loading || isUpdating) && (
                         <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
                             <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                         </div>
@@ -111,13 +119,36 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                         <Calendar
                             month={currentMonth}
                             onMonthChange={setCurrentMonth}
-                            mode="multiple"
-                            selected={workedDays}
-                            onDayClick={handleDayClick}
+                            mode="range"
+                            selected={range}
+                            onSelect={setRange}
+                            modifiers={modifiers}
+                            modifiersStyles={modifiersStyles}
                             className="w-full"
                         />
                      )}
                 </div>
+
+                {range?.from && (
+                    <Card className="bg-muted/50">
+                        <CardContent className="p-4 space-y-3">
+                           <div className="text-sm font-medium">
+                                Update range: {format(range.from, "PPP")} {range.to && ` - ${format(range.to, "PPP")}`}
+                           </div>
+                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <Button variant="outline" size="sm" onClick={() => setRange(undefined)}>
+                                    <X className="mr-2 h-4 w-4" /> Clear
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleRangeUpdate(false)} disabled={!range.to}>
+                                    <X className="mr-2 h-4 w-4" /> Mark as Not Worked
+                                </Button>
+                                <Button size="sm" onClick={() => handleRangeUpdate(true)} disabled={!range.to}>
+                                    <Check className="mr-2 h-4 w-4" /> Mark as Worked
+                                </Button>
+                           </div>
+                        </CardContent>
+                    </Card>
+                )}
             </CardContent>
         </Card>
     );

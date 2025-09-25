@@ -4,9 +4,9 @@
 import type { User, LeaveType, Employee } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
-import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { startOfDay, endOfDay, isWithinInterval, eachDayOfInterval } from 'date-fns';
 
 
 export async function clockInAction(user: User) {
@@ -174,6 +174,65 @@ export async function updateAttendanceForDayAction(employeeId: string, day: Date
         
         // No change needed
         return { success: true, message: 'No change needed.' };
+
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to update attendance: ${errorMessage}` };
+    }
+}
+
+export async function updateAttendanceForRangeAction(employeeId: string, from: Date, to: Date, worked: boolean) {
+    try {
+        const employeeSnap = await getDoc(doc(db, 'employees', employeeId));
+        if (!employeeSnap.exists()) return { success: false, message: 'Employee not found.' };
+        const employee = employeeSnap.data() as Employee;
+        
+        if (worked && (!employee.shiftStartTime || !employee.shiftEndTime)) {
+            return { success: false, message: "Employee shift times are not set. Please configure them in the Staff Manager." };
+        }
+
+        const days = eachDayOfInterval({ start: from, end: to });
+        const batch = writeBatch(db);
+
+        // Fetch existing logs for the entire range to avoid multiple reads inside the loop
+        const q = query(
+            collection(db, 'attendanceLogs'),
+            where('employeeName', '==', employee.name)
+        );
+        const querySnapshot = await getDocs(q);
+        const allLogs = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        for (const day of days) {
+            const dayStart = startOfDay(day);
+            const dayEnd = endOfDay(day);
+            const existingLog = allLogs.find(log => {
+                const clockIn = log.clockIn.toDate();
+                return isWithinInterval(clockIn, { start: dayStart, end: dayEnd });
+            });
+
+            if (worked && !existingLog) {
+                const [startHour, startMinute] = employee.shiftStartTime!.split(':').map(Number);
+                const [endHour, endMinute] = employee.shiftEndTime!.split(':').map(Number);
+                
+                const clockIn = new Date(day);
+                clockIn.setHours(startHour, startMinute, 0, 0);
+                const clockOut = new Date(day);
+                clockOut.setHours(endHour, endMinute, 0, 0);
+
+                const newLogRef = doc(collection(db, 'attendanceLogs'));
+                batch.set(newLogRef, { employeeName: employee.name, clockIn, clockOut });
+
+            } else if (!worked && existingLog) {
+                const logRef = doc(db, 'attendanceLogs', existingLog.id);
+                batch.delete(logRef);
+            }
+        }
+
+        await batch.commit();
+        revalidatePath('/admin');
+        const action = worked ? 'marked as worked' : 'marked as not worked';
+        return { success: true, message: `Selected dates have been ${action}.` };
 
     } catch (error) {
         console.error(error);
