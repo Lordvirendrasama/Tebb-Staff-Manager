@@ -18,6 +18,13 @@ import { Separator } from './ui/separator';
 export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; children: React.ReactNode }) {
     const formatDate = (date: Date) => format(new Date(date), 'MMM d, yyyy');
 
+    const formatCurrency = (value: number | undefined | null) => {
+        if (typeof value !== 'number') {
+            return '...';
+        }
+        return `₹${value.toFixed(2)}`;
+    }
+
     return (
         <Dialog>
             <DialogTrigger asChild>{children}</DialogTrigger>
@@ -31,7 +38,7 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
                 <div className="py-4 space-y-4 text-sm">
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Monthly Salary</span>
-                        <span className="font-medium">₹{payroll.monthlySalary.toFixed(2)}</span>
+                        <span className="font-medium">{formatCurrency(payroll.monthlySalary)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between items-center">
@@ -44,7 +51,7 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Per-Day Salary</span>
-                        <span className="font-medium">₹{payroll.perDaySalary.toFixed(2)}</span>
+                        <span className="font-medium">{formatCurrency(payroll.perDaySalary)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center">
@@ -53,20 +60,20 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
                     </div>
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Late Deductions</span>
-                        <span className="font-medium text-destructive">- ₹{payroll.lateDeductions.toFixed(2)}</span>
+                        <span className="font-medium text-destructive">- {formatCurrency(payroll.lateDeductions)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Tips</span>
-                        <span className="font-medium text-green-500">+ ₹{(payroll.tips || 0).toFixed(2)}</span>
+                        <span className="font-medium text-green-500">+ {formatCurrency(payroll.tips)}</span>
                     </div>
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Other Deductions</span>
-                        <span className="font-medium text-destructive">- ₹{(payroll.deductions || 0).toFixed(2)}</span>
+                        <span className="font-medium text-destructive">- {formatCurrency(payroll.deductions)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center font-bold text-base">
                         <span>Final Salary</span>
-                        <span>₹{payroll.finalSalary.toFixed(2)}</span>
+                        <span>{formatCurrency(payroll.finalSalary)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center">
