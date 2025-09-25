@@ -36,22 +36,30 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     }, [selectedEmployeeId, currentMonth, employees]);
 
     const handleDayClick = (day: Date | undefined) => {
-        if (!day || !selectedEmployeeId || isUpdating) return;
+        if (!day || !selectedEmployeeId) return;
+
+        const isWorked = workedDays.some(d => d.toDateString() === day.toDateString());
+        
+        // Optimistic UI update
+        if (isWorked) {
+            setWorkedDays(prev => prev.filter(d => d.toDateString() !== day.toDateString()));
+        } else {
+            setWorkedDays(prev => [...prev, day]);
+        }
         
         startUpdateTransition(async () => {
-            const isWorked = workedDays.some(d => d.toDateString() === day.toDateString());
             const result = await updateAttendanceForDayAction(selectedEmployeeId, day, !isWorked);
             
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
-                // Optimistically update UI
-                if (isWorked) {
-                    setWorkedDays(prev => prev.filter(d => d.toDateString() !== day.toDateString()));
-                } else {
-                    setWorkedDays(prev => [...prev, day]);
-                }
             } else {
                 toast({ variant: 'destructive', title: 'Error', description: result.message });
+                // Revert optimistic update on failure
+                if (isWorked) {
+                    setWorkedDays(prev => [...prev, day]);
+                } else {
+                    setWorkedDays(prev => prev.filter(d => d.toDateString() !== day.toDateString()));
+                }
             }
         });
     };
@@ -90,7 +98,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                 </div>
 
                 <div className="p-1 border rounded-lg relative">
-                    {(loading || isUpdating) && (
+                    {(loading) && (
                         <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
                             <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                         </div>
