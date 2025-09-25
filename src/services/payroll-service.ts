@@ -4,7 +4,7 @@
 import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency, WeekDay } from '@/lib/constants';
-import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay, eachDayOfInterval } from 'date-fns';
+import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay, eachDayOfInterval, format } from 'date-fns';
 
 const LATE_DEDUCTION_AMOUNT = 50;
 const LATE_BUFFER_MINUTES = 10;
