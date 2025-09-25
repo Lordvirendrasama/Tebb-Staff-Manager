@@ -50,7 +50,7 @@ export function PayrollViewer({ payrolls }: { payrolls: Payroll[] }) {
                     <div className="p-4 border rounded-lg bg-muted/50 flex justify-between items-center">
                         <div>
                             <p className="text-sm text-muted-foreground">Net Pay</p>
-                            <p className="text-3xl font-bold">${latestPayroll.totalSalary.toFixed(2)}</p>
+                            <p className="text-3xl font-bold">₹{latestPayroll.totalSalary.toFixed(2)}</p>
                         </div>
                          <Badge variant={getStatusVariant(latestPayroll.status)} className="capitalize h-fit">{latestPayroll.status}</Badge>
                     </div>
@@ -65,11 +65,11 @@ export function PayrollViewer({ payrolls }: { payrolls: Payroll[] }) {
                         </div>
                         <div>
                             <p className="text-muted-foreground">Tips</p>
-                            <p className="font-medium">${(latestPayroll.tips || 0).toFixed(2)}</p>
+                            <p className="font-medium">₹{(latestPayroll.tips || 0).toFixed(2)}</p>
                         </div>
                         <div>
                             <p className="text-muted-foreground">Deductions</p>
-                            <p className="font-medium">${(latestPayroll.deductions || 0).toFixed(2)}</p>
+                            <p className="font-medium">₹{(latestPayroll.deductions || 0).toFixed(2)}</p>
                         </div>
                     </div>
                     <PayrollDetailsDialog payroll={latestPayroll}>
@@ -91,7 +91,7 @@ export function PayrollViewer({ payrolls }: { payrolls: Payroll[] }) {
                                     <div key={p.id} className="p-3 border rounded-lg">
                                         <div className="flex justify-between items-center">
                                             <div>
-                                                <p className="font-medium">${p.totalSalary.toFixed(2)}</p>
+                                                <p className="font-medium">₹{p.totalSalary.toFixed(2)}</p>
                                                 <p className="text-xs text-muted-foreground">{formatDateRange(p.payPeriodStart, p.payPeriodEnd)}</p>
                                             </div>
                                             <PayrollDetailsDialog payroll={p}>

@@ -31,7 +31,7 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
                 <div className="py-4 space-y-4 text-sm">
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Base Salary</span>
-                        <span className="font-medium">${payroll.baseSalary.toFixed(2)}</span>
+                        <span className="font-medium">₹{payroll.baseSalary.toFixed(2)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between items-center">
@@ -45,16 +45,16 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
                     <Separator />
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Tips</span>
-                        <span className="font-medium">${(payroll.tips || 0).toFixed(2)}</span>
+                        <span className="font-medium">₹{(payroll.tips || 0).toFixed(2)}</span>
                     </div>
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Deductions</span>
-                        <span className="font-medium text-destructive">-${(payroll.deductions || 0).toFixed(2)}</span>
+                        <span className="font-medium text-destructive">-₹{(payroll.deductions || 0).toFixed(2)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center font-bold text-base">
                         <span>Net Pay</span>
-                        <span>${payroll.totalSalary.toFixed(2)}</span>
+                        <span>₹{payroll.totalSalary.toFixed(2)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center">

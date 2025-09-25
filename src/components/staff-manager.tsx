@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Loader2, UserPlus, Save, Edit, Clock, Trash2, Calendar as CalendarIcon, DollarSign } from 'lucide-react';
+import { Loader2, UserPlus, Save, Edit, Clock, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import type { Employee, WeekDay, PayFrequency } from '@/lib/constants';
 import { WEEKDAYS, PAY_FREQUENCIES } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
@@ -241,13 +241,13 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
             <h5 className="font-medium text-xs text-muted-foreground pt-2">Payroll Information</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                  <Label htmlFor="base-salary">Base Salary</Label>
+                  <Label htmlFor="base-salary">Base Salary (₹)</Label>
                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground">₹</span>
                       <Input 
                         id="base-salary"
                         type="number"
-                        placeholder="e.g. 3000"
+                        placeholder="e.g. 30000"
                         value={baseSalary}
                         onChange={(e) => setBaseSalary(e.target.value === '' ? '' : Number(e.target.value))}
                         disabled={isPending}
