@@ -4,7 +4,7 @@
 import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency } from '@/lib/constants';
-import { differenceInHours, add, sub, isBefore, startOfDay } from 'date-fns';
+import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay } from 'date-fns';
 
 async function docToTyped<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -65,13 +65,17 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriodForDate(employee.payStartDate, employee.payFrequency, new Date());
     
+    // WORKAROUND: Fetch by employeeId first, then filter by date in code to avoid composite index.
     const payrollQuery = query(
         collection(db, 'payroll'),
-        where('employeeId', '==', employee.id),
-        where('payPeriodStart', '==', payPeriodStart),
+        where('employeeId', '==', employee.id)
     );
-    const existingPayrollSnap = await getDocs(payrollQuery);
-    if(!existingPayrollSnap.empty) {
+    const allPayrollsSnap = await getDocs(payrollQuery);
+    const allPayrolls = await Promise.all(allPayrollsSnap.docs.map(d => docToTyped<Payroll>(d)));
+    
+    const existingPayroll = allPayrolls.find(p => isSameDay(p.payPeriodStart, payPeriodStart));
+
+    if (existingPayroll) {
         throw new Error(`Payroll for this period already exists for ${employeeName}.`);
     }
 
@@ -105,7 +109,7 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
     if (employee.payFrequency === 'monthly') {
         // Assuming baseSalary is monthly for monthly frequency
         const monthlyWorkHours = employee.standardWorkHours * 22; // Approximation
-        const hourlyRate = employee.baseSalary / monthlyWorkHours;
+        const hourlyRate = monthlyWorkHours > 0 ? employee.baseSalary / monthlyWorkHours : 0;
         const regularPay = regularHours * hourlyRate;
         const overtimePay = overtimeHours * hourlyRate * 1.5;
         totalSalary = regularPay + overtimePay;
