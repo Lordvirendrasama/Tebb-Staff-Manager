@@ -34,18 +34,17 @@ function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, tar
         const cycleDay = getDate(cycleAnchorDate);
 
         let periodStart;
-        // Determine if the current date is before or after the cycle day in the current month
         if (getDate(targetDate) >= cycleDay) {
-            // We are in the pay period that started this month
+            // The pay period started in the current month on cycleDay
             periodStart = new Date(targetYear, targetMonth, cycleDay);
         } else {
-            // We are in the pay period that started last month
+            // The pay period started in the previous month on cycleDay
             periodStart = new Date(targetYear, targetMonth - 1, cycleDay);
         }
         
         const periodEnd = sub(add(periodStart, { months: 1 }), { days: 1 });
         
-        return { start: periodStart, end: startOfDay(periodEnd) };
+        return { start: startOfDay(periodStart), end: startOfDay(periodEnd) };
     }
 
     // Fallback for weekly/bi-weekly (existing logic)
@@ -114,7 +113,10 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const perDaySalary = employee.monthlySalary / totalWorkingDays;
 
-    const attendanceQuery = query(collection(db, 'attendanceLogs'), where('employeeName', '==', employee.name));
+    const attendanceQuery = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employee.name)
+    );
     const attendanceSnapshot = await getDocs(attendanceQuery);
     const allAttendanceLogs = await Promise.all(attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d)));
     
