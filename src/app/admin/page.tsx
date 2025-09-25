@@ -23,6 +23,7 @@ import { ItemManager } from '@/components/item-manager';
 import { ExportEspressoDataButton } from '@/components/export-espresso-data-button';
 import { PayrollManager } from '@/components/payroll-manager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AttendanceEditor } from '@/components/attendance-editor';
 
 
 export default function AdminPage() {
@@ -99,9 +100,10 @@ export default function AdminPage() {
         <div className="space-y-8">
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h2>
         
-            <Tabs defaultValue="general">
-                <TabsList className="grid w-full grid-cols-3">
+            <Tabs defaultValue="general" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                     <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
                     <TabsTrigger value="payroll">Payroll</TabsTrigger>
                     <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
@@ -157,6 +159,10 @@ export default function AdminPage() {
                             <OvertimeTracker data={overtimeData} />
                         </div>
                     </div>
+                </TabsContent>
+
+                <TabsContent value="attendance" className="mt-6">
+                    <AttendanceEditor employees={employees} />
                 </TabsContent>
 
                 <TabsContent value="payroll" className="mt-6">

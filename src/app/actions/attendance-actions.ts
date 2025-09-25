@@ -1,11 +1,12 @@
 
 'use server';
 
-import type { User, LeaveType } from '@/lib/constants';
+import type { User, LeaveType, Employee } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
-import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
+import { startOfDay, endOfDay } from 'date-fns';
 
 
 export async function clockInAction(user: User) {
@@ -116,5 +117,64 @@ export async function markAsUnpaidAction(requestId: string) {
     } catch (error) {
         console.error(error);
         return { success: false, message: 'Failed to update leave type.' };
+    }
+}
+
+
+export async function updateAttendanceForDayAction(employeeId: string, day: Date, worked: boolean) {
+    try {
+        const employeeSnap = await getDoc(doc(db, 'employees', employeeId));
+        if (!employeeSnap.exists()) {
+            return { success: false, message: 'Employee not found.' };
+        }
+        const employee = employeeSnap.data() as Employee;
+
+        const dayStart = startOfDay(day);
+        const dayEnd = endOfDay(day);
+
+        const q = query(
+            collection(db, 'attendanceLogs'),
+            where('employeeName', '==', employee.name),
+            where('clockIn', '>=', dayStart),
+            where('clockIn', '<=', dayEnd)
+        );
+        const querySnapshot = await getDocs(q);
+        const existingLog = querySnapshot.docs[0];
+
+        if (worked && !existingLog) {
+            // Add a new log for the day
+            if (!employee.shiftStartTime || !employee.shiftEndTime) {
+                return { success: false, message: 'Employee shift times are not set.' };
+            }
+            const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
+            const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
+            
+            const clockIn = new Date(day);
+            clockIn.setHours(startHour, startMinute, 0, 0);
+            
+            const clockOut = new Date(day);
+            clockOut.setHours(endHour, endMinute, 0, 0);
+
+            await addDoc(collection(db, 'attendanceLogs'), {
+                employeeName: employee.name,
+                clockIn,
+                clockOut,
+            });
+             revalidatePath('/admin');
+            return { success: true, message: `Marked ${employee.name} as worked.` };
+        } else if (!worked && existingLog) {
+            // Delete the existing log
+            await deleteDoc(doc(db, 'attendanceLogs', existingLog.id));
+            revalidatePath('/admin');
+            return { success: true, message: `Removed work day for ${employee.name}.` };
+        }
+        
+        // No change needed
+        return { success: true, message: 'No change needed.' };
+
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to update attendance: ${errorMessage}` };
     }
 }

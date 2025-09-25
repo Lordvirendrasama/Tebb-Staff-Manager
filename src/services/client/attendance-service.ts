@@ -1,10 +1,11 @@
 
 'use client';
 
-import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, getDocs, where } from 'firebase/firestore';
 import * as serverService from '../attendance-service';
 import { db } from '@/lib/firebase-client';
-import type { Employee, LeaveRequest } from '@/lib/constants';
+import type { Employee, LeaveRequest, AttendanceLog } from '@/lib/constants';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 // This file exports server functions for client-side use.
 // This is the correct way to expose server functions to client components
@@ -68,4 +69,19 @@ export const onLeaveRequestsSnapshot = (
             onError(error);
         }
     );
+};
+
+export const getAttendanceForMonth = async (employeeName: string, month: Date): Promise<AttendanceLog[]> => {
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+
+    const q = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employeeName),
+        where('clockIn', '>=', start),
+        where('clockIn', '<=', end)
+    );
+
+    const querySnapshot = await getDocs(q);
+    return snapshotToDocs<AttendanceLog>(querySnapshot);
 };
