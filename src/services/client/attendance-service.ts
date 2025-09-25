@@ -5,7 +5,7 @@ import { collection, onSnapshot, query, orderBy, doc, getDocs, where } from 'fir
 import * as serverService from '../attendance-service';
 import { db } from '@/lib/firebase-client';
 import type { Employee, LeaveRequest, AttendanceLog } from '@/lib/constants';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 // This file exports server functions for client-side use.
 // This is the correct way to expose server functions to client components
@@ -75,13 +75,20 @@ export const getAttendanceForMonth = async (employeeName: string, month: Date): 
     const start = startOfMonth(month);
     const end = endOfMonth(month);
 
+    // Query by employee and order by date
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', employeeName),
-        where('clockIn', '>=', start),
-        where('clockIn', '<=', end)
+        orderBy('clockIn', 'desc')
     );
 
     const querySnapshot = await getDocs(q);
-    return snapshotToDocs<AttendanceLog>(querySnapshot);
+    const allLogs = snapshotToDocs<AttendanceLog>(querySnapshot);
+    
+    // Filter by date range in the client
+    const logsInMonth = allLogs.filter(log => 
+        isWithinInterval(log.clockIn, { start, end })
+    );
+
+    return logsInMonth;
 };
