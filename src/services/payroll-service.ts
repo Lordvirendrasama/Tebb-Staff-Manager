@@ -4,7 +4,7 @@
 import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency, WeekDay } from '@/lib/constants';
-import { differenceInHours, add, sub, startOfDay, isSameDay, eachDayOfInterval, format, getMonth, getYear, getDate, addMonths, subMonths, isAfter } from 'date-fns';
+import { differenceInHours, add, startOfDay, isSameDay, eachDayOfInterval, format, isAfter } from 'date-fns';
 
 const LATE_DEDUCTION_AMOUNT = 50;
 const LATE_BUFFER_MINUTES = 10;
@@ -39,8 +39,8 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const employee = await docToTyped<Employee>(employeeSnap);
     
-    if (!employee.payStartDate || !employee.payFrequency || !employee.monthlySalary || !employee.shiftStartTime) {
-        throw new Error('Employee is missing required payroll configuration (start date, frequency, salary, or shift start time).');
+    if (!employee.monthlySalary || !employee.shiftStartTime) {
+        throw new Error('Employee is missing required payroll configuration (monthly salary or shift start time).');
     }
 
     const payPeriodStart = startOfDay(dateRange.from);
@@ -60,7 +60,10 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
     }
 
     const payPeriodDays = eachDayOfInterval({ start: payPeriodStart, end: payPeriodEnd });
-    const weeklyOffDayNumber = getWeekDayNumber(employee.weeklyOffDay);
+    
+    // Check if weeklyOffDay is valid before using it
+    const weeklyOffDayNumber = employee.weeklyOffDay ? getWeekDayNumber(employee.weeklyOffDay) : -1; // -1 if no off day
+    
     const totalWorkingDays = payPeriodDays.filter(day => day.getDay() !== weeklyOffDayNumber).length;
     if (totalWorkingDays <= 0) throw new Error("No working days in this pay period.");
 
@@ -68,13 +71,17 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const attendanceQuery = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employee.name),
-        where('clockIn', '>=', payPeriodStart),
-        where('clockIn', '<', add(payPeriodEnd, { days: 1 }))
+        where('employeeName', '==', employee.name)
     );
     const attendanceSnapshot = await getDocs(attendanceQuery);
-    const attendanceLogsInPeriod = await Promise.all(attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d)));
+    const allAttendanceLogs = await Promise.all(attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d)));
     
+    const endOfPayPeriod = add(payPeriodEnd, { days: 1 });
+    const attendanceLogsInPeriod = allAttendanceLogs.filter(log => {
+        const clockInDate = new Date(log.clockIn);
+        return clockInDate >= payPeriodStart && clockInDate < endOfPayPeriod;
+    });
+
     const workedDays = new Map<string, { clockIn: Date, hours: number }>();
     attendanceLogsInPeriod.forEach(log => {
         if (!log.clockOut) return;
@@ -97,7 +104,7 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         
         const lateBuffer = add(shiftStartToday, { minutes: LATE_BUFFER_MINUTES });
         
-        if (clockIn > lateBuffer) {
+        if (isAfter(clockIn, lateBuffer)) {
             lateDays++;
         }
     });
