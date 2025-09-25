@@ -56,7 +56,10 @@ export async function addEmployeeAction(employeeData: Partial<Employee>) {
 
 export async function updateEmployeeAction(id: string, employeeData: Partial<Employee>) {
     try {
-        await updateDoc(doc(db, 'employees', id), employeeData);
+        await updateDoc(doc(db, 'employees', id), {
+            ...employeeData,
+            payStartDate: employeeData.payStartDate ? new Date(employeeData.payStartDate) : null
+        });
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };

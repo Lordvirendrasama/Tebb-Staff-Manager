@@ -56,8 +56,7 @@ export interface Employee {
   standardWorkHours: number;
   shiftStartTime?: string;
   shiftEndTime?: string;
-  // Payroll fields
-  baseSalary?: number;
+  monthlySalary?: number;
   payFrequency?: PayFrequency;
   payStartDate?: Date;
 }
@@ -85,7 +84,7 @@ export const DEFAULT_EMPLOYEES: Omit<Employee, 'id'>[] = [
     standardWorkHours: 8, 
     shiftStartTime: '09:00', 
     shiftEndTime: '17:00',
-    baseSalary: 4000,
+    monthlySalary: 30000,
     payFrequency: 'monthly',
     payStartDate: new Date('2024-07-01')
   },
@@ -95,7 +94,7 @@ export const DEFAULT_EMPLOYEES: Omit<Employee, 'id'>[] = [
     standardWorkHours: 8, 
     shiftStartTime: '09:00', 
     shiftEndTime: '17:00',
-    baseSalary: 3800,
+    monthlySalary: 28000,
     payFrequency: 'monthly',
     payStartDate: new Date('2024-07-01')
   },
@@ -105,8 +104,8 @@ export const DEFAULT_EMPLOYEES: Omit<Employee, 'id'>[] = [
     standardWorkHours: 6, 
     shiftStartTime: '12:00', 
     shiftEndTime: '18:00',
-    baseSalary: 25, // hourly
-    payFrequency: 'weekly',
+    monthlySalary: 25000,
+    payFrequency: 'monthly',
     payStartDate: new Date('2024-07-01')
   },
 ];
@@ -145,12 +144,15 @@ export interface Payroll {
   employeeName: string;
   payPeriodStart: Date;
   payPeriodEnd: Date;
-  baseSalary: number;
-  hoursWorked: number;
-  overtimeHours: number;
+  monthlySalary: number;
+  totalWorkingDays: number;
+  actualDaysWorked: number;
+  perDaySalary: number;
+  lateDays: number;
+  lateDeductions: number;
   tips?: number;
   deductions?: number;
-  totalSalary: number;
+  finalSalary: number;
   status: PayrollStatus;
   paymentDate?: Date;
   generatedAt: Date;

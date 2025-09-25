@@ -3,8 +3,11 @@
 
 import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import type { Employee, AttendanceLog, Payroll, PayFrequency } from '@/lib/constants';
-import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay } from 'date-fns';
+import type { Employee, AttendanceLog, Payroll, PayFrequency, WeekDay } from '@/lib/constants';
+import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay, eachDayOfInterval } from 'date-fns';
+
+const LATE_DEDUCTION_AMOUNT = 50;
+const LATE_BUFFER_MINUTES = 10;
 
 async function docToTyped<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -51,6 +54,12 @@ function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, tar
     }
 }
 
+const getWeekDayNumber = (day: WeekDay): number => {
+    const dayMap: { [key in WeekDay]: number } = {
+        Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6,
+    };
+    return dayMap[day];
+};
 
 export async function generatePayrollForEmployee(employeeId: string, employeeName: string): Promise<Payroll | null> {
     const employeeRef = doc(db, 'employees', employeeId);
@@ -59,81 +68,87 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const employee = await docToTyped<Employee>(employeeSnap);
     
-    if (!employee.payStartDate || !employee.payFrequency || !employee.baseSalary) {
-        throw new Error('Employee is missing required payroll configuration (start date, frequency, or salary).');
+    if (!employee.payStartDate || !employee.payFrequency || !employee.monthlySalary || !employee.shiftStartTime) {
+        throw new Error('Employee is missing required payroll configuration (start date, frequency, salary, or shift start time).');
     }
 
     const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriodForDate(employee.payStartDate, employee.payFrequency, new Date());
     
-    const payrollQuery = query(
-        collection(db, 'payroll'),
-        where('employeeId', '==', employee.id)
-    );
+    const payrollQuery = query(collection(db, 'payroll'), where('employeeId', '==', employee.id));
     const allPayrollsSnap = await getDocs(payrollQuery);
     const allPayrolls = await Promise.all(allPayrollsSnap.docs.map(d => docToTyped<Payroll>(d)));
     
     const existingPayroll = allPayrolls.find(p => isSameDay(p.payPeriodStart, payPeriodStart));
-
     if (existingPayroll) {
         throw new Error(`Payroll for this period already exists for ${employeeName}.`);
     }
 
-    // WORKAROUND: Fetch all logs for the employee and then filter by date in code to avoid composite index.
-    const attendanceQuery = query(
-        collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employee.name)
-    );
-    
+    // --- New Pro-Rata Logic ---
+
+    // 1. Calculate Total Working Days in Period
+    const payPeriodDays = eachDayOfInterval({ start: payPeriodStart, end: payPeriodEnd });
+    const weeklyOffDayNumber = getWeekDayNumber(employee.weeklyOffDay);
+    const totalWorkingDays = payPeriodDays.filter(day => day.getDay() !== weeklyOffDayNumber).length;
+    if (totalWorkingDays <= 0) throw new Error("No working days in this pay period.");
+
+    const perDaySalary = employee.monthlySalary / totalWorkingDays;
+
+    // 2. Fetch Attendance Logs for the period
+    const attendanceQuery = query(collection(db, 'attendanceLogs'), where('employeeName', '==', employee.name));
     const attendanceSnapshot = await getDocs(attendanceQuery);
-    const allAttendanceLogs = await Promise.all(
-        attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d))
+    const allAttendanceLogs = await Promise.all(attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d)));
+    
+    const periodEndWithTime = add(payPeriodEnd, { days: 1 });
+    const attendanceLogsInPeriod = allAttendanceLogs.filter(log => 
+        log.clockIn >= payPeriodStart && log.clockIn < periodEndWithTime && log.clockOut
     );
 
-    const periodEndWithTime = add(payPeriodEnd, {days: 1});
-    const attendanceLogs = allAttendanceLogs.filter(log => 
-        log.clockIn >= payPeriodStart && log.clockIn < periodEndWithTime
-    );
-
-    let totalHours = 0;
-    let overtimeHours = 0;
-
-    attendanceLogs.forEach(log => {
-        if (log.clockOut) {
-            const hours = differenceInHours(log.clockOut, log.clockIn);
-            totalHours += hours;
-            const overtime = Math.max(0, hours - employee.standardWorkHours);
-            overtimeHours += overtime;
+    // 3. Calculate Actual Days Worked & Late Days
+    const workedDays = new Map<string, { clockIn: Date, hours: number }>();
+    attendanceLogsInPeriod.forEach(log => {
+        const dayKey = format(log.clockIn, 'yyyy-MM-dd');
+        const hoursWorked = differenceInHours(log.clockOut!, log.clockIn);
+        
+        // Store only the earliest clock-in for the day
+        if (!workedDays.has(dayKey) || log.clockIn < workedDays.get(dayKey)!.clockIn) {
+            workedDays.set(dayKey, { clockIn: log.clockIn, hours: hoursWorked });
         }
     });
 
-    const regularHours = totalHours - overtimeHours;
-    let totalSalary;
+    const actualDaysWorked = workedDays.size;
     
-    if (employee.payFrequency === 'monthly') {
-        // Assuming baseSalary is monthly for monthly frequency
-        const monthlyWorkHours = employee.standardWorkHours * 22; // Approximation
-        const hourlyRate = monthlyWorkHours > 0 ? employee.baseSalary / monthlyWorkHours : 0;
-        const regularPay = regularHours * hourlyRate;
-        const overtimePay = overtimeHours * hourlyRate * 1.5;
-        totalSalary = regularPay + overtimePay;
-    } else {
-        // Assuming baseSalary is hourly for weekly/bi-weekly
-        const hourlyRate = employee.baseSalary;
-        const regularPay = regularHours * hourlyRate;
-        const overtimePay = overtimeHours * hourlyRate * 1.5;
-        totalSalary = regularPay + overtimePay;
-    }
+    let lateDays = 0;
+    const [shiftHour, shiftMinute] = employee.shiftStartTime.split(':').map(Number);
 
+    workedDays.forEach(({ clockIn }) => {
+        const shiftStartToday = new Date(clockIn);
+        shiftStartToday.setHours(shiftHour, shiftMinute, 0, 0);
+        
+        const lateBuffer = add(shiftStartToday, { minutes: LATE_BUFFER_MINUTES });
+        
+        if (clockIn > lateBuffer) {
+            lateDays++;
+        }
+    });
 
+    const lateDeductions = lateDays * LATE_DEDUCTION_AMOUNT;
+    
+    // 4. Calculate Final Salary
+    const baseSalaryForDaysWorked = perDaySalary * actualDaysWorked;
+    const finalSalary = baseSalaryForDaysWorked - lateDeductions;
+    
     const newPayroll: Omit<Payroll, 'id'> = {
         employeeId: employee.id,
         employeeName: employee.name,
         payPeriodStart,
         payPeriodEnd,
-        baseSalary: employee.baseSalary,
-        hoursWorked: totalHours,
-        overtimeHours,
-        totalSalary,
+        monthlySalary: employee.monthlySalary,
+        totalWorkingDays,
+        actualDaysWorked,
+        perDaySalary,
+        lateDays,
+        lateDeductions,
+        finalSalary: finalSalary,
         status: 'pending',
         generatedAt: new Date(),
     };

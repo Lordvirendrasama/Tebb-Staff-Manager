@@ -22,7 +22,7 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
     const { toast } = useToast();
 
     const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
-    const isPayrollConfigured = selectedEmployee && selectedEmployee.baseSalary && selectedEmployee.payFrequency && selectedEmployee.payStartDate;
+    const isPayrollConfigured = selectedEmployee && selectedEmployee.monthlySalary && selectedEmployee.payFrequency && selectedEmployee.payStartDate && selectedEmployee.shiftStartTime;
 
     const handleGeneratePayroll = () => {
         if (!selectedEmployeeId) {
@@ -93,7 +93,7 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                             <Info className="h-4 w-4" />
                             <AlertTitle>Missing Configuration</AlertTitle>
                             <AlertDescription>
-                                This employee's payroll information is incomplete. Please set their base salary, pay frequency, and cycle start date in the Staff Manager.
+                                This employee's payroll information is incomplete. Please set their monthly salary, pay frequency, cycle start date, and shift start time in the Staff Manager.
                             </AlertDescription>
                         </Alert>
                     )}
@@ -111,7 +111,7 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                                         <div className="flex-1">
                                             <p className="font-semibold">{payroll.employeeName}</p>
                                             <p className="text-xs text-muted-foreground">{formatDateRange(payroll.payPeriodStart, payroll.payPeriodEnd)}</p>
-                                            <p className="text-lg font-bold mt-1">₹{payroll.totalSalary.toFixed(2)}</p>
+                                            <p className="text-lg font-bold mt-1">₹{payroll.finalSalary.toFixed(2)}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <Badge variant={getStatusVariant(payroll.status)} className="capitalize">{payroll.status}</Badge>

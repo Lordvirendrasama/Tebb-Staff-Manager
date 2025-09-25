@@ -32,7 +32,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
   const [shiftStartTime, setShiftStartTime] = useState<string>('');
   const [shiftEndTime, setShiftEndTime] = useState<string>('');
   // Payroll fields
-  const [baseSalary, setBaseSalary] = useState<number | ''>('');
+  const [monthlySalary, setMonthlySalary] = useState<number | ''>('');
   const [payFrequency, setPayFrequency] = useState<PayFrequency | ''>('');
   const [payStartDate, setPayStartDate] = useState<Date | undefined>();
 
@@ -43,7 +43,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setStandardWorkHours('');
     setShiftStartTime('');
     setShiftEndTime('');
-    setBaseSalary('');
+    setMonthlySalary('');
     setPayFrequency('');
     setPayStartDate(undefined);
   };
@@ -62,7 +62,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setStandardWorkHours(employee.standardWorkHours);
     setShiftStartTime(employee.shiftStartTime || '');
     setShiftEndTime(employee.shiftEndTime || '');
-    setBaseSalary(employee.baseSalary || '');
+    setMonthlySalary(employee.monthlySalary || '');
     setPayFrequency(employee.payFrequency || '');
     setPayStartDate(employee.payStartDate ? new Date(employee.payStartDate) : undefined);
   };
@@ -85,7 +85,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
       standardWorkHours,
       shiftStartTime,
       shiftEndTime,
-      baseSalary: baseSalary || null,
+      monthlySalary: monthlySalary || null,
       payFrequency: payFrequency || null,
       payStartDate: payStartDate || null,
     };
@@ -241,15 +241,15 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
             <h5 className="font-medium text-xs text-muted-foreground pt-2">Payroll Information</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                  <Label htmlFor="base-salary">Base Salary (₹)</Label>
+                  <Label htmlFor="monthly-salary">Monthly Salary (₹)</Label>
                    <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground">₹</span>
                       <Input 
-                        id="base-salary"
+                        id="monthly-salary"
                         type="number"
                         placeholder="e.g. 30000"
-                        value={baseSalary}
-                        onChange={(e) => setBaseSalary(e.target.value === '' ? '' : Number(e.target.value))}
+                        value={monthlySalary}
+                        onChange={(e) => setMonthlySalary(e.target.value === '' ? '' : Number(e.target.value))}
                         disabled={isPending}
                         className="pl-9"
                       />

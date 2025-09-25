@@ -23,38 +23,50 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Payroll Details</DialogTitle>
+                    <DialogTitle>Salary Slip</DialogTitle>
                     <DialogDescription>
-                        For {payroll.employeeName} - Pay Period: {formatDate(payroll.payPeriodStart)} to {formatDate(payroll.payPeriodEnd)}
+                        For {payroll.employeeName} - {formatDate(payroll.payPeriodStart)} to {formatDate(payroll.payPeriodEnd)}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4 text-sm">
                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Base Salary</span>
-                        <span className="font-medium">₹{payroll.baseSalary.toFixed(2)}</span>
+                        <span className="text-muted-foreground">Monthly Salary</span>
+                        <span className="font-medium">₹{payroll.monthlySalary.toFixed(2)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Hours Worked</span>
-                        <span className="font-medium">{payroll.hoursWorked.toFixed(2)} hrs</span>
+                        <span className="text-muted-foreground">Total Working Days</span>
+                        <span className="font-medium">{payroll.totalWorkingDays}</span>
                     </div>
                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Overtime Hours</span>
-                        <span className="font-medium">{payroll.overtimeHours.toFixed(2)} hrs</span>
+                        <span className="text-muted-foreground">Actual Days Worked</span>
+                        <span className="font-medium">{payroll.actualDaysWorked}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Per-Day Salary</span>
+                        <span className="font-medium">₹{payroll.perDaySalary.toFixed(2)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Tips</span>
-                        <span className="font-medium">₹{(payroll.tips || 0).toFixed(2)}</span>
+                        <span className="text-muted-foreground">Late Days</span>
+                        <span className="font-medium">{payroll.lateDays}</span>
                     </div>
                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Deductions</span>
-                        <span className="font-medium text-destructive">-₹{(payroll.deductions || 0).toFixed(2)}</span>
+                        <span className="text-muted-foreground">Late Deductions</span>
+                        <span className="font-medium text-destructive">- ₹{payroll.lateDeductions.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Tips</span>
+                        <span className="font-medium text-green-500">+ ₹{(payroll.tips || 0).toFixed(2)}</span>
+                    </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Other Deductions</span>
+                        <span className="font-medium text-destructive">- ₹{(payroll.deductions || 0).toFixed(2)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center font-bold text-base">
-                        <span>Net Pay</span>
-                        <span>₹{payroll.totalSalary.toFixed(2)}</span>
+                        <span>Final Salary</span>
+                        <span>₹{payroll.finalSalary.toFixed(2)}</span>
                     </div>
                     <Separator />
                      <div className="flex justify-between items-center">
