@@ -4,7 +4,7 @@
 import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency, WeekDay } from '@/lib/constants';
-import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay, eachDayOfInterval, format } from 'date-fns';
+import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay, eachDayOfInterval, format, getMonth, getYear, getDate } from 'date-fns';
 
 const LATE_DEDUCTION_AMOUNT = 50;
 const LATE_BUFFER_MINUTES = 10;
@@ -26,8 +26,30 @@ async function docToTyped<T>(docSnap: any): Promise<T> {
 }
 
 function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, targetDate: Date): { start: Date, end: Date } {
-    let periodStart = startOfDay(payStartDate);
+    let cycleAnchorDate = startOfDay(payStartDate);
 
+    if (payFrequency === 'monthly') {
+        const targetYear = getYear(targetDate);
+        const targetMonth = getMonth(targetDate);
+        const cycleDay = getDate(cycleAnchorDate);
+
+        let periodStart;
+        // Determine if the current date is before or after the cycle day in the current month
+        if (getDate(targetDate) >= cycleDay) {
+            // We are in the pay period that started this month
+            periodStart = new Date(targetYear, targetMonth, cycleDay);
+        } else {
+            // We are in the pay period that started last month
+            periodStart = new Date(targetYear, targetMonth - 1, cycleDay);
+        }
+        
+        const periodEnd = sub(add(periodStart, { months: 1 }), { days: 1 });
+        
+        return { start: periodStart, end: startOfDay(periodEnd) };
+    }
+
+    // Fallback for weekly/bi-weekly (existing logic)
+    let periodStart = cycleAnchorDate;
     while (true) {
         let periodEnd;
         switch (payFrequency) {
@@ -37,12 +59,9 @@ function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, tar
             case 'bi-weekly':
                 periodEnd = add(periodStart, { days: 13 });
                 break;
-            case 'monthly':
-                periodEnd = add(periodStart, { months: 1 });
-                periodEnd = sub(periodEnd, { days: 1 });
-                break;
-            default:
-                throw new Error(`Unsupported pay frequency: ${payFrequency}`);
+            default: // Should not happen with the monthly check above, but as a safeguard
+                 periodEnd = add(periodStart, { months: 1 });
+                 periodEnd = sub(periodEnd, { days: 1 });
         }
         periodEnd = startOfDay(periodEnd);
 
@@ -53,6 +72,7 @@ function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, tar
         periodStart = add(periodEnd, { days: 1 });
     }
 }
+
 
 const getWeekDayNumber = (day: WeekDay): number => {
     const dayMap: { [key in WeekDay]: number } = {
@@ -74,18 +94,19 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriodForDate(employee.payStartDate, employee.payFrequency, new Date());
     
-    const payrollQuery = query(collection(db, 'payroll'), where('employeeId', '==', employee.id));
+    const payrollQuery = query(
+        collection(db, 'payroll'), 
+        where('employeeId', '==', employee.id)
+    );
+
     const allPayrollsSnap = await getDocs(payrollQuery);
     const allPayrolls = await Promise.all(allPayrollsSnap.docs.map(d => docToTyped<Payroll>(d)));
     
     const existingPayroll = allPayrolls.find(p => isSameDay(p.payPeriodStart, payPeriodStart));
     if (existingPayroll) {
-        throw new Error(`Payroll for this period already exists for ${employeeName}.`);
+        throw new Error(`Payroll for this period (${format(payPeriodStart, 'MMM d')} - ${format(payPeriodEnd, 'MMM d')}) already exists for ${employeeName}.`);
     }
 
-    // --- New Pro-Rata Logic ---
-
-    // 1. Calculate Total Working Days in Period
     const payPeriodDays = eachDayOfInterval({ start: payPeriodStart, end: payPeriodEnd });
     const weeklyOffDayNumber = getWeekDayNumber(employee.weeklyOffDay);
     const totalWorkingDays = payPeriodDays.filter(day => day.getDay() !== weeklyOffDayNumber).length;
@@ -93,7 +114,6 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const perDaySalary = employee.monthlySalary / totalWorkingDays;
 
-    // 2. Fetch Attendance Logs for the period
     const attendanceQuery = query(collection(db, 'attendanceLogs'), where('employeeName', '==', employee.name));
     const attendanceSnapshot = await getDocs(attendanceQuery);
     const allAttendanceLogs = await Promise.all(attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d)));
@@ -103,13 +123,11 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         log.clockIn >= payPeriodStart && log.clockIn < periodEndWithTime && log.clockOut
     );
 
-    // 3. Calculate Actual Days Worked & Late Days
     const workedDays = new Map<string, { clockIn: Date, hours: number }>();
     attendanceLogsInPeriod.forEach(log => {
         const dayKey = format(log.clockIn, 'yyyy-MM-dd');
         const hoursWorked = differenceInHours(log.clockOut!, log.clockIn);
         
-        // Store only the earliest clock-in for the day
         if (!workedDays.has(dayKey) || log.clockIn < workedDays.get(dayKey)!.clockIn) {
             workedDays.set(dayKey, { clockIn: log.clockIn, hours: hoursWorked });
         }
@@ -133,7 +151,6 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const lateDeductions = lateDays * LATE_DEDUCTION_AMOUNT;
     
-    // 4. Calculate Final Salary
     const baseSalaryForDaysWorked = perDaySalary * actualDaysWorked;
     const finalSalary = baseSalaryForDaysWorked - lateDeductions;
     
