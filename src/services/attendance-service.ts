@@ -98,8 +98,15 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
 
 export const getEmployees = async (): Promise<Employee[]> => {
     const snapshot = await getDocs(collection(db, 'employees'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
-}
+    const employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    // Manually serialize date fields to prevent passing Date objects to client components
+    return employees.map(emp => {
+        if (emp.payStartDate && typeof emp.payStartDate.toDate === 'function') {
+            emp.payStartDate = emp.payStartDate.toDate().toISOString();
+        }
+        return emp as Employee;
+    });
+};
 
 export const addEmployee = async (employee: { name: string; weeklyOffDay: WeekDay; standardWorkHours: number; }): Promise<void> => {
     await addDoc(collection(db, 'employees'), employee);
