@@ -8,15 +8,8 @@ import { clockInAction, clockOutAction } from '@/app/actions/attendance-actions'
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, LogOut, History, Clock } from 'lucide-react';
 import type { User, AttendanceStatus, AttendanceLog } from '@/lib/constants';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ScrollArea } from './ui/scroll-area';
+import { Card, CardContent } from './ui/card';
 
 interface AttendanceTrackerProps {
     user: User;
@@ -41,11 +34,10 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
   
-    const formatLocaleDate = (date: Date | string | undefined) => {
+  const formatLocaleDate = (date: Date | string | undefined) => {
     if (!date) return '...';
-    return new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   };
-
 
   const handleClockIn = () => {
     startTransition(async () => {
@@ -119,28 +111,28 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
                 <History className="h-5 w-5 text-muted-foreground"/>
                 <h4 className="font-medium text-sm">Recent Activity</h4>
             </div>
-            <ScrollArea className="h-48 w-full">
-              <div className="relative w-full overflow-auto">
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[33%]">Date</TableHead>
-                        <TableHead className="w-[33%]">In</TableHead>
-                        <TableHead className="w-[33%] text-right">Out</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {history.slice(0, 5).map((log) => (
-                        <TableRow key={log.id}>
-                            <TableCell className="truncate">{isClient ? formatLocaleDate(log.clockIn) : '...'}</TableCell>
-                            <TableCell className="truncate">{isClient ? formatLocaleTime(log.clockIn) : '...'}</TableCell>
-                            <TableCell className="truncate text-right">{isClient ? formatLocaleTime(log.clockOut) : '...'}</TableCell>
-                        </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
-              </div>
-            </ScrollArea>
+            <Card>
+              <CardContent className="p-0">
+                <ScrollArea className="h-48 w-full">
+                    <div className="p-2 space-y-2">
+                      {history.slice(0, 7).map((log) => (
+                          <div key={log.id} className="p-3 rounded-md border bg-background text-sm">
+                              <p className="font-medium">{isClient ? formatLocaleDate(log.clockIn) : '...'}</p>
+                              <div className="flex justify-between items-center text-muted-foreground mt-1">
+                                  <span>In: {isClient ? formatLocaleTime(log.clockIn) : '...'}</span>
+                                  <span>Out: {isClient ? formatLocaleTime(log.clockOut) : '...'}</span>
+                              </div>
+                          </div>
+                      ))}
+                      {history.length === 0 && (
+                        <div className="flex items-center justify-center h-24">
+                          <p className="text-sm text-muted-foreground">No recent activity.</p>
+                        </div>
+                      )}
+                    </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
       </div>
     </div>
   );
