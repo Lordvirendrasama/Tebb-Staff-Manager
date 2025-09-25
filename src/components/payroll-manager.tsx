@@ -7,18 +7,22 @@ import type { Payroll, Employee } from '@/lib/constants';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generatePayrollAction, markPayrollAsPaidAction } from '@/app/actions/payroll-actions';
-import { Loader2, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, FileText, CheckCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
 import { format } from 'date-fns';
 import { Badge } from './ui/badge';
 import { PayrollDetailsDialog } from './payroll-details-dialog';
-
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { Info } from 'lucide-react';
 
 export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], employees: Employee[] }) {
     const [isPending, startTransition] = useTransition();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
     const { toast } = useToast();
+
+    const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
+    const isPayrollConfigured = selectedEmployee && selectedEmployee.baseSalary && selectedEmployee.payFrequency && selectedEmployee.payStartDate;
 
     const handleGeneratePayroll = () => {
         if (!selectedEmployeeId) {
@@ -26,14 +30,13 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
             return;
         }
 
-        const employee = employees.find(e => e.id === selectedEmployeeId);
-        if (!employee) {
-             toast({ variant: 'destructive', title: 'Error', description: 'Selected employee not found.' });
+        if (!isPayrollConfigured || !selectedEmployee) {
+             toast({ variant: 'destructive', title: 'Error', description: 'Selected employee does not have complete payroll configuration.' });
             return;
         }
 
         startTransition(async () => {
-            const result = await generatePayrollAction(selectedEmployeeId, employee.name);
+            const result = await generatePayrollAction(selectedEmployeeId, selectedEmployee.name);
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
             } else {
@@ -80,11 +83,20 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                                 {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <Button onClick={handleGeneratePayroll} disabled={isPending || !selectedEmployeeId} className="w-full sm:w-auto">
+                        <Button onClick={handleGeneratePayroll} disabled={isPending || !selectedEmployeeId || !isPayrollConfigured} className="w-full sm:w-auto">
                             {isPending ? <Loader2 className="animate-spin" /> : <FileText />}
                             Generate
                         </Button>
                     </div>
+                     {selectedEmployeeId && !isPayrollConfigured && (
+                        <Alert variant="destructive">
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Missing Configuration</AlertTitle>
+                            <AlertDescription>
+                                This employee's payroll information is incomplete. Please set their base salary, pay frequency, and cycle start date in the Staff Manager.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                 </div>
 
                 <div className="space-y-2">

@@ -14,7 +14,7 @@ import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { getMonthlyOvertime, onEmployeesSnapshot, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
 import { onConsumptionLogsSnapshot, onConsumableItemsSnapshot } from '@/services/client/consumption-log-service';
-import { onPayrollSnapshot } from '@/services/client/payroll-service';
+import { onPayrollSnapshot } from '@/services-client/payroll-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExportDataButton } from '@/components/export-data-button';
 import { ResetDataButton } from '@/components/reset-data-button';

@@ -4,7 +4,7 @@
 import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency } from '@/lib/constants';
-import { differenceInHours, add, sub } from 'date-fns';
+import { differenceInHours, add, sub, isBefore, startOfDay } from 'date-fns';
 
 async function docToTyped<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -22,34 +22,33 @@ async function docToTyped<T>(docSnap: any): Promise<T> {
     return convertedData as T;
 }
 
-function getNextPayPeriod(payStartDate: Date, payFrequency: PayFrequency): { start: Date, end: Date } {
-    const now = new Date();
-    let currentStart = new Date(payStartDate.getTime());
+function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, targetDate: Date): { start: Date, end: Date } {
+    let periodStart = startOfDay(payStartDate);
 
-    while (currentStart <= now) {
-        let currentEnd;
+    while (true) {
+        let periodEnd;
         switch (payFrequency) {
             case 'weekly':
-                currentEnd = add(currentStart, { days: 6 });
+                periodEnd = add(periodStart, { days: 6 });
                 break;
             case 'bi-weekly':
-                currentEnd = add(currentStart, { days: 13 });
+                periodEnd = add(periodStart, { days: 13 });
                 break;
             case 'monthly':
-                currentEnd = add(currentStart, { months: 1 });
-                currentEnd = sub(currentEnd, {days: 1});
+                periodEnd = add(periodStart, { months: 1 });
+                periodEnd = sub(periodEnd, { days: 1 });
                 break;
-            default: // custom or fallback
-                currentEnd = add(currentStart, { months: 1 });
-                 currentEnd = sub(currentEnd, {days: 1});
+            default:
+                throw new Error(`Unsupported pay frequency: ${payFrequency}`);
         }
-        if (now >= currentStart && now <= currentEnd) {
-            return { start: currentStart, end: currentEnd };
+        periodEnd = startOfDay(periodEnd);
+
+        if (isBefore(targetDate, add(periodEnd, { days: 1 }))) {
+            return { start: periodStart, end: periodEnd };
         }
-        currentStart = add(currentEnd, { days: 1 });
+        
+        periodStart = add(periodEnd, { days: 1 });
     }
-    // Fallback if something goes wrong, should not happen in normal flow
-    return { start: payStartDate, end: add(payStartDate, { days: 6 }) };
 }
 
 
@@ -64,9 +63,8 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         throw new Error('Employee is missing required payroll configuration (start date, frequency, or salary).');
     }
 
-    const { start: payPeriodStart, end: payPeriodEnd } = getNextPayPeriod(employee.payStartDate, employee.payFrequency);
+    const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriodForDate(employee.payStartDate, employee.payFrequency, new Date());
     
-    // Check if payroll for this period already exists
     const payrollQuery = query(
         collection(db, 'payroll'),
         where('employeeId', '==', employee.id),
@@ -77,12 +75,11 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         throw new Error(`Payroll for this period already exists for ${employeeName}.`);
     }
 
-
     const attendanceQuery = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', employee.name),
         where('clockIn', '>=', payPeriodStart),
-        where('clockIn', '<=', payPeriodEnd)
+        where('clockIn', '<=', add(payPeriodEnd, {days: 1})) // include the whole end day
     );
     
     const attendanceSnapshot = await getDocs(attendanceQuery);
@@ -102,12 +99,24 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         }
     });
 
-    // Simple salary calculation logic
-    const hourlyRate = employee.payFrequency === 'monthly' ? employee.baseSalary / 160 : employee.baseSalary;
     const regularHours = totalHours - overtimeHours;
-    const regularPay = regularHours * hourlyRate;
-    const overtimePay = overtimeHours * hourlyRate * 1.5;
-    const totalSalary = regularPay + overtimePay;
+    let totalSalary;
+    
+    if (employee.payFrequency === 'monthly') {
+        // Assuming baseSalary is monthly for monthly frequency
+        const monthlyWorkHours = employee.standardWorkHours * 22; // Approximation
+        const hourlyRate = employee.baseSalary / monthlyWorkHours;
+        const regularPay = regularHours * hourlyRate;
+        const overtimePay = overtimeHours * hourlyRate * 1.5;
+        totalSalary = regularPay + overtimePay;
+    } else {
+        // Assuming baseSalary is hourly for weekly/bi-weekly
+        const hourlyRate = employee.baseSalary;
+        const regularPay = regularHours * hourlyRate;
+        const overtimePay = overtimeHours * hourlyRate * 1.5;
+        totalSalary = regularPay + overtimePay;
+    }
+
 
     const newPayroll: Omit<Payroll, 'id'> = {
         employeeId: employee.id,

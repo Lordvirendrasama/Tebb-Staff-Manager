@@ -46,7 +46,7 @@ export const WEEKDAYS = [
 
 export type WeekDay = (typeof WEEKDAYS)[number];
 
-export const PAY_FREQUENCIES = ['weekly', 'bi-weekly', 'monthly', 'custom'] as const;
+export const PAY_FREQUENCIES = ['weekly', 'bi-weekly', 'monthly'] as const;
 export type PayFrequency = (typeof PAY_FREQUENCIES)[number];
 
 export interface Employee {
@@ -78,10 +78,37 @@ export interface LeaveRequest {
   status: LeaveStatus;
 }
 
-export const DEFAULT_EMPLOYEES = [
-  { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8, shiftStartTime: '09:00', shiftEndTime: '17:00' },
-  { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8, shiftStartTime: '09:00', shiftEndTime: '17:00' },
-  { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6, shiftStartTime: '12:00', shiftEndTime: '18:00' },
+export const DEFAULT_EMPLOYEES: Omit<Employee, 'id'>[] = [
+  { 
+    name: 'Mario', 
+    weeklyOffDay: 'Tuesday', 
+    standardWorkHours: 8, 
+    shiftStartTime: '09:00', 
+    shiftEndTime: '17:00',
+    baseSalary: 4000,
+    payFrequency: 'monthly',
+    payStartDate: new Date('2024-07-01')
+  },
+  { 
+    name: 'Luigi', 
+    weeklyOffDay: 'Wednesday', 
+    standardWorkHours: 8, 
+    shiftStartTime: '09:00', 
+    shiftEndTime: '17:00',
+    baseSalary: 3800,
+    payFrequency: 'monthly',
+    payStartDate: new Date('2024-07-01')
+  },
+  { 
+    name: 'Peach', 
+    weeklyOffDay: 'Thursday', 
+    standardWorkHours: 6, 
+    shiftStartTime: '12:00', 
+    shiftEndTime: '18:00',
+    baseSalary: 25, // hourly
+    payFrequency: 'weekly',
+    payStartDate: new Date('2024-07-01')
+  },
 ];
 
 export const ITEM_TYPES = ['Drink', 'Meal'] as const;
