@@ -7,24 +7,22 @@ import { db } from '@/lib/firebase-client';
 import type { Employee, LeaveRequest, AttendanceLog } from '@/lib/constants';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
-// This file exports server functions for client-side use.
-// This is the correct way to expose server functions to client components
-// without marking the entire service file as a client module.
-
-function makeEmployeeSerializable(emp: Employee): Employee {
-    const serializableEmp: any = { ...emp };
-    if (emp.payStartDate) {
-        // Handle both Firestore Timestamps and Date objects
-        const date = emp.payStartDate.toDate ? emp.payStartDate.toDate() : new Date(emp.payStartDate);
-        serializableEmp.payStartDate = date.toISOString();
+function makeSerializable<T>(obj: any): T {
+    const serializableObj: { [key: string]: any } = { ...obj };
+    for (const key in serializableObj) {
+        const value = serializableObj[key];
+        if (value && typeof value.toDate === 'function') {
+            serializableObj[key] = value.toDate().toISOString();
+        } else if (value instanceof Date) {
+            serializableObj[key] = value.toISOString();
+        }
     }
-    return serializableEmp as Employee;
+    return serializableObj as T;
 }
 
 const getEmployees = async (): Promise<Employee[]> => {
     const employees = await serverService.getEmployees();
-    // Convert any Date/Timestamp objects to string to make them serializable for client components
-    return employees.map(makeEmployeeSerializable);
+    return employees.map(emp => makeSerializable<Employee>(emp));
 };
 
 export const getAttendanceStatus = serverService.getAttendanceStatus;
@@ -61,8 +59,7 @@ export const onEmployeesSnapshot = (
     return onSnapshot(q, 
         (snapshot) => {
             const employees = snapshotToDocs<Employee>(snapshot);
-            // Ensure employees are serializable before passing to client components
-            const serializableEmployees = employees.map(makeEmployeeSerializable);
+            const serializableEmployees = employees.map(emp => makeSerializable<Employee>(emp));
             callback(serializableEmployees);
         },
         (error) => {
@@ -93,7 +90,6 @@ export const getAttendanceForMonth = async (employeeName: string, month: Date): 
     const start = startOfMonth(month);
     const end = endOfMonth(month);
 
-    // Query by employee and order by date
     const q = query(
         collection(db, 'attendanceLogs'),
         where('employeeName', '==', employeeName),
@@ -103,7 +99,6 @@ export const getAttendanceForMonth = async (employeeName: string, month: Date): 
     const querySnapshot = await getDocs(q);
     const allLogs = snapshotToDocs<AttendanceLog>(querySnapshot);
     
-    // Filter by date range in the client
     const logsInMonth = allLogs.filter(log => 
         isWithinInterval(log.clockIn, { start, end })
     );
