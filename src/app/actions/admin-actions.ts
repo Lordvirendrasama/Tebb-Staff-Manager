@@ -5,7 +5,8 @@ import type { User, WeekDay, ItemType, Employee } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { DEFAULT_EMPLOYEES } from '@/lib/constants';
+import { DEFAULT_EMPLOYEES, WEEKDAYS } from '@/lib/constants';
+import { eachDayOfInterval, format } from 'date-fns';
 
 // This function must be in a server-only file.
 async function getEmployeeOfTheWeek(): Promise<User | null> {
@@ -120,15 +121,51 @@ async function deleteCollection(collectionPath: string) {
     await batch.commit();
 }
 
+async function seedAttendanceForEmployee(batch: any, employee: Omit<Employee, 'id'>) {
+    if (!employee.payStartDate || !employee.shiftStartTime || !employee.shiftEndTime) {
+        return;
+    }
+
+    const today = new Date();
+    const startDate = new Date(employee.payStartDate);
+    
+    if (startDate > today) return;
+
+    const daysToSeed = eachDayOfInterval({ start: startDate, end: today });
+    const offDayIndex = WEEKDAYS.indexOf(employee.weeklyOffDay);
+
+    const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
+    const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
+    
+    daysToSeed.forEach(day => {
+        if (day.getDay() !== offDayIndex) {
+            const clockIn = new Date(day);
+            clockIn.setHours(startHour, startMinute, 0, 0);
+
+            const clockOut = new Date(day);
+            clockOut.setHours(endHour, endMinute, 0, 0);
+
+            const attendanceLog = {
+                employeeName: employee.name,
+                clockIn,
+                clockOut,
+            };
+            const docRef = doc(collection(db, 'attendanceLogs'));
+            batch.set(docRef, attendanceLog);
+        }
+    });
+}
+
 async function seedDefaultData() {
     const batch = writeBatch(db);
 
     // Seed employees
     const employeesCollection = collection(db, 'employees');
-    DEFAULT_EMPLOYEES.forEach(employee => {
+    for (const employee of DEFAULT_EMPLOYEES) {
         const docRef = doc(employeesCollection);
         batch.set(docRef, employee);
-    });
+        await seedAttendanceForEmployee(batch, employee);
+    }
 
     // Seed consumable items
     const itemsCollection = collection(db, 'consumableItems');
