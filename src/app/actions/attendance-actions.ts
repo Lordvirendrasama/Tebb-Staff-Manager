@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
 
 export async function clockInAction(user: User) {
@@ -134,12 +134,15 @@ export async function updateAttendanceForDayAction(employeeId: string, day: Date
 
         const q = query(
             collection(db, 'attendanceLogs'),
-            where('employeeName', '==', employee.name),
-            where('clockIn', '>=', dayStart),
-            where('clockIn', '<=', dayEnd)
+            where('employeeName', '==', employee.name)
         );
         const querySnapshot = await getDocs(q);
-        const existingLog = querySnapshot.docs[0];
+        
+        const logsForDay = querySnapshot.docs.filter(doc => {
+            const clockIn = doc.data().clockIn.toDate();
+            return isWithinInterval(clockIn, { start: dayStart, end: dayEnd });
+        });
+        const existingLog = logsForDay[0];
 
         if (worked && !existingLog) {
             // Add a new log for the day
