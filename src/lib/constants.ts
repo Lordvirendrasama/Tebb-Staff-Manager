@@ -85,3 +85,19 @@ export interface ConsumableItemDef {
   name: string;
   type: ItemType;
 }
+
+export const ESPRESSO_DRINKS = [
+    'Espresso', 'Double Espresso', 'Latte', 'Americano', 
+    'Cappuccino', 'Iced Latte', 'Iced Americano'
+] as const;
+
+export type EspressoDrink = (typeof ESPRESSO_DRINKS)[number];
+
+export interface EspressoLog {
+    id: string;
+    employeeName: User;
+    coffeeType: EspressoDrink;
+    timeTaken: number; // in seconds
+    coffeeUsed: number; // in grams
+    pullDateTime: Date;
+}

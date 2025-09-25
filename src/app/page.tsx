@@ -117,7 +117,7 @@ export default function Home() {
                 employeeOfTheWeek={employeeOfTheWeek}
               />
             ))}
-             <Link href="#" className="block">
+             <Link href="/espresso-tracker" className="block">
               <Card className="hover:bg-accent/50 hover:border-accent transition-all duration-300 transform hover:-translate-y-1 h-full">
                 <CardHeader className="text-center items-center p-6 sm:py-10">
                   <div className="p-4 bg-primary/10 rounded-full mb-4">
