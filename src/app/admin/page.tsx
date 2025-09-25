@@ -19,6 +19,7 @@ import { ExportDataButton } from '@/components/export-data-button';
 import { ResetDataButton } from '@/components/reset-data-button';
 import { AdminAuth } from '@/components/admin-auth';
 import { ItemManager } from '@/components/item-manager';
+import { ExportEspressoDataButton } from '@/components/export-espresso-data-button';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -175,11 +176,12 @@ export default function AdminPage() {
                 <CardContent className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">Export Data</CardTitle>
-                            <CardDescription>Download all application data as a single CSV file.</CardDescription>
+                            <CardTitle className="text-lg">Export Data</CardTitle>
+                            <CardDescription>Download application data.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-2">
                             <ExportDataButton />
+                            <ExportEspressoDataButton />
                         </CardContent>
                     </Card>
                     <Card>

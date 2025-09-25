@@ -4,7 +4,7 @@
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { saveAs } from 'file-saver';
 import { db } from '@/lib/firebase-client';
-import type { Employee, ConsumptionLog, AttendanceLog, LeaveRequest, User } from '@/lib/constants';
+import type { Employee, ConsumptionLog, AttendanceLog, LeaveRequest, User, EspressoLog } from '@/lib/constants';
 import { differenceInHours, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { getMonthlyOvertime, getEmployees, getAllLeaveRequests } from './client/attendance-service';
 import { getAllUsersAllowances } from './client/consumption-log-service';
@@ -52,6 +52,24 @@ async function fetchAllData<T>(collectionName: string, dateField?: string): Prom
     const snapshot = await getDocs(q);
     return Promise.all(snapshot.docs.map(doc => docWithDates<T>(doc)));
 }
+
+export async function exportEspressoData() {
+    const espressoLogs = await fetchAllData<EspressoLog>('espressoLogs', 'pullDateTime');
+
+    const formattedLogs = espressoLogs.map(log => ({
+        ...log,
+        pullDateTime: format(new Date(log.pullDateTime), 'yyyy-MM-dd HH:mm:ss'),
+        coffeeUsed: log.coffeeUsed.toFixed(2),
+    }));
+
+    const headers = [
+        'pullDateTime', 'employeeName', 'coffeeType', 'timeTaken', 'coffeeUsed'
+    ];
+    
+    const csv = convertToCSV(formattedLogs, headers);
+    saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'espresso_logs.csv');
+}
+
 
 export async function exportAllData() {
     const [
