@@ -138,7 +138,10 @@ async function seedAttendanceForEmployee(batch: any, employee: Omit<Employee, 'i
     const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
     
     daysToSeed.forEach(day => {
-        if (day.getDay() !== offDayIndex) {
+        // Special condition for Musaib to seed data for every day.
+        const shouldSkipDay = employee.name === 'Musaib' ? false : day.getDay() === offDayIndex;
+
+        if (!shouldSkipDay) {
             const clockIn = new Date(day);
             clockIn.setHours(startHour, startMinute, 0, 0);
 
