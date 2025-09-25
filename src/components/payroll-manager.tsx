@@ -111,7 +111,9 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                                         <div className="flex-1">
                                             <p className="font-semibold">{payroll.employeeName}</p>
                                             <p className="text-xs text-muted-foreground">{formatDateRange(payroll.payPeriodStart, payroll.payPeriodEnd)}</p>
-                                            <p className="text-lg font-bold mt-1">₹{payroll.finalSalary.toFixed(2)}</p>
+                                            <p className="text-lg font-bold mt-1">
+                                                ₹{typeof payroll.finalSalary === 'number' ? payroll.finalSalary.toFixed(2) : '...'}
+                                            </p>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <Badge variant={getStatusVariant(payroll.status)} className="capitalize">{payroll.status}</Badge>
