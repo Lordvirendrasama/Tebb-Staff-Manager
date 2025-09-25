@@ -147,7 +147,7 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
                    <FormControl>
                      <div className="relative">
                         <Coffee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type="number" placeholder="e.g. 18" {...field} className="pl-9" disabled={isPending || isActive} />
+                        <Input type="number" placeholder="e.g. 18.5" step="0.01" {...field} className="pl-9" disabled={isPending || isActive} />
                      </div>
                    </FormControl>
                   <FormMessage />
