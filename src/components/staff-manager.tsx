@@ -6,13 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Loader2, UserPlus, Save, Edit, Clock, Trash2 } from 'lucide-react';
-import type { Employee, WeekDay } from '@/lib/constants';
-import { WEEKDAYS } from '@/lib/constants';
+import { Loader2, UserPlus, Save, Edit, Clock, Trash2, Calendar as CalendarIcon, DollarSign } from 'lucide-react';
+import type { Employee, WeekDay, PayFrequency } from '@/lib/constants';
+import { WEEKDAYS, PAY_FREQUENCIES } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { addEmployeeAction, updateEmployeeAction, deleteEmployeeAction } from '@/app/actions/admin-actions';
 import { Label } from './ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 
 export function StaffManager({ employees }: { employees: Employee[] }) {
@@ -27,16 +31,27 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
   const [standardWorkHours, setStandardWorkHours] = useState<number | ''>('');
   const [shiftStartTime, setShiftStartTime] = useState<string>('');
   const [shiftEndTime, setShiftEndTime] = useState<string>('');
+  // Payroll fields
+  const [baseSalary, setBaseSalary] = useState<number | ''>('');
+  const [payFrequency, setPayFrequency] = useState<PayFrequency | ''>('');
+  const [payStartDate, setPayStartDate] = useState<Date | undefined>();
 
 
-  const handleAddNew = () => {
-    setIsAdding(true);
-    setEditingEmployee(null);
+  const resetForm = () => {
     setName('');
     setWeeklyOffDay('');
     setStandardWorkHours('');
     setShiftStartTime('');
     setShiftEndTime('');
+    setBaseSalary('');
+    setPayFrequency('');
+    setPayStartDate(undefined);
+  };
+
+  const handleAddNew = () => {
+    setIsAdding(true);
+    setEditingEmployee(null);
+    resetForm();
   };
 
   const handleEdit = (employee: Employee) => {
@@ -47,28 +62,38 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
     setStandardWorkHours(employee.standardWorkHours);
     setShiftStartTime(employee.shiftStartTime || '');
     setShiftEndTime(employee.shiftEndTime || '');
+    setBaseSalary(employee.baseSalary || '');
+    setPayFrequency(employee.payFrequency || '');
+    setPayStartDate(employee.payStartDate ? new Date(employee.payStartDate) : undefined);
   };
 
   const handleCancel = () => {
     setIsAdding(false);
     setEditingEmployee(null);
-    setName('');
-    setWeeklyOffDay('');
-    setStandardWorkHours('');
-    setShiftStartTime('');
-    setShiftEndTime('');
+    resetForm();
   };
 
   const handleSave = () => {
     if (!name || !weeklyOffDay || !standardWorkHours || standardWorkHours <= 0) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields with valid values.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all required employee fields with valid values.' });
       return;
     }
 
+    const employeeData: any = {
+      name,
+      weeklyOffDay: weeklyOffDay as WeekDay,
+      standardWorkHours,
+      shiftStartTime,
+      shiftEndTime,
+      baseSalary: baseSalary || null,
+      payFrequency: payFrequency || null,
+      payStartDate: payStartDate || null,
+    };
+
     startTransition(async () => {
       const action = editingEmployee ? 
-        updateEmployeeAction(editingEmployee.id, name, weeklyOffDay as WeekDay, standardWorkHours, shiftStartTime, shiftEndTime) : 
-        addEmployeeAction(name, weeklyOffDay as WeekDay, standardWorkHours, shiftStartTime, shiftEndTime);
+        updateEmployeeAction(editingEmployee.id, employeeData) : 
+        addEmployeeAction(employeeData);
       const result = await action;
 
       if (result.success) {
@@ -154,63 +179,121 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
         {(isAdding || editingEmployee) && (
           <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
             <h4 className="font-medium text-sm">{editingEmployee ? 'Edit Employee' : 'Add New Employee'}</h4>
-            <div>
-                <Label htmlFor="employee-name">Employee Name</Label>
-                <Input 
-                  id="employee-name"
-                  placeholder="e.g. John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={isPending}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                  <Label htmlFor="employee-name">Employee Name</Label>
+                  <Input 
+                    id="employee-name"
+                    placeholder="e.g. John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isPending}
+                  />
+              </div>
+              <div>
+                  <Label>Weekly Day Off</Label>
+                  <Select onValueChange={(value) => setWeeklyOffDay(value as WeekDay)} value={weeklyOffDay} disabled={isPending}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WEEKDAYS.map((day) => (
+                        <SelectItem key={day} value={day}>{day}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+              </div>
+              <div>
+                  <Label htmlFor="work-hours">Standard Work Hours/Day</Label>
+                  <Input 
+                    id="work-hours"
+                    type="number"
+                    placeholder="e.g. 8"
+                    value={standardWorkHours}
+                    onChange={(e) => setStandardWorkHours(e.target.value === '' ? '' : Number(e.target.value))}
+                    disabled={isPending}
+                  />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                      <Label htmlFor="shift-start">Shift Start</Label>
+                      <Input 
+                        id="shift-start"
+                        type="time"
+                        value={shiftStartTime}
+                        onChange={(e) => setShiftStartTime(e.target.value)}
+                        disabled={isPending}
+                      />
+                  </div>
+                  <div>
+                      <Label htmlFor="shift-end">Shift End</Label>
+                      <Input 
+                        id="shift-end"
+                        type="time"
+                        value={shiftEndTime}
+                        onChange={(e) => setShiftEndTime(e.target.value)}
+                        disabled={isPending}
+                      />
+                  </div>
+              </div>
             </div>
-             <div>
-                <Label>Weekly Day Off</Label>
-                <Select onValueChange={(value) => setWeeklyOffDay(value as WeekDay)} value={weeklyOffDay} disabled={isPending}>
+            
+            <h5 className="font-medium text-xs text-muted-foreground pt-2">Payroll Information</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                  <Label htmlFor="base-salary">Base Salary</Label>
+                   <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="base-salary"
+                        type="number"
+                        placeholder="e.g. 3000"
+                        value={baseSalary}
+                        onChange={(e) => setBaseSalary(e.target.value === '' ? '' : Number(e.target.value))}
+                        disabled={isPending}
+                        className="pl-9"
+                      />
+                   </div>
+              </div>
+              <div>
+                <Label>Pay Frequency</Label>
+                <Select onValueChange={(value) => setPayFrequency(value as PayFrequency)} value={payFrequency} disabled={isPending}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Day" />
+                    <SelectValue placeholder="Select Frequency" />
                   </SelectTrigger>
                   <SelectContent>
-                    {WEEKDAYS.map((day) => (
-                      <SelectItem key={day} value={day}>{day}</SelectItem>
+                    {PAY_FREQUENCIES.map((freq) => (
+                      <SelectItem key={freq} value={freq} className="capitalize">{freq}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-            </div>
-            <div>
-                <Label htmlFor="work-hours">Standard Work Hours/Day</Label>
-                <Input 
-                  id="work-hours"
-                  type="number"
-                  placeholder="e.g. 8"
-                  value={standardWorkHours}
-                  onChange={(e) => setStandardWorkHours(e.target.value === '' ? '' : Number(e.target.value))}
-                  disabled={isPending}
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="shift-start">Shift Start</Label>
-                    <Input 
-                      id="shift-start"
-                      type="time"
-                      value={shiftStartTime}
-                      onChange={(e) => setShiftStartTime(e.target.value)}
+              </div>
+              <div className="md:col-span-2">
+                <Label>Current Cycle Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn('w-full justify-start text-left font-normal', !payStartDate && 'text-muted-foreground')}
                       disabled={isPending}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {payStartDate ? format(payStartDate, 'PPP') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={payStartDate}
+                      onSelect={setPayStartDate}
+                      initialFocus
                     />
-                </div>
-                <div>
-                    <Label htmlFor="shift-end">Shift End</Label>
-                    <Input 
-                      id="shift-end"
-                      type="time"
-                      value={shiftEndTime}
-                      onChange={(e) => setShiftEndTime(e.target.value)}
-                      disabled={isPending}
-                    />
-                </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-4">
               <Button onClick={handleCancel} variant="outline" className="w-full" disabled={isPending}>Cancel</Button>
               <Button onClick={handleSave} className="w-full" disabled={isPending || !name || !weeklyOffDay || !standardWorkHours}>
                 {isPending ? <Loader2 className="animate-spin" /> : <Save />}

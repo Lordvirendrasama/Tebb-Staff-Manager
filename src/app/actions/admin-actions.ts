@@ -1,11 +1,11 @@
 
 'use server';
 
-import type { User, WeekDay, ItemType } from '@/lib/constants';
+import type { User, WeekDay, ItemType, Employee } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { DEFAULT_EMPLOYEES, ALL_ITEMS, ITEM_TYPES } from '@/lib/constants';
+import { DEFAULT_EMPLOYEES } from '@/lib/constants';
 
 // This function must be in a server-only file.
 async function getEmployeeOfTheWeek(): Promise<User | null> {
@@ -41,13 +41,9 @@ export async function setEmployeeOfTheWeekAction(employeeName: User | null) {
     }
 }
 
-export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, standardWorkHours: number, shiftStartTime?: string, shiftEndTime?: string) {
+export async function addEmployeeAction(employeeData: Partial<Employee>) {
     try {
-        const batch = writeBatch(db);
-        const newEmployeeRef = doc(collection(db, 'employees'));
-        batch.set(newEmployeeRef, { name, weeklyOffDay, standardWorkHours, shiftStartTime, shiftEndTime });
-        await batch.commit();
-
+        await addDoc(collection(db, 'employees'), employeeData);
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee added successfully!' };
@@ -58,9 +54,9 @@ export async function addEmployeeAction(name: string, weeklyOffDay: WeekDay, sta
     }
 }
 
-export async function updateEmployeeAction(id: string, name: string, weeklyOffDay: WeekDay, standardWorkHours: number, shiftStartTime?: string, shiftEndTime?: string) {
+export async function updateEmployeeAction(id: string, employeeData: Partial<Employee>) {
     try {
-        await updateDoc(doc(db, 'employees', id), { name, weeklyOffDay, standardWorkHours, shiftStartTime, shiftEndTime });
+        await updateDoc(doc(db, 'employees', id), employeeData);
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };
@@ -83,7 +79,7 @@ export async function deleteEmployeeAction(id: string) {
 
         if (employeeName) {
             const batch = writeBatch(db);
-            const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
+            const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests', 'payroll'];
             
             for (const collectionName of collectionsToDelete) {
                 const q = query(collection(db, collectionName), where('employeeName', '==', employeeName));
@@ -153,7 +149,7 @@ async function seedDefaultData() {
 export async function resetDataAction() {
     try {
         // Clear existing data
-        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems'];
+        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems', 'payroll'];
         for (const collectionPath of collectionsToDelete) {
             await deleteCollection(collectionPath);
         }

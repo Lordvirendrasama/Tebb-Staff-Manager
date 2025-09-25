@@ -46,6 +46,9 @@ export const WEEKDAYS = [
 
 export type WeekDay = (typeof WEEKDAYS)[number];
 
+export const PAY_FREQUENCIES = ['weekly', 'bi-weekly', 'monthly', 'custom'] as const;
+export type PayFrequency = (typeof PAY_FREQUENCIES)[number];
+
 export interface Employee {
   id: string;
   name: string;
@@ -53,6 +56,10 @@ export interface Employee {
   standardWorkHours: number;
   shiftStartTime?: string;
   shiftEndTime?: string;
+  // Payroll fields
+  baseSalary?: number;
+  payFrequency?: PayFrequency;
+  payStartDate?: Date;
 }
 
 export const LEAVE_TYPES = ['Paid (Scheduled)', 'Paid (Made Up)', 'Unpaid'] as const;
@@ -100,4 +107,24 @@ export interface EspressoLog {
     timeTaken: number; // in seconds
     coffeeUsed: number; // in grams
     pullDateTime: Date;
+}
+
+export const PAYROLL_STATUSES = ['pending', 'paid'] as const;
+export type PayrollStatus = (typeof PAYROLL_STATUSES)[number];
+
+export interface Payroll {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  payPeriodStart: Date;
+  payPeriodEnd: Date;
+  baseSalary: number;
+  hoursWorked: number;
+  overtimeHours: number;
+  tips?: number;
+  deductions?: number;
+  totalSalary: number;
+  status: PayrollStatus;
+  paymentDate?: Date;
+  generatedAt: Date;
 }

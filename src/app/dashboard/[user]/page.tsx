@@ -8,13 +8,17 @@ import { LogItemForm } from '@/components/log-item-form';
 import { ConsumptionHistory } from '@/components/consumption-history';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, GlassWater, Utensils } from 'lucide-react';
-import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, ConsumableItemDef } from '@/lib/constants';
+import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, ConsumableItemDef, Payroll } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { onUserConsumptionLogsSnapshot, getConsumableItems } from '@/services/client/consumption-log-service';
 import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, getEmployees } from '@/services/client/attendance-service';
+import { onUserPayrollSnapshot } from '@/services/client/payroll-service';
 import { LeaveTracker } from '@/components/leave-tracker';
+import { PayrollViewer } from '@/components/payroll-viewer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE } from '@/lib/constants';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 export default function UserDashboard() {
   const params = useParams();
@@ -29,9 +33,12 @@ export default function UserDashboard() {
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceLog[]>([]);
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
+  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
+
 
   useEffect(() => {
     let unsubscribeLogs: (() => void) | undefined;
+    let unsubscribePayrolls: (() => void) | undefined;
 
     const initializeDashboard = async () => {
       setLoading(true);
@@ -77,10 +84,10 @@ export default function UserDashboard() {
               meals: MONTHLY_MEAL_ALLOWANCE - mealsConsumed,
             });
           },
-          (error) => {
-            console.error("Failed to listen to consumption logs:", error);
-          }
+          (error) => console.error("Failed to listen to consumption logs:", error)
         );
+
+        unsubscribePayrolls = onUserPayrollSnapshot(user, setPayrolls, (error) => console.error("Failed to listen to payrolls:", error));
 
       } catch (error) {
         console.error("Failed to fetch initial dashboard data:", error);
@@ -95,6 +102,7 @@ export default function UserDashboard() {
 
     return () => {
       unsubscribeLogs?.();
+      unsubscribePayrolls?.();
     };
   }, [user]);
 
@@ -134,84 +142,95 @@ export default function UserDashboard() {
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome, {user}!</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Attendance</CardTitle>
-              <CardDescription>Clock in and out for your shift.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AttendanceTracker 
-                user={user} 
-                status={attendanceStatus} 
-                history={attendanceHistory}
-                setStatus={setAttendanceStatus}
-                setHistory={setAttendanceHistory}
-              />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Allowance</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {hasAllowance ? (
-                <>
-                  <div className="flex items-center gap-4">
-                    <GlassWater className="h-8 w-8 text-primary" />
-                    <div>
-                      <p className="text-2xl font-bold">{allowances.drinks}</p>
-                      <p className="text-sm text-muted-foreground">drinks left</p>
-                    </div>
-                  </div>
-                   <div className="flex items-center gap-4">
-                    <Utensils className="h-8 w-8 text-primary" />
-                    <div>
-                      <p className="text-2xl font-bold">{allowances.meals}</p>
-                      <p className="text-sm text-muted-foreground">meals left</p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <Alert variant="destructive">
-                  <Ban className="h-4 w-4" />
-                  <AlertTitle>No free items left!</AlertTitle>
-                  <AlertDescription>
-                    Please pay for any extra orders.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-1 space-y-8">
-            <Card>
-              <CardHeader>
-                  <CardTitle>Log an Item</CardTitle>
-                  <CardDescription>Select an item you've consumed.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <LogItemForm user={user} allowances={allowances} items={consumableItems} />
-              </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Consumption History</CardTitle>
-                    <CardDescription>Your last 6 logged items this month.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ConsumptionHistory logs={recentLogs} />
-                </CardContent>
-            </Card>
-        </div>
+       <Tabs defaultValue="general">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="payroll">Payroll</TabsTrigger>
+        </TabsList>
+        <TabsContent value="general" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 space-y-8">
+                <Card>
+                    <CardHeader>
+                    <CardTitle>Attendance</CardTitle>
+                    <CardDescription>Clock in and out for your shift.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                    <AttendanceTracker 
+                        user={user} 
+                        status={attendanceStatus} 
+                        history={attendanceHistory}
+                        setStatus={setAttendanceStatus}
+                        setHistory={setAttendanceHistory}
+                    />
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader>
+                    <CardTitle>Monthly Allowance</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                    {hasAllowance ? (
+                        <>
+                        <div className="flex items-center gap-4">
+                            <GlassWater className="h-8 w-8 text-primary" />
+                            <div>
+                            <p className="text-2xl font-bold">{allowances.drinks}</p>
+                            <p className="text-sm text-muted-foreground">drinks left</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Utensils className="h-8 w-8 text-primary" />
+                            <div>
+                            <p className="text-2xl font-bold">{allowances.meals}</p>
+                            <p className="text-sm text-muted-foreground">meals left</p>
+                            </div>
+                        </div>
+                        </>
+                    ) : (
+                        <Alert variant="destructive">
+                        <Ban className="h-4 w-4" />
+                        <AlertTitle>No free items left!</AlertTitle>
+                        <AlertDescription>
+                            Please pay for any extra orders.
+                        </AlertDescription>
+                        </Alert>
+                    )}
+                    </CardContent>
+                </Card>
+                </div>
+                
+                <div className="lg:col-span-1 space-y-8">
+                    <Card>
+                    <CardHeader>
+                        <CardTitle>Log an Item</CardTitle>
+                        <CardDescription>Select an item you've consumed.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <LogItemForm user={user} allowances={allowances} items={consumableItems} />
+                    </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Consumption History</CardTitle>
+                            <CardDescription>Your last 6 logged items this month.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ConsumptionHistory logs={recentLogs} />
+                        </CardContent>
+                    </Card>
+                </div>
 
-        <div className="lg:col-span-1 space-y-8">
-           <LeaveTracker user={user} history={leaveHistory} />
-        </div>
-      </div>
+                <div className="lg:col-span-1 space-y-8">
+                <LeaveTracker user={user} history={leaveHistory} />
+                </div>
+            </div>
+        </TabsContent>
+        <TabsContent value="payroll" className="mt-6">
+            <PayrollViewer payrolls={payrolls} />
+        </TabsContent>
+       </Tabs>
     </div>
   );
 }
