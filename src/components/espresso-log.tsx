@@ -98,7 +98,7 @@ export function EspressoLog({ logs }: { logs: EspressoLogType[] }) {
                         <TableCell>{log.employeeName}</TableCell>
                         <TableCell>{log.coffeeType}</TableCell>
                         <TableCell className="text-right">{log.timeTaken}s</TableCell>
-                        <TableCell className="text-right hidden sm:table-cell">{log.coffeeUsed}g</TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">{log.coffeeUsed.toFixed(2)}g</TableCell>
                     </TableRow>
                     ))}
                 </TableBody>
