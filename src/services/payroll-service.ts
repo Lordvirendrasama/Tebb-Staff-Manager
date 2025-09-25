@@ -65,7 +65,6 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriodForDate(employee.payStartDate, employee.payFrequency, new Date());
     
-    // WORKAROUND: Fetch by employeeId first, then filter by date in code to avoid composite index.
     const payrollQuery = query(
         collection(db, 'payroll'),
         where('employeeId', '==', employee.id)
@@ -79,16 +78,20 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         throw new Error(`Payroll for this period already exists for ${employeeName}.`);
     }
 
+    // WORKAROUND: Fetch all logs for the employee and then filter by date in code to avoid composite index.
     const attendanceQuery = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employee.name),
-        where('clockIn', '>=', payPeriodStart),
-        where('clockIn', '<=', add(payPeriodEnd, {days: 1})) // include the whole end day
+        where('employeeName', '==', employee.name)
     );
     
     const attendanceSnapshot = await getDocs(attendanceQuery);
-    const attendanceLogs = await Promise.all(
+    const allAttendanceLogs = await Promise.all(
         attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d))
+    );
+
+    const periodEndWithTime = add(payPeriodEnd, {days: 1});
+    const attendanceLogs = allAttendanceLogs.filter(log => 
+        log.clockIn >= payPeriodStart && log.clockIn < periodEndWithTime
     );
 
     let totalHours = 0;
