@@ -7,7 +7,7 @@ import type { Payroll, Employee } from '@/lib/constants';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generatePayrollAction, markPayrollAsPaidAction, deletePayrollAction } from '@/app/actions/payroll-actions';
-import { Loader2, FileText, CheckCircle, Trash2, Info } from 'lucide-react';
+import { Loader2, FileText, CheckCircle, Trash2, Info, Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
 import { format } from 'date-fns';
@@ -25,12 +25,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
 
 
 export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], employees: Employee[] }) {
     const [isPending, startTransition] = useTransition();
     const [isDeleting, startDeleteTransition] = useTransition();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+    const [payrollForDate, setPayrollForDate] = useState<Date | undefined>(new Date());
     const { toast } = useToast();
 
     const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
@@ -48,7 +52,7 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
         }
 
         startTransition(async () => {
-            const result = await generatePayrollAction(selectedEmployeeId, selectedEmployee.name);
+            const result = await generatePayrollAction(selectedEmployeeId, selectedEmployee.name, payrollForDate);
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
             } else {
@@ -97,7 +101,7 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
             <CardContent className="space-y-6">
                 <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
                     <h4 className="font-medium text-sm">Generate New Payroll</h4>
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <Select onValueChange={setSelectedEmployeeId} value={selectedEmployeeId} disabled={isPending}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Employee" />
@@ -106,7 +110,30 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                                 {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <Button onClick={handleGeneratePayroll} disabled={isPending || !selectedEmployeeId || !isPayrollConfigured} className="w-full sm:w-auto">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn('justify-start text-left font-normal', !payrollForDate && 'text-muted-foreground')}
+                              disabled={isPending}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {payrollForDate ? format(payrollForDate, 'PPP') : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={payrollForDate}
+                              onSelect={setPayrollForDate}
+                              initialFocus
+                              captionLayout="dropdown-buttons" 
+                              fromYear={2020} 
+                              toYear={new Date().getFullYear() + 1}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <Button onClick={handleGeneratePayroll} disabled={isPending || !selectedEmployeeId || !isPayrollConfigured} className="w-full lg:w-auto">
                             {isPending ? <Loader2 className="animate-spin" /> : <FileText />}
                             Generate
                         </Button>
@@ -179,5 +206,5 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                 </div>
             </CardContent>
         </Card>
-    )
+    );
 }

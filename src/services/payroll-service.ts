@@ -4,7 +4,7 @@
 import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency, WeekDay } from '@/lib/constants';
-import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay, eachDayOfInterval, format, getMonth, getYear, getDate } from 'date-fns';
+import { differenceInHours, add, sub, isBefore, startOfDay, isSameDay, eachDayOfInterval, format, getMonth, getYear, getDate, addMonths, subMonths, isAfter } from 'date-fns';
 
 const LATE_DEDUCTION_AMOUNT = 50;
 const LATE_BUFFER_MINUTES = 10;
@@ -25,30 +25,28 @@ async function docToTyped<T>(docSnap: any): Promise<T> {
     return convertedData as T;
 }
 
-function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, targetDate: Date): { start: Date, end: Date } {
-    let cycleAnchorDate = startOfDay(payStartDate);
-
+function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, forDate: Date): { start: Date, end: Date } {
     if (payFrequency === 'monthly') {
-        const targetYear = getYear(targetDate);
-        const targetMonth = getMonth(targetDate);
-        const cycleDay = getDate(cycleAnchorDate);
-
         let periodStart;
-        if (getDate(targetDate) >= cycleDay) {
-            // The pay period started in the current month on cycleDay
-            periodStart = new Date(targetYear, targetMonth, cycleDay);
+        const cycleDay = getDate(payStartDate);
+
+        // Find the cycle start date for the month of `forDate`
+        let cycleStartDateForTargetMonth = new Date(getYear(forDate), getMonth(forDate), cycleDay);
+
+        if (isAfter(forDate, cycleStartDateForTargetMonth)) {
+             // If forDate is on or after the cycle day of this month, this is the start of the period
+             periodStart = cycleStartDateForTargetMonth;
         } else {
-            // The pay period started in the previous month on cycleDay
-            periodStart = new Date(targetYear, targetMonth - 1, cycleDay);
+            // Otherwise, the pay period started in the previous month
+            periodStart = subMonths(cycleStartDateForTargetMonth, 1);
         }
         
-        const periodEnd = sub(add(periodStart, { months: 1 }), { days: 1 });
-        
+        const periodEnd = sub(addMonths(periodStart, 1), { days: 1 });
         return { start: startOfDay(periodStart), end: startOfDay(periodEnd) };
     }
 
     // Fallback for weekly/bi-weekly (existing logic)
-    let periodStart = cycleAnchorDate;
+    let periodStart = startOfDay(payStartDate);
     while (true) {
         let periodEnd;
         switch (payFrequency) {
@@ -64,7 +62,7 @@ function getPayPeriodForDate(payStartDate: Date, payFrequency: PayFrequency, tar
         }
         periodEnd = startOfDay(periodEnd);
 
-        if (isBefore(targetDate, add(periodEnd, { days: 1 }))) {
+        if (isBefore(forDate, add(periodEnd, { days: 1 }))) {
             return { start: periodStart, end: periodEnd };
         }
         
@@ -80,7 +78,7 @@ const getWeekDayNumber = (day: WeekDay): number => {
     return dayMap[day];
 };
 
-export async function generatePayrollForEmployee(employeeId: string, employeeName: string): Promise<Payroll | null> {
+export async function generatePayrollForEmployee(employeeId: string, employeeName: string, generationDate: Date = new Date()): Promise<Payroll | null> {
     const employeeRef = doc(db, 'employees', employeeId);
     const employeeSnap = await getDoc(employeeRef);
     if (!employeeSnap.exists()) throw new Error('Employee not found');
@@ -91,7 +89,7 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         throw new Error('Employee is missing required payroll configuration (start date, frequency, salary, or shift start time).');
     }
 
-    const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriodForDate(employee.payStartDate, employee.payFrequency, new Date());
+    const { start: payPeriodStart, end: payPeriodEnd } = getPayPeriodForDate(employee.payStartDate, employee.payFrequency, generationDate);
     
     const payrollQuery = query(
         collection(db, 'payroll'), 
@@ -101,7 +99,7 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
     const allPayrollsSnap = await getDocs(payrollQuery);
     const allPayrolls = await Promise.all(allPayrollsSnap.docs.map(d => docToTyped<Payroll>(d)));
     
-    const existingPayroll = allPayrolls.find(p => isSameDay(p.payPeriodStart, payPeriodStart));
+    const existingPayroll = allPayrolls.find(p => isSameDay(new Date(p.payPeriodStart), payPeriodStart));
     if (existingPayroll) {
         throw new Error(`Payroll for this period (${format(payPeriodStart, 'MMM d')} - ${format(payPeriodEnd, 'MMM d')}) already exists for ${employeeName}.`);
     }
@@ -115,18 +113,16 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const attendanceQuery = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employee.name)
+        where('employeeName', '==', employee.name),
+        where('clockIn', '>=', payPeriodStart),
+        where('clockIn', '<', add(payPeriodEnd, { days: 1 }))
     );
     const attendanceSnapshot = await getDocs(attendanceQuery);
-    const allAttendanceLogs = await Promise.all(attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d)));
+    const attendanceLogsInPeriod = await Promise.all(attendanceSnapshot.docs.map(d => docToTyped<AttendanceLog>(d)));
     
-    const periodEndWithTime = add(payPeriodEnd, { days: 1 });
-    const attendanceLogsInPeriod = allAttendanceLogs.filter(log => 
-        log.clockIn >= payPeriodStart && log.clockIn < periodEndWithTime && log.clockOut
-    );
-
     const workedDays = new Map<string, { clockIn: Date, hours: number }>();
     attendanceLogsInPeriod.forEach(log => {
+        if (!log.clockOut) return;
         const dayKey = format(log.clockIn, 'yyyy-MM-dd');
         const hoursWorked = differenceInHours(log.clockOut!, log.clockIn);
         
