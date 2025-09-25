@@ -11,10 +11,24 @@ import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 // This is the correct way to expose server functions to client components
 // without marking the entire service file as a client module.
 
+const getEmployees = async (): Promise<Employee[]> => {
+    const employees = await serverService.getEmployees();
+    // Convert any Date/Timestamp objects to string to make them serializable for client components
+    return employees.map(emp => {
+        const serializableEmp: any = { ...emp };
+        if (emp.payStartDate && typeof emp.payStartDate.toDate === 'function') {
+            serializableEmp.payStartDate = emp.payStartDate.toDate().toISOString();
+        } else if (emp.payStartDate instanceof Date) {
+            serializableEmp.payStartDate = emp.payStartDate.toISOString();
+        }
+        return serializableEmp as Employee;
+    });
+};
+
 export const getAttendanceStatus = serverService.getAttendanceStatus;
 export const getAttendanceHistory = serverService.getAttendanceHistory;
 export const getMonthlyOvertime = serverService.getMonthlyOvertime;
-export const getEmployees = serverService.getEmployees;
+export { getEmployees };
 export const addEmployee = serverService.addEmployee;
 export const getLeaveRequestsForUser = serverService.getLeaveRequestsForUser;
 export const getAllLeaveRequests = serverService.getAllLeaveRequests;
