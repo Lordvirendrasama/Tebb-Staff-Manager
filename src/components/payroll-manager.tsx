@@ -6,18 +6,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import type { Payroll, Employee } from '@/lib/constants';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { generatePayrollAction, markPayrollAsPaidAction } from '@/app/actions/payroll-actions';
-import { Loader2, FileText, CheckCircle } from 'lucide-react';
+import { generatePayrollAction, markPayrollAsPaidAction, deletePayrollAction } from '@/app/actions/payroll-actions';
+import { Loader2, FileText, CheckCircle, Trash2, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
 import { format } from 'date-fns';
 import { Badge } from './ui/badge';
 import { PayrollDetailsDialog } from './payroll-details-dialog';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Info } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 
 export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], employees: Employee[] }) {
     const [isPending, startTransition] = useTransition();
+    const [isDeleting, startDeleteTransition] = useTransition();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
     const { toast } = useToast();
 
@@ -48,6 +60,17 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
     const handleMarkAsPaid = (payrollId: string) => {
          startTransition(async () => {
             const result = await markPayrollAsPaidAction(payrollId);
+            if (result.success) {
+                toast({ title: 'Success', description: result.message });
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: result.message });
+            }
+        });
+    };
+
+     const handleDeletePayroll = (payrollId: string) => {
+        startDeleteTransition(async () => {
+            const result = await deletePayrollAction(payrollId);
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
             } else {
@@ -115,17 +138,38 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                                                 ₹{typeof payroll.finalSalary === 'number' ? payroll.finalSalary.toFixed(2) : '...'}
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center flex-wrap gap-2">
                                             <Badge variant={getStatusVariant(payroll.status)} className="capitalize">{payroll.status}</Badge>
                                             <PayrollDetailsDialog payroll={payroll}>
                                                 <Button variant="outline" size="sm">Details</Button>
                                             </PayrollDetailsDialog>
                                             {payroll.status === 'pending' && (
-                                                <Button onClick={() => handleMarkAsPaid(payroll.id)} disabled={isPending} size="sm">
-                                                    {isPending ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle className="h-4 w-4"/>}
+                                                <Button onClick={() => handleMarkAsPaid(payroll.id)} disabled={isPending || isDeleting} size="sm">
+                                                    {(isPending || isDeleting) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle className="h-4 w-4"/>}
                                                     Mark Paid
                                                 </Button>
                                             )}
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="icon" disabled={isPending || isDeleting}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This will permanently delete the payroll record for {payroll.employeeName} for the period {formatDateRange(payroll.payPeriodStart, payroll.payPeriodEnd)}. This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeletePayroll(payroll.id)} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+                                                            {isDeleting ? <Loader2 className="animate-spin" /> : 'Delete'}
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
                                     </div>
                                 ))}

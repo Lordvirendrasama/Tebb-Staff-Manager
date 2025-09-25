@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { generatePayrollForEmployee } from '@/services/payroll-service';
 
@@ -45,5 +45,17 @@ export async function updatePayrollAction(payrollId: string, data: { tips?: numb
         console.error('Failed to update payroll:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return { success: false, message: `Failed to update payroll: ${errorMessage}` };
+    }
+}
+
+export async function deletePayrollAction(payrollId: string) {
+    try {
+        await deleteDoc(doc(db, 'payroll', payrollId));
+        revalidatePath('/admin');
+        return { success: true, message: 'Payroll record deleted successfully.' };
+    } catch (error) {
+        console.error('Failed to delete payroll:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to delete payroll: ${errorMessage}` };
     }
 }
