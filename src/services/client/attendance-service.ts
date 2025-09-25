@@ -11,18 +11,20 @@ import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 // This is the correct way to expose server functions to client components
 // without marking the entire service file as a client module.
 
+function makeEmployeeSerializable(emp: Employee): Employee {
+    const serializableEmp: any = { ...emp };
+    if (emp.payStartDate) {
+        // Handle both Firestore Timestamps and Date objects
+        const date = emp.payStartDate.toDate ? emp.payStartDate.toDate() : new Date(emp.payStartDate);
+        serializableEmp.payStartDate = date.toISOString();
+    }
+    return serializableEmp as Employee;
+}
+
 const getEmployees = async (): Promise<Employee[]> => {
     const employees = await serverService.getEmployees();
     // Convert any Date/Timestamp objects to string to make them serializable for client components
-    return employees.map(emp => {
-        const serializableEmp: any = { ...emp };
-        if (emp.payStartDate && typeof emp.payStartDate.toDate === 'function') {
-            serializableEmp.payStartDate = emp.payStartDate.toDate().toISOString();
-        } else if (emp.payStartDate instanceof Date) {
-            serializableEmp.payStartDate = emp.payStartDate.toISOString();
-        }
-        return serializableEmp as Employee;
-    });
+    return employees.map(makeEmployeeSerializable);
 };
 
 export const getAttendanceStatus = serverService.getAttendanceStatus;
@@ -59,7 +61,9 @@ export const onEmployeesSnapshot = (
     return onSnapshot(q, 
         (snapshot) => {
             const employees = snapshotToDocs<Employee>(snapshot);
-            callback(employees);
+            // Ensure employees are serializable before passing to client components
+            const serializableEmployees = employees.map(makeEmployeeSerializable);
+            callback(serializableEmployees);
         },
         (error) => {
             console.error("Error listening to employees collection:", error);
