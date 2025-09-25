@@ -110,7 +110,7 @@ export const DEFAULT_EMPLOYEES: Omit<Employee, 'id'>[] = [
   },
   {
     name: 'Musaib',
-    weeklyOffDay: 'Sunday',
+    weeklyOffDay: 'Tuesday',
     standardWorkHours: 8,
     shiftStartTime: '09:00',
     shiftEndTime: '17:00',
