@@ -108,6 +108,16 @@ export const DEFAULT_EMPLOYEES: Omit<Employee, 'id'>[] = [
     payFrequency: 'monthly',
     payStartDate: new Date('2024-07-01')
   },
+  {
+    name: 'Musaib',
+    weeklyOffDay: 'Sunday',
+    standardWorkHours: 8,
+    shiftStartTime: '09:00',
+    shiftEndTime: '17:00',
+    monthlySalary: 35000,
+    payFrequency: 'monthly',
+    payStartDate: new Date('2024-08-16')
+  },
 ];
 
 export const ITEM_TYPES = ['Drink', 'Meal'] as const;
