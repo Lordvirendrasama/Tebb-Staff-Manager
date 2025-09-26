@@ -1,14 +1,6 @@
-'use server';
+import type { ConsumptionLog, User } from '@/lib/constants';
 
-import {
-  ALL_USERS,
-  MONTHLY_DRINK_ALLOWANCE,
-  MONTHLY_MEAL_ALLOWANCE,
-  type ConsumptionLog,
-  type User,
-} from '@/lib/constants';
-
-async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
+export async function getUserLogs(user: User): Promise<ConsumptionLog[]> {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
@@ -45,7 +37,8 @@ async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
   }
 
   const json = await res.json();
-  return json.map((item: any) => {
+  // Filter out empty responses that can come from Firestore REST API
+  return json.filter((item: any) => item.document).map((item: any) => {
     const fields = item.document.fields;
     return {
       employeeName: fields.employeeName.stringValue,
@@ -54,26 +47,3 @@ async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     };
   });
 }
-
-async function getRemainingAllowances(user: User): Promise<{ drinks: number, meals: number }> {
-  const logs = await getLogsForUser(user);
-  const drinksConsumed = logs.filter(log => ['Coffee', 'Cooler', 'Milkshake'].includes(log.itemName)).length;
-  const mealsConsumed = logs.filter(log => ['Maggie', 'Fries', 'Pasta'].includes(log.itemName)).length;
-
-  return {
-    drinks: MONTHLY_DRINK_ALLOWANCE - drinksConsumed,
-    meals: MONTHLY_MEAL_ALLOWANCE - mealsConsumed,
-  };
-}
-
-async function getAllUsersAllowances(): Promise<Array<{ user: User, allowances: { drinks: number, meals: number } }>> {
-  const allowances = await Promise.all(
-    ALL_USERS.map(async (user) => {
-      const userAllowances = await getRemainingAllowances(user);
-      return { user, allowances: userAllowances };
-    })
-  );
-  return allowances;
-}
-
-export { getLogsForUser, getRemainingAllowances, getAllUsersAllowances };

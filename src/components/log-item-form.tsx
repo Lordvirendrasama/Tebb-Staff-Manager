@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,7 +6,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { type User, type ConsumableItem, type ConsumableItemDef } from '@/lib/constants';
+import { ALL_ITEMS, type User, type ConsumableItem } from '@/lib/constants';
 import { logItemAction } from '@/app/actions';
 import { useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +18,7 @@ const FormSchema = z.object({
   }),
 });
 
-export function LogItemForm({ user, allowances, items }: { user: User; allowances: { drinks: number, meals: number }; items: ConsumableItemDef[] }) {
+export function LogItemForm({ user, allowances }: { user: User; allowances: { drinks: number, meals: number } }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -35,7 +34,6 @@ export function LogItemForm({ user, allowances, items }: { user: User; allowance
           title: 'Success',
           description: result.message,
         });
-        form.reset({ itemName: undefined });
       } else {
         toast({
           variant: 'destructive',
@@ -45,16 +43,14 @@ export function LogItemForm({ user, allowances, items }: { user: User; allowance
       }
     });
   }
-  
-  const selectedItemName = form.watch('itemName');
-  const selectedItemDef = items.find(i => i.name === selectedItemName);
 
+  const selectedItemName = form.watch('itemName');
   let disabled = !selectedItemName;
-  if(selectedItemDef) {
-    const isDrink = selectedItemDef.type === 'Drink';
-    const isMeal = selectedItemDef.type === 'Meal';
-    if(isDrink && allowances.drinks <= 0) disabled = true;
-    if(isMeal && allowances.meals <= 0) disabled = true;
+  if (selectedItemName === 'Coffee' || selectedItemName === 'Cooler' || selectedItemName === 'Milkshake') {
+    if (allowances.drinks <= 0) disabled = true;
+  }
+  if (selectedItemName === 'Maggie' || selectedItemName === 'Fries' || selectedItemName === 'Pasta') {
+    if (allowances.meals <= 0) disabled = true;
   }
   if (isPending) disabled = true;
 
@@ -74,19 +70,11 @@ export function LogItemForm({ user, allowances, items }: { user: User; allowance
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {items.map((item) => {
-                    const isDrink = item.type === 'Drink';
-                    const isMeal = item.type === 'Meal';
-                    let itemDisabled = false;
-                    if (isDrink && allowances.drinks <= 0) itemDisabled = true;
-                    if (isMeal && allowances.meals <= 0) itemDisabled = true;
-
-                    return (
-                        <SelectItem key={item.id} value={item.name} disabled={itemDisabled}>
-                          {item.name}
-                        </SelectItem>
-                    )
-                  })}
+                  {ALL_ITEMS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
