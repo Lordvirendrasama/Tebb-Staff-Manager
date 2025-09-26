@@ -6,59 +6,48 @@ import {
   MONTHLY_MEAL_ALLOWANCE,
   type ConsumptionLog,
   type User,
+  type ConsumableItem,
+  type ConsumableItemDef
 } from '@/lib/constants';
+import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase-client';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+    const now = new Date();
+    const start = startOfMonth(now);
+    const end = endOfMonth(now);
 
-  const url = `https://firestore.googleapis.com/v1/projects/staff-manager-e952a/databases/(default)/documents:runQuery`;
-  const body = {
-    structuredQuery: {
-      from: [{ collectionId: 'consumptionLogs' }],
-      where: {
-        compositeFilter: {
-          op: 'AND',
-          filters: [
-            { field: { fieldPath: 'employeeName' }, op: 'EQUAL', value: { stringValue: user } },
-            {
-              field: { fieldPath: 'dateTimeLogged' },
-              op: 'GREATER_THAN_OR_EQUAL',
-              value: { timestampValue: startOfMonth },
-            },
-            {
-              field: { fieldPath: 'dateTimeLogged' },
-              op: 'LESS_THAN_OR_EQUAL',
-              value: { timestampValue: endOfMonth },
-            },
-          ],
-        },
-      },
-      orderBy: [{ field: { fieldPath: 'dateTimeLogged' }, direction: 'DESCENDING' }],
-    },
-  };
+    const q = query(
+        collection(db, 'consumptionLogs'),
+        where('employeeName', '==', user),
+        where('dateTimeLogged', '>=', start),
+        where('dateTimeLogged', '<=', end),
+        orderBy('dateTimeLogged', 'desc')
+    );
 
-  const res = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
-  if (!res.ok) {
-    throw new Error('Failed to fetch logs');
-  }
-
-  const json = await res.json();
-  return json.map((item: any) => {
-    const fields = item.document.fields;
-    return {
-      employeeName: fields.employeeName.stringValue,
-      itemName: fields.itemName.stringValue,
-      dateTimeLogged: fields.dateTimeLogged.timestampValue,
-    };
-  });
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        return [];
+    }
+    return snapshot.docs.map((doc: any) => {
+        const data = doc.data();
+        return {
+            employeeName: data.employeeName,
+            itemName: data.itemName,
+            dateTimeLogged: data.dateTimeLogged.toDate(),
+        } as ConsumptionLog;
+    });
 }
 
 async function getRemainingAllowances(user: User): Promise<{ drinks: number, meals: number }> {
   const logs = await getLogsForUser(user);
-  const drinksConsumed = logs.filter(log => ['Coffee', 'Cooler', 'Milkshake'].includes(log.itemName)).length;
-  const mealsConsumed = logs.filter(log => ['Maggie', 'Fries', 'Pasta'].includes(log.itemName)).length;
+  const items = await getConsumableItems();
+  const drinkNames = items.filter(i => i.type === 'Drink').map(i => i.name);
+  const mealNames = items.filter(i => i.type === 'Meal').map(i => i.name);
+  
+  const drinksConsumed = logs.filter(log => drinkNames.includes(log.itemName)).length;
+  const mealsConsumed = logs.filter(log => mealNames.includes(log.itemName)).length;
 
   return {
     drinks: MONTHLY_DRINK_ALLOWANCE - drinksConsumed,
@@ -75,5 +64,12 @@ async function getAllUsersAllowances(): Promise<Array<{ user: User, allowances: 
   );
   return allowances;
 }
+
+export const getConsumableItems = async (): Promise<ConsumableItemDef[]> => {
+    const q = query(collection(db, 'consumableItems'), orderBy('name'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ConsumableItemDef));
+};
+
 
 export { getLogsForUser, getRemainingAllowances, getAllUsersAllowances };

@@ -48,15 +48,19 @@ export default function AdminPage() {
     const fetchAndSubscribe = async () => {
       setLoading(true);
       try {
-        const [overtime, monthlyL] = await Promise.all([
-          getMonthlyOvertime(),
-          getMonthlyLeaves(),
-        ]);
-
-        setOvertimeData(overtime);
-        setMonthlyLeaves(monthlyL);
+        unsubEmployees = onEmployeesSnapshot(async (emps) => {
+            setEmployees(emps);
+            // Fetch dependent data only after employees are loaded
+            if (emps.length > 0) {
+              const [overtime, monthlyL] = await Promise.all([
+                  getMonthlyOvertime(),
+                  getMonthlyLeaves(),
+              ]);
+              setOvertimeData(overtime);
+              setMonthlyLeaves(monthlyL);
+            }
+        }, (err) => console.error(err));
         
-        unsubEmployees = onEmployeesSnapshot(setEmployees, (err) => console.error(err));
         unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
         unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
         unsubConsumption = onConsumptionLogsSnapshot(setAllowanceData, (err) => console.error(err));
@@ -82,7 +86,7 @@ export default function AdminPage() {
     };
   }, []);
 
-  if (loading) {
+  if (loading && employees.length === 0) {
     return (
         <AdminAuth>
             <div className="space-y-8">

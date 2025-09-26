@@ -4,12 +4,13 @@
 import { revalidatePath } from 'next/cache';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { generatePayrollForEmployee } from '@/services/payroll-service';
+import { generatePayrollForEmployee, recalculatePayroll } from '@/services/payroll-service';
 
 export async function generatePayrollAction(employeeId: string, employeeName: string, dateRange: { from: Date, to: Date }) {
     try {
         await generatePayrollForEmployee(employeeId, employeeName, dateRange);
         revalidatePath('/admin');
+        revalidatePath('/dashboard');
         return { success: true, message: `Payroll generated successfully for ${employeeName}.` };
     } catch (error) {
         console.error('Failed to generate payroll:', error);
@@ -26,6 +27,7 @@ export async function markPayrollAsPaidAction(payrollId: string) {
             paymentDate: new Date(),
         });
         revalidatePath('/admin');
+        revalidatePath('/dashboard');
         return { success: true, message: 'Payroll marked as paid.' };
     } catch (error) {
         console.error('Failed to mark payroll as paid:', error);
@@ -38,6 +40,10 @@ export async function updatePayrollAction(payrollId: string, data: { tips?: numb
      try {
         const payrollRef = doc(db, 'payroll', payrollId);
         await updateDoc(payrollRef, data);
+
+        // After updating, recalculate the final salary
+        await recalculatePayroll(payrollId);
+
         revalidatePath('/admin');
         revalidatePath('/dashboard');
         return { success: true, message: 'Payroll updated.' };
@@ -52,6 +58,7 @@ export async function deletePayrollAction(payrollId: string) {
     try {
         await deleteDoc(doc(db, 'payroll', payrollId));
         revalidatePath('/admin');
+        revalidatePath('/dashboard');
         return { success: true, message: 'Payroll record deleted successfully.' };
     } catch (error) {
         console.error('Failed to delete payroll:', error);

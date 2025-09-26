@@ -6,8 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Staff Food & Drink Tracker',
-  description: 'A simple way to track staff meals.',
+  title: '8-Bit Bistro Staff Manager',
+  description: 'An all-in-one solution for managing cafe staff efficiently.',
 };
 
 export default function RootLayout({

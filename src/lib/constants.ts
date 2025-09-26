@@ -1,27 +1,110 @@
-export interface ConsumptionLog {
-  employeeName: string;
-  itemName: string;
-  dateTimeLogged: string;
-}
+import { type } from "os";
 
 export type User = 'Mario' | 'Luigi' | 'Peach' | 'Musaib';
 
 export const ALL_USERS: User[] = ['Mario', 'Luigi', 'Peach', 'Musaib'];
+export const DEFAULT_EMPLOYEES = [
+  { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00', monthlySalary: 32000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
+  { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8, shiftStartTime: '12:00', shiftEndTime: '20:00', monthlySalary: 30000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
+  { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6, shiftStartTime: '14:00', shiftEndTime: '20:00', monthlySalary: 25000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
+  { name: 'Musaib', weeklyOffDay: 'Sunday', standardWorkHours: 9, shiftStartTime: '09:00', shiftEndTime: '18:00', monthlySalary: 35000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
+] as const;
 
-export const DRINK_ITEMS = ['Coffee', 'Cooler', 'Milkshake'] as const;
-export type DrinkItem = typeof DRINK_ITEMS[number];
-
-export const MEAL_ITEMS = ['Maggie', 'Fries', 'Pasta'] as const;
-export type MealItem = typeof MEAL_ITEMS[number];
-
-export const ALL_ITEMS = [...DRINK_ITEMS, ...MEAL_ITEMS] as const;
-export type ConsumableItem = typeof ALL_ITEMS[number];
 
 export const MONTHLY_DRINK_ALLOWANCE = 6;
 export const MONTHLY_MEAL_ALLOWANCE = 6;
 
+export type ItemType = 'Drink' | 'Meal';
+export const ITEM_TYPES: ItemType[] = ['Drink', 'Meal'];
+
+export interface ConsumableItemDef {
+  id: string;
+  name: string;
+  type: ItemType;
+}
+
+export type ConsumableItem = string;
+
+export interface ConsumptionLog {
+  employeeName: User;
+  itemName: ConsumableItem;
+  dateTimeLogged: Date;
+}
+
+export type WeekDay = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+export const WEEKDAYS: WeekDay[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export type PayFrequency = 'monthly' | 'bi-weekly' | 'weekly';
+export const PAY_FREQUENCIES: PayFrequency[] = ['monthly', 'bi-weekly', 'weekly'];
+
 export interface Employee {
+  id: string;
   name: User;
-  weeklyOffDay: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
+  weeklyOffDay: WeekDay;
   standardWorkHours: number;
+  shiftStartTime?: string;
+  shiftEndTime?: string;
+  // Payroll info
+  monthlySalary?: number;
+  payFrequency?: PayFrequency;
+  payStartDate?: Date | string; // Date of first day of current pay cycle
+}
+
+export interface AttendanceStatus {
+    status: 'Clocked In' | 'Clocked Out';
+    clockInTime?: Date;
+}
+
+export interface AttendanceLog {
+    id: string;
+    employeeName: User;
+    clockIn: Date;
+    clockOut?: Date;
+}
+
+export type LeaveType = 'Paid' | 'Unpaid' | 'Paid (Made Up)';
+export const LEAVE_TYPES: LeaveType[] = ['Paid', 'Unpaid', 'Paid (Made Up)'];
+
+export interface LeaveRequest {
+    id: string;
+    employeeName: User;
+    startDate: Date;
+    endDate: Date;
+    reason: string;
+    leaveType: LeaveType;
+    status: 'Pending' | 'Approved' | 'Denied';
+}
+
+export const ESPRESSO_DRINKS = ['Espresso', 'Doppio', 'Ristretto', 'Lungo', 'Macchiato', 'Cortado', 'Americano'] as const;
+export type EspressoDrink = typeof ESPRESSO_DRINKS[number];
+
+export interface EspressoLog {
+  id: string;
+  employeeName: User;
+  coffeeType: EspressoDrink;
+  timeTaken: number; // in seconds
+  coffeeUsed: number; // in grams
+  pullDateTime: Date;
+}
+
+export interface Payroll {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  payPeriodStart: Date;
+  payPeriodEnd: Date;
+  monthlySalary: number;
+  totalWorkingDays: number;
+  actualDaysWorked: number;
+  perDaySalary: number;
+  lateDays: number;
+  lateDeductions: number;
+  unpaidLeaveDays: number;
+  unpaidLeaveDeductions: number;
+  tips: number;
+  deductions: number; // Other deductions
+  finalSalary: number;
+  status: 'pending' | 'paid';
+  generatedAt: Date;
+  paymentDate?: Date;
 }

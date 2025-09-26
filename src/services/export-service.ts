@@ -4,7 +4,7 @@
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { saveAs } from 'file-saver';
 import { db } from '@/lib/firebase-client';
-import type { Employee, ConsumptionLog, AttendanceLog, LeaveRequest, User, EspressoLog } from '@/lib/constants';
+import type { Employee, ConsumptionLog, AttendanceLog, LeaveRequest, User, EspressoLog, Payroll } from '@/lib/constants';
 import { differenceInHours, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { getMonthlyOvertime, getEmployees, getAllLeaveRequests } from './client/attendance-service';
 import { getAllUsersAllowances } from './client/consumption-log-service';
@@ -68,6 +68,37 @@ export async function exportEspressoData() {
     
     const csv = convertToCSV(formattedLogs, headers);
     saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'espresso_logs.csv');
+}
+
+export async function exportPayrollData() {
+    const payrolls = await fetchAllData<Payroll>('payroll', 'payPeriodStart');
+
+    const formattedPayrolls = payrolls.map(p => ({
+        Employee: p.employeeName,
+        PayPeriod: `${format(new Date(p.payPeriodStart), 'yyyy-MM-dd')} to ${format(new Date(p.payPeriodEnd), 'yyyy-MM-dd')}`,
+        MonthlySalary: p.monthlySalary,
+        PerDaySalary: p.perDaySalary.toFixed(2),
+        TotalWorkingDays: p.totalWorkingDays,
+        ActualDaysWorked: p.actualDaysWorked,
+        LateDays: p.lateDays,
+        LateDeductions: p.lateDeductions.toFixed(2),
+        UnpaidLeaveDays: p.unpaidLeaveDays || 0,
+        UnpaidLeaveDeductions: p.unpaidLeaveDeductions?.toFixed(2) || '0.00',
+        Tips: p.tips?.toFixed(2) || '0.00',
+        OtherDeductions: p.deductions?.toFixed(2) || '0.00',
+        FinalSalary: p.finalSalary.toFixed(2),
+        Status: p.status,
+        PaymentDate: p.paymentDate ? format(new Date(p.paymentDate), 'yyyy-MM-dd') : 'N/A',
+    }));
+
+    const headers = [
+        'Employee', 'PayPeriod', 'MonthlySalary', 'PerDaySalary', 'TotalWorkingDays',
+        'ActualDaysWorked', 'LateDays', 'LateDeductions', 'UnpaidLeaveDays', 'UnpaidLeaveDeductions',
+        'Tips', 'OtherDeductions', 'FinalSalary', 'Status', 'PaymentDate'
+    ];
+
+    const csv = convertToCSV(formattedPayrolls, headers);
+    saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'payroll_export.csv');
 }
 
 

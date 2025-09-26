@@ -1,7 +1,7 @@
 
 'use server';
 
-import { collection, query, where, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency, WeekDay } from '@/lib/constants';
 import { differenceInHours, add, startOfDay, isSameDay, eachDayOfInterval, format, isAfter } from 'date-fns';
@@ -32,6 +32,33 @@ const getWeekDayNumber = (day: WeekDay): number => {
     return dayMap[day];
 };
 
+async function getLeaveDaysForPeriod(employeeName: string, start: Date, end: Date): Promise<number> {
+    const leaveQuery = query(
+        collection(db, 'leaveRequests'),
+        where('employeeName', '==', employeeName),
+        where('status', '==', 'Approved')
+    );
+    const leaveSnapshot = await getDocs(leaveQuery);
+    const leaveRequests = await Promise.all(leaveSnapshot.docs.map(d => docToTyped<any>(d)));
+
+    let unpaidLeaveDays = 0;
+    const daysInPeriod = eachDayOfInterval({ start, end });
+
+    daysInPeriod.forEach(day => {
+        const isOnUnpaidLeave = leaveRequests.some(req => {
+            const reqStart = startOfDay(req.startDate);
+            const reqEnd = startOfDay(req.endDate);
+            return req.leaveType === 'Unpaid' && isSameDay(day, reqStart) || (isAfter(day, reqStart) && !isAfter(day, reqEnd));
+        });
+
+        if (isOnUnpaidLeave) {
+            unpaidLeaveDays++;
+        }
+    });
+
+    return unpaidLeaveDays;
+}
+
 export async function generatePayrollForEmployee(employeeId: string, employeeName: string, dateRange: { from: Date, to: Date }): Promise<Payroll | null> {
     const employeeRef = doc(db, 'employees', employeeId);
     const employeeSnap = await getDoc(employeeRef);
@@ -61,13 +88,14 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
 
     const payPeriodDays = eachDayOfInterval({ start: payPeriodStart, end: payPeriodEnd });
     
-    // Check if weeklyOffDay is valid before using it
-    const weeklyOffDayNumber = employee.weeklyOffDay ? getWeekDayNumber(employee.weeklyOffDay) : -1; // -1 if no off day
+    const weeklyOffDayNumber = employee.weeklyOffDay ? getWeekDayNumber(employee.weeklyOffDay) : -1; 
     
     const totalWorkingDays = payPeriodDays.filter(day => day.getDay() !== weeklyOffDayNumber).length;
     if (totalWorkingDays <= 0) throw new Error("No working days in this pay period.");
 
     const perDaySalary = employee.monthlySalary / totalWorkingDays;
+    
+    const unpaidLeaveDays = await getLeaveDaysForPeriod(employee.name, payPeriodStart, payPeriodEnd);
 
     const attendanceQuery = query(
         collection(db, 'attendanceLogs'),
@@ -110,11 +138,12 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
     });
 
     const lateDeductions = lateDays * LATE_DEDUCTION_AMOUNT;
+    const unpaidLeaveDeductions = unpaidLeaveDays * perDaySalary;
     
     const baseSalaryForDaysWorked = perDaySalary * actualDaysWorked;
-    const finalSalary = baseSalaryForDaysWorked - lateDeductions;
+    const finalSalary = baseSalaryForDaysWorked - lateDeductions - unpaidLeaveDeductions;
     
-    const newPayroll: Omit<Payroll, 'id'> = {
+    const newPayrollData: Omit<Payroll, 'id'> = {
         employeeId: employee.id,
         employeeName: employee.name,
         payPeriodStart,
@@ -125,12 +154,31 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
         perDaySalary,
         lateDays,
         lateDeductions,
-        finalSalary: finalSalary,
+        unpaidLeaveDays,
+        unpaidLeaveDeductions,
+        tips: 0,
+        deductions: 0,
+        finalSalary,
         status: 'pending',
         generatedAt: new Date(),
     };
 
-    const docRef = await addDoc(collection(db, 'payroll'), newPayroll);
+    const docRef = await addDoc(collection(db, 'payroll'), newPayrollData);
 
-    return { id: docRef.id, ...newPayroll };
+    return { id: docRef.id, ...newPayrollData };
+}
+
+export async function recalculatePayroll(payrollId: string): Promise<void> {
+    const payrollRef = doc(db, 'payroll', payrollId);
+    const payrollSnap = await getDoc(payrollRef);
+    if (!payrollSnap.exists()) throw new Error('Payroll record not found');
+    const payroll = await docToTyped<Payroll>(payrollSnap);
+
+    const baseSalaryForDaysWorked = payroll.perDaySalary * payroll.actualDaysWorked;
+    const tips = payroll.tips || 0;
+    const otherDeductions = payroll.deductions || 0;
+
+    const finalSalary = baseSalaryForDaysWorked - payroll.lateDeductions - payroll.unpaidLeaveDeductions + tips - otherDeductions;
+    
+    await updateDoc(payrollRef, { finalSalary });
 }

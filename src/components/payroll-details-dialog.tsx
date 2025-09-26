@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import type { Payroll } from '@/lib/constants';
 import { format } from 'date-fns';
@@ -25,6 +26,8 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
         return `₹${value.toFixed(2)}`;
     }
 
+    const baseSalary = payroll.perDaySalary * payroll.actualDaysWorked;
+
     return (
         <Dialog>
             <DialogTrigger asChild>{children}</DialogTrigger>
@@ -40,33 +43,35 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
                         <span className="text-muted-foreground">Monthly Salary</span>
                         <span className="font-medium">{formatCurrency(payroll.monthlySalary)}</span>
                     </div>
-                    <Separator />
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Total Working Days</span>
-                        <span className="font-medium">{payroll.totalWorkingDays}</span>
-                    </div>
                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Actual Days Worked</span>
-                        <span className="font-medium">{payroll.actualDaysWorked}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Per-Day Salary</span>
                         <span className="font-medium">{formatCurrency(payroll.perDaySalary)}</span>
                     </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Days Worked / Total Days</span>
+                        <span className="font-medium">{payroll.actualDaysWorked} / {payroll.totalWorkingDays}</span>
+                    </div>
                     <Separator />
-                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Late Days</span>
-                        <span className="font-medium">{payroll.lateDays}</span>
+                    <div className="font-semibold">Earnings</div>
+                     <div className="flex justify-between items-center pl-4">
+                        <span className="text-muted-foreground">Salary for Days Worked</span>
+                        <span className="font-medium">{formatCurrency(baseSalary)}</span>
                     </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Late Deductions</span>
-                        <span className="font-medium text-destructive">- {formatCurrency(payroll.lateDeductions)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
+                     <div className="flex justify-between items-center pl-4">
                         <span className="text-muted-foreground">Tips</span>
                         <span className="font-medium text-green-500">+ {formatCurrency(payroll.tips)}</span>
                     </div>
-                     <div className="flex justify-between items-center">
+                    <Separator />
+                     <div className="font-semibold">Deductions</div>
+                     <div className="flex justify-between items-center pl-4">
+                        <span className="text-muted-foreground">Late Days ({payroll.lateDays})</span>
+                        <span className="font-medium text-destructive">- {formatCurrency(payroll.lateDeductions)}</span>
+                    </div>
+                     <div className="flex justify-between items-center pl-4">
+                        <span className="text-muted-foreground">Unpaid Leave Days ({payroll.unpaidLeaveDays || 0})</span>
+                        <span className="font-medium text-destructive">- {formatCurrency(payroll.unpaidLeaveDeductions)}</span>
+                    </div>
+                    <div className="flex justify-between items-center pl-4">
                         <span className="text-muted-foreground">Other Deductions</span>
                         <span className="font-medium text-destructive">- {formatCurrency(payroll.deductions)}</span>
                     </div>
@@ -88,9 +93,9 @@ export function PayrollDetailsDialog({ payroll, children }: { payroll: Payroll; 
                     )}
                 </div>
                 <DialogFooter>
-                    <DialogTrigger asChild>
+                    <DialogClose asChild>
                         <Button type="button" variant="secondary">Close</Button>
-                    </DialogTrigger>
+                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

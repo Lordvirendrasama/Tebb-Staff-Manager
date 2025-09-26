@@ -4,7 +4,8 @@ import {
   MONTHLY_DRINK_ALLOWANCE,
   MONTHLY_MEAL_ALLOWANCE,
 } from '@/lib/constants';
-import type { ConsumptionLog, User } from '@/lib/constants';
+import type { ConsumptionLog, User, ConsumableItem } from '@/lib/constants';
+import { getConsumableItems } from '@/services/consumption-log-service';
 
 async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
   try {
@@ -42,11 +43,15 @@ async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
 
 async function getRemainingAllowances(user: User): Promise<{ drinks: number; meals: number }> {
   const logs = await getLogsForUser(user);
+  const items = await getConsumableItems();
+  const drinkNames = items.filter(i => i.type === 'Drink').map(i => i.name);
+  const mealNames = items.filter(i => i.type === 'Meal').map(i => i.name);
+
   const drinksConsumed = logs.filter(log =>
-    ['Coffee', 'Cooler', 'Milkshake'].includes(log.itemName)
+    drinkNames.includes(log.itemName)
   ).length;
   const mealsConsumed = logs.filter(log =>
-    ['Maggie', 'Fries', 'Pasta'].includes(log.itemName)
+    mealNames.includes(log.itemName)
   ).length;
 
   return {

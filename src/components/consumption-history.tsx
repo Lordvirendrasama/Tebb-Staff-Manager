@@ -13,12 +13,18 @@ export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs.map((log, index) => (
+          {logs.length > 0 ? logs.map((log, index) => (
             <TableRow key={index}>
               <TableCell className="font-medium">{log.itemName}</TableCell>
-              <TableCell className="text-right">{new Date(log.dateTimeLogged).toLocaleTimeString()}</TableCell>
+              <TableCell className="text-right">{new Date(log.dateTimeLogged).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
             </TableRow>
-          ))}
+          )) : (
+            <TableRow>
+              <TableCell colSpan={2} className="text-center text-muted-foreground">
+                No items logged yet.
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </div>

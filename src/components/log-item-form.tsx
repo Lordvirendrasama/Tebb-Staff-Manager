@@ -6,11 +6,12 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ALL_ITEMS, type User, type ConsumableItem } from '@/lib/constants';
+import type { User, ConsumableItem, ConsumableItemDef } from '@/lib/constants';
 import { logItemAction } from '@/app/actions';
-import { useTransition } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { getConsumableItems } from '@/services/client/consumption-log-service';
 
 const FormSchema = z.object({
   itemName: z.string({
@@ -21,6 +22,15 @@ const FormSchema = z.object({
 export function LogItemForm({ user, allowances }: { user: User; allowances: { drinks: number, meals: number } }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  const [items, setItems] = useState<ConsumableItemDef[]>([]);
+  const [loadingItems, setLoadingItems] = useState(true);
+
+  useEffect(() => {
+    getConsumableItems()
+      .then(setItems)
+      .finally(() => setLoadingItems(false));
+  }, []);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -34,6 +44,7 @@ export function LogItemForm({ user, allowances }: { user: User; allowances: { dr
           title: 'Success',
           description: result.message,
         });
+        form.reset();
       } else {
         toast({
           variant: 'destructive',
@@ -43,16 +54,18 @@ export function LogItemForm({ user, allowances }: { user: User; allowances: { dr
       }
     });
   }
-
+  
   const selectedItemName = form.watch('itemName');
-  let disabled = !selectedItemName;
-  if (selectedItemName === 'Coffee' || selectedItemName === 'Cooler' || selectedItemName === 'Milkshake') {
-    if (allowances.drinks <= 0) disabled = true;
+  const selectedItem = items.find(item => item.name === selectedItemName);
+
+  let disabled = !selectedItemName || isPending || loadingItems;
+  if (selectedItem) {
+    if (selectedItem.type === 'Drink' && allowances.drinks <= 0) disabled = true;
+    if (selectedItem.type === 'Meal' && allowances.meals <= 0) disabled = true;
   }
-  if (selectedItemName === 'Maggie' || selectedItemName === 'Fries' || selectedItemName === 'Pasta') {
-    if (allowances.meals <= 0) disabled = true;
-  }
-  if (isPending) disabled = true;
+  
+  const drinkItems = items.filter(item => item.type === 'Drink');
+  const mealItems = items.filter(item => item.type === 'Meal');
 
   return (
     <Form {...form}>
@@ -63,18 +76,31 @@ export function LogItemForm({ user, allowances }: { user: User; allowances: { dr
           render={({ field }) => (
             <FormItem>
               <FormLabel>Item</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={isPending || loadingItems}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an item to log" />
+                    <SelectValue placeholder={loadingItems ? "Loading items..." : "Select an item to log"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {ALL_ITEMS.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
+                  {drinkItems.length > 0 && (
+                     <optgroup label="Drinks">
+                      {drinkItems.map((item) => (
+                        <SelectItem key={item.id} value={item.name}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </optgroup>
+                  )}
+                  {mealItems.length > 0 && (
+                    <optgroup label="Meals">
+                      {mealItems.map((item) => (
+                        <SelectItem key={item.id} value={item.name}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </optgroup>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />

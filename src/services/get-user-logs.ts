@@ -31,8 +31,9 @@ export async function getUserLogs(user: User): Promise<ConsumptionLog[]> {
     },
   };
 
-  const res = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
+  const res = await fetch(url, { method: 'POST', body: JSON.stringify(body), cache: 'no-store' });
   if (!res.ok) {
+    console.error('Failed to fetch logs response:', await res.text());
     throw new Error('Failed to fetch logs');
   }
 
