@@ -105,3 +105,22 @@ export const getAttendanceForMonth = async (employeeName: string, month: Date): 
 
     return logsInMonth;
 };
+
+export const onUserPayrollSnapshot = (
+    userName: string,
+    callback: (payrolls: Payroll[]) => void,
+    onError: (error: Error) => void
+) => {
+    const q = query(
+        collection(db, 'payroll'),
+        where('employeeName', '==', userName),
+        orderBy('payPeriodStart', 'desc')
+    );
+    return onSnapshot(q, 
+        (snapshot) => {
+            const payrolls = snapshotToDocs<Payroll>(snapshot);
+            callback(payrolls);
+        },
+        onError
+    );
+};
