@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { KeyRound } from 'lucide-react';
 
-const ADMIN_PASSWORD = '8bitcafe';
+const ADMIN_PASSWORD = 'Tebb';
 
 export function AdminAuth({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
