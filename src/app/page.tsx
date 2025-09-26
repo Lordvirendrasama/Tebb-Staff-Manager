@@ -4,7 +4,7 @@ import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, FileText } from 
 import { getEmployees } from '@/services/get-employees';
 import type { Employee } from '@/lib/constants';
 
-function EmployeeCard({ employee }: { employee: Employee }) {
+async function EmployeeCard({ employee }: { employee: Employee }) {
   return (
     <Link href={`/dashboard/${employee.name}`} className="block">
       <Card className="hover:bg-accent/50 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full">
