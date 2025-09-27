@@ -1,13 +1,12 @@
+
 import { type } from "os";
 
-export type User = 'Mario' | 'Luigi' | 'Peach' | 'Musaib';
+export type User = string;
 
-export const ALL_USERS: User[] = ['Mario', 'Luigi', 'Peach', 'Musaib'];
 export const DEFAULT_EMPLOYEES = [
-  { name: 'Mario', weeklyOffDay: 'Tuesday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00', monthlySalary: 32000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
-  { name: 'Luigi', weeklyOffDay: 'Wednesday', standardWorkHours: 8, shiftStartTime: '12:00', shiftEndTime: '20:00', monthlySalary: 30000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
-  { name: 'Peach', weeklyOffDay: 'Thursday', standardWorkHours: 6, shiftStartTime: '14:00', shiftEndTime: '20:00', monthlySalary: 25000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
+  { name: 'Abbas', weeklyOffDay: 'Monday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00', monthlySalary: 33000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
   { name: 'Musaib', weeklyOffDay: 'Sunday', standardWorkHours: 9, shiftStartTime: '09:00', shiftEndTime: '18:00', monthlySalary: 35000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
+  { name: 'Viren', weeklyOffDay: 'Friday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00', monthlySalary: 40000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
 ] as const;
 
 
