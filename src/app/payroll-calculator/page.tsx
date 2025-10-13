@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -100,7 +99,7 @@ export default function PayrollCalculatorPage() {
                 <p className="text-muted-foreground">A simple tool to calculate employee pay.</p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 <Card>
                     <CardHeader>
                         <CardTitle>Enter Details</CardTitle>
@@ -188,7 +187,7 @@ export default function PayrollCalculatorPage() {
                             <CardDescription>Summary of the payroll calculation.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4 text-sm">
-                            <div className="space-y-2 p-4 border rounded-lg">
+                            <div className="space-y-2 p-4 border rounded-lg bg-background">
                                 <div className="flex justify-between"><span>Employee:</span> <span className="font-medium">{results.employeeName}</span></div>
                                 <div className="flex justify-between"><span>Monthly Salary:</span> <span className="font-medium">{formatCurrency(results.monthlySalary)}</span></div>
                                 <Separator />
@@ -201,8 +200,8 @@ export default function PayrollCalculatorPage() {
                             </div>
                             
                             <Alert className="border-primary/50 text-primary-foreground bg-primary">
-                                <PartyPopper className="h-5 w-5" />
-                                <AlertTitle className="font-headline text-lg">Final Pay: {formatCurrency(results.finalPay)}</AlertTitle>
+                                <PartyPopper className="h-5 w-5 text-primary-foreground" />
+                                <AlertTitle className="font-headline text-lg text-primary-foreground">Final Pay: {formatCurrency(results.finalPay)}</AlertTitle>
                             </Alert>
 
                             <Alert variant="default" className="text-center">
@@ -211,7 +210,7 @@ export default function PayrollCalculatorPage() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                    <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg h-full">
                         <Calculator className="h-16 w-16 text-muted-foreground/50 mb-4" />
                         <p className="text-muted-foreground">Results will be displayed here.</p>
                     </div>
