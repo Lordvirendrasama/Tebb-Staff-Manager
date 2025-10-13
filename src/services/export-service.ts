@@ -6,8 +6,9 @@ import { saveAs } from 'file-saver';
 import { db } from '@/lib/firebase-client';
 import type { Employee, ConsumptionLog, AttendanceLog, LeaveRequest, User, EspressoLog, Payroll } from '@/lib/constants';
 import { differenceInHours, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
-import { getMonthlyOvertime, getEmployees, getAllLeaveRequests } from './client/attendance-service';
+import { getMonthlyOvertime, getAllLeaveRequests } from './client/attendance-service';
 import { getAllUsersAllowances } from './client/consumption-log-service';
+import { getAllUsers } from '@/app/actions/admin-actions';
 
 async function docWithDates<T>(docSnap: any): Promise<T> {
     const data = docSnap.data();
@@ -111,7 +112,7 @@ export async function exportAllData() {
         overtimeData,
         allowanceData
     ] = await Promise.all([
-        getEmployees(),
+        getAllUsers(),
         fetchAllData<ConsumptionLog>('consumptionLogs', 'dateTimeLogged'),
         fetchAllData<AttendanceLog>('attendanceLogs', 'clockIn'),
         getAllLeaveRequests(),

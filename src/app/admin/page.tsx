@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,8 @@ import { OvertimeTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
-import { getMonthlyOvertime, onEmployeesSnapshot, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
+import { getAllUsers } from '@/app/actions/admin-actions';
+import { getMonthlyOvertime, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
 import { onConsumptionLogsSnapshot, onConsumableItemsSnapshot } from '@/services/client/consumption-log-service';
 import { onPayrollSnapshot } from '@/services/client/payroll-service';
@@ -38,7 +38,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubEmployees: () => void;
     let unsubLeaves: () => void;
     let unsubEow: () => void;
     let unsubConsumption: () => void;
@@ -48,18 +47,17 @@ export default function AdminPage() {
     const fetchAndSubscribe = async () => {
       setLoading(true);
       try {
-        unsubEmployees = onEmployeesSnapshot(async (emps) => {
-            setEmployees(emps);
-            // Fetch dependent data only after employees are loaded
-            if (emps.length > 0) {
-              const [overtime, monthlyL] = await Promise.all([
-                  getMonthlyOvertime(),
-                  getMonthlyLeaves(),
-              ]);
-              setOvertimeData(overtime);
-              setMonthlyLeaves(monthlyL);
-            }
-        }, (err) => console.error(err));
+        const emps = await getAllUsers();
+        setEmployees(emps);
+
+        if (emps.length > 0) {
+            const [overtime, monthlyL] = await Promise.all([
+                getMonthlyOvertime(),
+                getMonthlyLeaves(),
+            ]);
+            setOvertimeData(overtime);
+            setMonthlyLeaves(monthlyL);
+        }
         
         unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
         unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
@@ -77,7 +75,6 @@ export default function AdminPage() {
     fetchAndSubscribe();
 
     return () => {
-      unsubEmployees?.();
       unsubLeaves?.();
       unsubEow?.();
       unsubConsumption?.();

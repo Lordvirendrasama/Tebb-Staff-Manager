@@ -1,12 +1,23 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Anton } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { cn } from '@/lib/utils';
 
-const inter = Inter({ subsets: ['latin'] });
+const anton = Anton({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-anton',
+});
+
+const karmaticArcade = localFont({
+  src: '../lib/fonts/karmatic-arcade.woff2',
+  variable: '--font-karmatic-arcade',
+});
 
 export const metadata: Metadata = {
-  title: '8-Bit Bistro Staff Manager',
+  title: 'The 8 Bit Bistro',
   description: 'An all-in-one solution for managing cafe staff efficiently.',
 };
 
@@ -17,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", anton.variable, karmaticArcade.variable)}>
         {children}
         <Toaster />
       </body>

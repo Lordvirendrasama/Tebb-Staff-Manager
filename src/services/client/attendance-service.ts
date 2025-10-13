@@ -1,10 +1,9 @@
-
 'use client';
 
 import { collection, onSnapshot, query, orderBy, doc, getDocs, where } from 'firebase/firestore';
 import * as serverService from '../attendance-service';
 import { db } from '@/lib/firebase-client';
-import type { Employee, LeaveRequest, AttendanceLog } from '@/lib/constants';
+import type { Employee, LeaveRequest, AttendanceLog, Payroll } from '@/lib/constants';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 function makeSerializable<T>(obj: any): T {
@@ -20,15 +19,9 @@ function makeSerializable<T>(obj: any): T {
     return serializableObj as T;
 }
 
-const getEmployees = async (): Promise<Employee[]> => {
-    const employees = await serverService.getEmployees();
-    return employees.map(emp => makeSerializable<Employee>(emp));
-};
-
 export const getAttendanceStatus = serverService.getAttendanceStatus;
 export const getAttendanceHistory = serverService.getAttendanceHistory;
 export const getMonthlyOvertime = serverService.getMonthlyOvertime;
-export { getEmployees };
 export const addEmployee = serverService.addEmployee;
 export const getLeaveRequestsForUser = serverService.getLeaveRequestsForUser;
 export const getAllLeaveRequests = serverService.getAllLeaveRequests;
@@ -50,24 +43,6 @@ function snapshotToDocs<T>(snapshot: any): T[] {
         return convertedData as T;
     });
 }
-
-export const onEmployeesSnapshot = (
-    callback: (employees: Employee[]) => void,
-    onError: (error: Error) => void
-) => {
-    const q = query(collection(db, 'employees'), orderBy('name'));
-    return onSnapshot(q, 
-        (snapshot) => {
-            const employees = snapshotToDocs<Employee>(snapshot);
-            const serializableEmployees = employees.map(emp => makeSerializable<Employee>(emp));
-            callback(serializableEmployees);
-        },
-        (error) => {
-            console.error("Error listening to employees collection:", error);
-            onError(error);
-        }
-    );
-};
 
 export const onLeaveRequestsSnapshot = (
     callback: (requests: LeaveRequest[]) => void,

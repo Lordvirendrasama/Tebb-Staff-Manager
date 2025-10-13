@@ -1,7 +1,6 @@
 'use server';
 
 import {
-  ALL_USERS,
   MONTHLY_DRINK_ALLOWANCE,
   MONTHLY_MEAL_ALLOWANCE,
   type ConsumptionLog,
@@ -12,6 +11,7 @@ import {
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { getAllUsers } from '@/app/actions/admin-actions';
 
 async function getLogsForUser(user: User): Promise<ConsumptionLog[]> {
     const now = new Date();
@@ -56,10 +56,11 @@ async function getRemainingAllowances(user: User): Promise<{ drinks: number, mea
 }
 
 async function getAllUsersAllowances(): Promise<Array<{ user: User, allowances: { drinks: number, meals: number } }>> {
+  const users = await getAllUsers();
   const allowances = await Promise.all(
-    ALL_USERS.map(async (user) => {
-      const userAllowances = await getRemainingAllowances(user);
-      return { user, allowances: userAllowances };
+    users.map(async (user) => {
+      const userAllowances = await getRemainingAllowances(user.name);
+      return { user: user.name, allowances: userAllowances };
     })
   );
   return allowances;

@@ -206,7 +206,7 @@ export async function resetDataAction() {
         return { success: true, message: 'Application data has been reset and seeded with default values.' };
     } catch (error) {
         console.error('Data reset failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
         return { success: false, message: `Failed to reset data: ${errorMessage}` };
     }
 }
@@ -248,6 +248,12 @@ export async function deleteItemAction(id: string) {
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
         return { success: false, message: `Failed to remove item: ${errorMessage}` };
     }
+}
+
+export async function getAllUsers(): Promise<Employee[]> {
+    const employeesSnapshot = await getDocs(collection(db, 'employees'));
+    const employees = employeesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Employee));
+    return employees;
 }
 
 export { getEmployeeOfTheWeek };
