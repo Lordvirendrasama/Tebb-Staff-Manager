@@ -8,11 +8,11 @@ import { Calendar } from './ui/calendar';
 import { Button } from './ui/button';
 import type { Employee } from '@/lib/constants';
 import { getAttendanceForMonth } from '@/services/client/attendance-service';
-import { updateAttendanceForRangeAction } from '@/app/actions/attendance-actions';
+import { updateAttendanceForRangeAction, updateAttendanceForDayAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
-import { addMonths, format, startOfMonth } from 'date-fns';
+import { addMonths, format, startOfMonth, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, Loader2, X, Check } from 'lucide-react';
-import type { DateRange } from 'react-day-picker';
+import type { DateRange, DayModifiers } from 'react-day-picker';
 
 export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
@@ -26,7 +26,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
 
     const employee = employees.find(e => e.id === selectedEmployeeId);
 
-    useEffect(() => {
+    const fetchAttendance = () => {
         if (selectedEmployeeId && employee) {
             setLoading(true);
             getAttendanceForMonth(employee.name, currentMonth).then(logs => {
@@ -36,8 +36,12 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         } else {
             setWorkedDays([]);
         }
+    };
+    
+    useEffect(() => {
+        fetchAttendance();
         setRange(undefined);
-    }, [selectedEmployeeId, currentMonth, employee]);
+    }, [selectedEmployeeId, currentMonth, employee?.name]);
 
     const handleRangeUpdate = (worked: boolean) => {
         if (!range?.from || !range.to || !selectedEmployeeId) return;
@@ -47,15 +51,24 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
             
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
-                if (employee) {
-                    setLoading(true);
-                     getAttendanceForMonth(employee.name, currentMonth).then(logs => {
-                        setWorkedDays(logs.map(log => new Date(log.clockIn)));
-                        setLoading(false);
-                    });
-                }
+                fetchAttendance();
                 setRange(undefined);
             } else {
+                toast({ variant: 'destructive', title: 'Error', description: result.message });
+            }
+        });
+    };
+    
+    const handleDayUpdate = (day: Date, modifiers: DayModifiers) => {
+        if (!selectedEmployeeId || range) return;
+        const isWorked = modifiers.worked;
+
+        startUpdateTransition(async () => {
+            const result = await updateAttendanceForDayAction(selectedEmployeeId, day, !isWorked);
+             if (result.success && result.message !== 'No change needed.') {
+                toast({ title: 'Success', description: result.message });
+                fetchAttendance();
+            } else if (!result.success) {
                 toast({ variant: 'destructive', title: 'Error', description: result.message });
             }
         });
@@ -66,7 +79,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     };
 
     const modifiers = {
-        worked: workedDays,
+        worked: workedDays.map(d => startOfMonth(d).getDate() === currentMonth.getDate() ? d : null).filter(Boolean) as Date[],
     };
 
     const modifiersStyles = {
@@ -80,7 +93,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         <Card>
             <CardHeader>
                 <CardTitle>Attendance Editor</CardTitle>
-                <CardDescription>Select a date range to mark days as worked or not worked.</CardDescription>
+                <CardDescription>Select a date range, or click a single day to toggle attendance.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -122,6 +135,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                             mode="range"
                             selected={range}
                             onSelect={setRange}
+                            onDayClick={handleDayUpdate}
                             modifiers={modifiers}
                             modifiersStyles={modifiersStyles}
                             className="w-full"
