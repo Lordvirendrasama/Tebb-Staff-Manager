@@ -102,10 +102,9 @@ export default function AdminPage() {
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h2>
         
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3 md:grid-cols-3">
                     <TabsTrigger value="general">General</TabsTrigger>
                     <TabsTrigger value="attendance">Attendance</TabsTrigger>
-                    <TabsTrigger value="payroll">Payroll</TabsTrigger>
                     <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
                 
@@ -164,10 +163,6 @@ export default function AdminPage() {
 
                 <TabsContent value="attendance" className="mt-6">
                     <AttendanceEditor employees={employees} />
-                </TabsContent>
-
-                <TabsContent value="payroll" className="mt-6">
-                    <PayrollManager payrolls={payrolls} employees={employees} />
                 </TabsContent>
                 
                 <TabsContent value="settings" className="mt-6">

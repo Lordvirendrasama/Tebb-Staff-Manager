@@ -80,10 +80,9 @@ export default function UserDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -159,9 +158,6 @@ export default function UserDashboard() {
                 <LeaveTracker user={user} history={leaveHistory} />
              </div>
            </div>
-        </TabsContent>
-        <TabsContent value="payroll" className="mt-6">
-          <PayrollViewer payrolls={payrolls} />
         </TabsContent>
       </Tabs>
     </div>
