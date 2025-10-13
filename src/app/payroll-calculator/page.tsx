@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,8 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PartyPopper, RefreshCw, Calculator } from 'lucide-react';
+import { PartyPopper, RefreshCw, Calculator, CalendarIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format, differenceInDays, isAfter, startOfDay, endOfDay } from 'date-fns';
+import type { DateRange } from 'react-day-picker';
 
 const getDaysInCurrentMonth = () => {
     const date = new Date();
@@ -20,11 +26,15 @@ const getDaysInCurrentMonth = () => {
 const payrollSchema = z.object({
   employeeName: z.string().min(1, 'Employee name is required'),
   monthlySalary: z.coerce.number().positive('Salary must be a positive number'),
-  totalDaysInMonth: z.coerce.number().int().min(28).max(31, 'Invalid number of days'),
+  payPeriod: z.object({
+    from: z.date({ required_error: 'Pay period start date is required.' }),
+    to: z.date({ required_error: 'Pay period end date is required.' }),
+  }),
+  joiningDate: z.date({ required_error: 'Joining date is required.' }),
   weeklyOffsPerWeek: z.coerce.number().int().min(0).max(7),
   actualDaysWorked: z.coerce.number().int().min(0, 'Days worked cannot be negative'),
-}).refine(data => data.actualDaysWorked <= data.totalDaysInMonth, {
-    message: "Days worked cannot exceed total days in the month",
+}).refine(data => data.actualDaysWorked <= differenceInDays(data.payPeriod.to, data.payPeriod.from) + 1, {
+    message: "Days worked cannot exceed days in the pay period",
     path: ["actualDaysWorked"],
 });
 
@@ -33,7 +43,10 @@ type PayrollFormInputs = z.infer<typeof payrollSchema>;
 interface PayrollResults {
     employeeName: string;
     monthlySalary: number;
-    totalDaysInMonth: number;
+    payPeriod: DateRange;
+    joiningDate: Date;
+    totalDaysInPeriod: number;
+    payableDays: number;
     weeklyOffs: number;
     standardWorkingDays: number;
     daysWorked: number;
@@ -45,24 +58,35 @@ interface PayrollResults {
 export default function PayrollCalculatorPage() {
     const [results, setResults] = useState<PayrollResults | null>(null);
 
+    const defaultPayPeriod = {
+        from: startOfDay(new Date(new Date().setDate(1))),
+        to: endOfDay(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
+    };
+
     const form = useForm<PayrollFormInputs>({
         resolver: zodResolver(payrollSchema),
         defaultValues: {
             employeeName: '',
             monthlySalary: 0,
-            totalDaysInMonth: getDaysInCurrentMonth(),
+            payPeriod: defaultPayPeriod,
+            joiningDate: defaultPayPeriod.from,
             weeklyOffsPerWeek: 1,
             actualDaysWorked: 0,
         },
     });
 
     const onSubmit: SubmitHandler<PayrollFormInputs> = (data) => {
-        const weeksInMonth = data.totalDaysInMonth / 7;
+        const totalDaysInPeriod = differenceInDays(data.payPeriod.to, data.payPeriod.from) + 1;
+        
+        const effectiveStartDate = isAfter(data.joiningDate, data.payPeriod.from) ? data.joiningDate : data.payPeriod.from;
+        const payableDays = differenceInDays(data.payPeriod.to, effectiveStartDate) + 1;
+        
+        const weeksInMonth = totalDaysInPeriod / 7;
         const totalWeeklyOffs = Math.floor(weeksInMonth) * data.weeklyOffsPerWeek;
-        const standardWorkingDays = data.totalDaysInMonth - totalWeeklyOffs;
+        const standardWorkingDays = totalDaysInPeriod - totalWeeklyOffs;
 
         if (standardWorkingDays <= 0) {
-            form.setError('totalDaysInMonth', {
+            form.setError('payPeriod', {
                 type: 'manual',
                 message: 'Calculated working days is zero or less. Check inputs.',
             });
@@ -70,18 +94,23 @@ export default function PayrollCalculatorPage() {
         }
 
         const perDayRate = data.monthlySalary / standardWorkingDays;
-        const finalPay = perDayRate * data.actualDaysWorked;
+        
+        const actualDaysWorkedInPayablePeriod = Math.min(data.actualDaysWorked, payableDays);
+        const finalPay = perDayRate * actualDaysWorkedInPayablePeriod;
 
         setResults({
             employeeName: data.employeeName,
             monthlySalary: data.monthlySalary,
-            totalDaysInMonth: data.totalDaysInMonth,
+            payPeriod: data.payPeriod,
+            joiningDate: data.joiningDate,
+            totalDaysInPeriod,
+            payableDays: actualDaysWorkedInPayablePeriod,
             weeklyOffs: totalWeeklyOffs,
             standardWorkingDays,
             daysWorked: data.actualDaysWorked,
             perDayRate,
             finalPay,
-            summary: `${data.employeeName} worked ${data.actualDaysWorked} out of ${standardWorkingDays} working days in a ${data.totalDaysInMonth}-day month. Their calculated pay is ₹${finalPay.toFixed(2)}.`,
+            summary: `${data.employeeName} worked ${actualDaysWorkedInPayablePeriod} out of ${standardWorkingDays} working days in the period. Their calculated pay is ₹${finalPay.toFixed(2)}.`,
         });
     };
     
@@ -130,19 +159,54 @@ export default function PayrollCalculatorPage() {
                                         </FormItem>
                                     )}
                                 />
+                                <FormField
+                                    control={form.control}
+                                    name="payPeriod"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>Pay Period</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !field.value.from && 'text-muted-foreground')}>
+                                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                                            {field.value.from ? `${format(field.value.from, 'PPP')} - ${field.value.to ? format(field.value.to, 'PPP') : ''}` : <span>Pick a date range</span>}
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="range" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="joiningDate"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>Joining Date</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !field.value && 'text-muted-foreground')}>
+                                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="totalDaysInMonth"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Days in Month</FormLabel>
-                                                <FormControl><Input type="number" {...field} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
+                                     <FormField
                                         control={form.control}
                                         name="weeklyOffsPerWeek"
                                         render={({ field }) => (
@@ -153,18 +217,18 @@ export default function PayrollCalculatorPage() {
                                             </FormItem>
                                         )}
                                     />
+                                    <FormField
+                                        control={form.control}
+                                        name="actualDaysWorked"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Days Worked</FormLabel>
+                                                <FormControl><Input type="number" placeholder="e.g., 25" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
-                                <FormField
-                                    control={form.control}
-                                    name="actualDaysWorked"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Actual Days Worked</FormLabel>
-                                            <FormControl><Input type="number" placeholder="e.g., 25" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
                             </CardContent>
                             <CardFooter className="flex-col gap-4">
                                 <Button type="submit" className="w-full">
@@ -190,10 +254,12 @@ export default function PayrollCalculatorPage() {
                             <div className="space-y-2 p-4 border rounded-lg bg-background">
                                 <div className="flex justify-between"><span>Employee:</span> <span className="font-medium">{results.employeeName}</span></div>
                                 <div className="flex justify-between"><span>Monthly Salary:</span> <span className="font-medium">{formatCurrency(results.monthlySalary)}</span></div>
+                                <div className="flex justify-between"><span>Pay Period:</span> <span className="font-medium text-right">{`${format(results.payPeriod.from!, 'dd MMM')} - ${format(results.payPeriod.to!, 'dd MMM yyyy')}`}</span></div>
                                 <Separator />
-                                <div className="flex justify-between"><span>Total Days in Month:</span> <span className="font-medium">{results.totalDaysInMonth}</span></div>
+                                <div className="flex justify-between"><span>Total Days in Period:</span> <span className="font-medium">{results.totalDaysInPeriod}</span></div>
                                 <div className="flex justify-between"><span>Total Weekly Offs:</span> <span className="font-medium">{results.weeklyOffs}</span></div>
                                 <div className="flex justify-between"><span>Standard Working Days:</span> <span className="font-medium">{results.standardWorkingDays}</span></div>
+                                 <div className="flex justify-between"><span>Payable Days (post-join):</span> <span className="font-medium">{results.payableDays}</span></div>
                                 <div className="flex justify-between"><span>Actual Days Worked:</span> <span className="font-medium">{results.daysWorked}</span></div>
                                 <Separator />
                                 <div className="flex justify-between"><span>Per Day Rate:</span> <span className="font-medium">{formatCurrency(results.perDayRate)}</span></div>
