@@ -15,7 +15,7 @@ async function EmployeeCard({ employee, isEmployeeOfTheWeek }: { employee: Emplo
           <Users className="h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl font-semibold font-headline">{employee.name}</CardTitle>
           {isEmployeeOfTheWeek && (
-            <Badge variant="secondary" className="mt-2 border-accent text-accent-foreground border-2">
+            <Badge variant="secondary" className="mt-2 border-accent text-accent-foreground border-2 dark:bg-white dark:text-black">
               <Award className="h-4 w-4 mr-1" />
               Employee of the Week
             </Badge>
