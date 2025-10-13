@@ -1,18 +1,25 @@
 
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, FileText, Calculator } from 'lucide-react';
-import { getAllUsers } from '@/app/actions/admin-actions';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, FileText, Calculator, Award } from 'lucide-react';
+import { getAllUsers, getEmployeeOfTheWeek } from '@/app/actions/admin-actions';
 import type { Employee } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Badge } from '@/components/ui/badge';
 
-async function EmployeeCard({ employee }: { employee: Employee }) {
+async function EmployeeCard({ employee, isEmployeeOfTheWeek }: { employee: Employee, isEmployeeOfTheWeek: boolean }) {
   return (
-    <Link href={`/dashboard/${employee.name}`} className="block">
-      <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full">
-        <CardHeader className="text-center items-center justify-center p-10 h-full">
+    <Link href={`/dashboard/${employee.name}`} className="block h-full">
+      <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-center">
+        <CardHeader className="text-center items-center justify-center p-6">
           <Users className="h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-2xl font-semibold font-headline">{employee.name}</CardTitle>
+          {isEmployeeOfTheWeek && (
+            <Badge variant="secondary" className="mt-2 border-accent text-accent-foreground border-2">
+              <Award className="h-4 w-4 mr-1" />
+              Employee of the Week
+            </Badge>
+          )}
         </CardHeader>
       </Card>
     </Link>
@@ -21,9 +28,9 @@ async function EmployeeCard({ employee }: { employee: Employee }) {
 
 function AdminCard() {
     return (
-        <Link href="/admin" className="block">
-          <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full">
-            <CardHeader className="text-center items-center justify-center p-10 h-full">
+        <Link href="/admin" className="block h-full">
+          <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-center">
+            <CardHeader className="text-center items-center justify-center p-6">
               <UserCog className="h-12 w-12 text-primary mb-4" />
               <CardTitle className="text-2xl font-semibold font-headline">Admin Panel</CardTitle>
             </CardHeader>
@@ -34,9 +41,9 @@ function AdminCard() {
 
 function EspressoCard() {
     return (
-         <Link href="/espresso-tracker" className="block">
-            <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full">
-                <CardHeader className="text-center items-center justify-center p-10 h-full">
+         <Link href="/espresso-tracker" className="block h-full">
+            <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-center">
+                <CardHeader className="text-center items-center justify-center p-6">
                     <Coffee className="h-12 w-12 text-primary mb-4" />
                     <CardTitle className="text-2xl font-semibold font-headline">Espresso Tracker</CardTitle>
                 </CardHeader>
@@ -44,6 +51,20 @@ function EspressoCard() {
         </Link>
     )
 }
+
+function PayrollCalculatorCard() {
+    return (
+        <Link href="/payroll-calculator" className="block h-full">
+            <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-center">
+                <CardHeader className="text-center items-center justify-center p-6">
+                    <Calculator className="h-12 w-12 text-primary mb-4" />
+                    <CardTitle className="text-2xl font-semibold font-headline">Payroll Calculator</CardTitle>
+                </CardHeader>
+            </Card>
+        </Link>
+    );
+}
+
 
 function FeatureCard({ icon, title, description, href }: { icon: React.ReactNode, title: string, description: string, href?: string }) {
   const cardContent = (
@@ -66,7 +87,10 @@ function FeatureCard({ icon, title, description, href }: { icon: React.ReactNode
 }
 
 export default async function Home() {
-  const employees = await getAllUsers();
+  const [employees, employeeOfTheWeek] = await Promise.all([
+    getAllUsers(),
+    getEmployeeOfTheWeek()
+  ]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-8">
@@ -79,12 +103,14 @@ export default async function Home() {
           <p className="text-muted-foreground mt-2 text-base sm:text-lg">Your all-in-one solution for managing cafe staff efficiently.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             <h3 className="col-span-full text-2xl font-semibold tracking-tight text-center sm:text-left font-headline">Who are you?</h3>
             {employees.map(employee => (
-            <EmployeeCard key={employee.id} employee={employee} />
+              <EmployeeCard key={employee.id} employee={employee} isEmployeeOfTheWeek={employee.name === employeeOfTheWeek} />
             ))}
             <AdminCard />
+            <EspressoCard />
+            <PayrollCalculatorCard />
         </div>
 
         <div className="space-y-8">
@@ -110,17 +136,15 @@ export default async function Home() {
                     title="Payroll Management"
                     description="Automated salary calculation based on attendance and deductions."
                 />
-                 <FeatureCard 
+                <FeatureCard
                     icon={<Coffee className="w-8 h-8 text-primary" />}
                     title="Espresso Consistency"
                     description="Log and track espresso shots to maintain quality standards."
-                    href="/espresso-tracker"
                 />
                 <FeatureCard
                     icon={<Calculator className="w-8 h-8 text-primary" />}
                     title="Payroll Calculator"
                     description="A simple tool for calculating employee pay based on worked days."
-                    href="/payroll-calculator"
                 />
             </div>
         </div>
