@@ -45,10 +45,17 @@ export function EspressoLog({ logs }: { logs: EspressoLogType[] }) {
 
   const formatDate = (date: Date) => new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   const formatTime = (date: Date) => new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
   const formatPullTime = (timeInMs: number) => {
+    // Heuristic: If time is less than 1000, it's likely an old log in seconds.
+    // Otherwise, it's a new log in milliseconds.
+    if (timeInMs < 1000) {
+      return `${timeInMs.toFixed(2)}s`; // Old format (seconds)
+    }
     const seconds = (timeInMs / 1000).toFixed(2);
-    return `${seconds}s`;
+    return `${seconds}s`; // New format (milliseconds to seconds)
   }
+
 
   return (
     <Card>
