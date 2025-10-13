@@ -13,7 +13,6 @@ import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, onU
 import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Payroll } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { LeaveTracker } from '@/components/leave-tracker';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PayrollViewer } from '@/components/payroll-viewer';
 
 export default function UserDashboard() {
@@ -79,64 +78,56 @@ export default function UserDashboard() {
         <h2 className="text-3xl font-bold tracking-tight">Welcome, {user}!</h2>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-2">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-6">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="lg:col-span-1 space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Monthly Allowance</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {allowances === null ? <Loader2 className="animate-spin" /> : hasAllowance ? (
-                    <>
-                      <div className="flex items-center gap-4">
-                        <GlassWater className="h-8 w-8 text-primary" />
-                        <div>
-                          <p className="text-2xl font-bold">{allowances.drinks}</p>
-                          <p className="text-sm text-muted-foreground">drinks left</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Utensils className="h-8 w-8 text-primary" />
-                        <div>
-                          <p className="text-2xl font-bold">{allowances.meals}</p>
-                          <p className="text-sm text-muted-foreground">meals left</p>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <Alert variant="destructive">
-                      <Ban className="h-4 w-4" />
-                      <AlertTitle>No free items left!</AlertTitle>
-                      <AlertDescription>
-                        Please pay for any extra orders.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Log an Item</CardTitle>
-                  <CardDescription>Select an item you've consumed.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {allowances !== null ? (
-                    <LogItemForm user={user} allowances={allowances} />
-                  ) : <div className="flex justify-center"><Loader2 className="animate-spin" /></div>}
-                </CardContent>
-              </Card>
-            </div>
-            <div className="lg:col-span-1">
-              <Card>
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-1 space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Allowance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {allowances === null ? <Loader2 className="animate-spin" /> : hasAllowance ? (
+                <>
+                  <div className="flex items-center gap-4">
+                    <GlassWater className="h-8 w-8 text-primary" />
+                    <div>
+                      <p className="text-2xl font-bold">{allowances.drinks}</p>
+                      <p className="text-sm text-muted-foreground">drinks left</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Utensils className="h-8 w-8 text-primary" />
+                    <div>
+                      <p className="text-2xl font-bold">{allowances.meals}</p>
+                      <p className="text-sm text-muted-foreground">meals left</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <Alert variant="destructive">
+                  <Ban className="h-4 w-4" />
+                  <AlertTitle>No free items left!</AlertTitle>
+                  <AlertDescription>
+                    Please pay for any extra orders.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Log an Item</CardTitle>
+              <CardDescription>Select an item you've consumed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {allowances !== null ? (
+                <LogItemForm user={user} allowances={allowances} />
+              ) : <div className="flex justify-center"><Loader2 className="animate-spin" /></div>}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="lg:col-span-1 space-y-8">
+            {attendanceStatus && <AttendanceTracker user={user} status={attendanceStatus} history={attendanceHistory} setStatus={setAttendanceStatus} setHistory={setAttendanceHistory} />}
+            <Card>
                 <CardHeader>
                   <CardTitle>Consumption History</CardTitle>
                   <CardDescription>Your last 5 logged items this month.</CardDescription>
@@ -144,22 +135,12 @@ export default function UserDashboard() {
                 <CardContent>
                   <ConsumptionHistory logs={recentLogs} />
                 </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="attendance" className="mt-6">
-           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-             <div className="lg:col-span-1">
-                {attendanceStatus && <AttendanceTracker user={user} status={attendanceStatus} history={attendanceHistory} setStatus={setAttendanceStatus} setHistory={setAttendanceHistory} />}
-             </div>
-             <div className="lg:col-span-2">
-                <LeaveTracker user={user} history={leaveHistory} />
-             </div>
-           </div>
-        </TabsContent>
-      </Tabs>
+            </Card>
+        </div>
+        <div className="lg:col-span-1 space-y-8">
+            <LeaveTracker user={user} history={leaveHistory} />
+        </div>
+      </div>
     </div>
   );
 }
