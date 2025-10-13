@@ -1,16 +1,16 @@
 
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import type { Payroll, Employee } from '@/lib/constants';
+import type { Payroll, Employee, PayFrequency } from '@/lib/constants';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generatePayrollAction, markPayrollAsPaidAction, deletePayrollAction, updatePayrollAction } from '@/app/actions/payroll-actions';
-import { Loader2, FileText, CheckCircle, Trash2, Info, Calendar as CalendarIcon, Edit2, Save, X } from 'lucide-react';
+import { Loader2, FileText, CheckCircle, Trash2, Info, Edit2, Save, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
-import { format } from 'date-fns';
+import { format, add, sub, isBefore } from 'date-fns';
 import { Badge } from './ui/badge';
 import { PayrollDetailsDialog } from './payroll-details-dialog';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -25,12 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Calendar } from './ui/calendar';
-import { cn } from '@/lib/utils';
-import type { DateRange } from 'react-day-picker';
 import { Input } from './ui/input';
-import { Label } from './ui/label';
 
 function EditablePayrollField({ payrollId, initialValue, field, label }: { payrollId: string, initialValue: number, field: 'tips' | 'deductions', label: string }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -83,39 +78,103 @@ function EditablePayrollField({ payrollId, initialValue, field, label }: { payro
     );
 }
 
+interface PayCycle {
+    from: Date;
+    to: Date;
+    label: string;
+    key: string;
+}
+
+const getPayCycles = (employee: Employee | undefined): PayCycle[] => {
+    if (!employee || !employee.payFrequency || !employee.payStartDate) {
+        return [];
+    }
+
+    const cycles: PayCycle[] = [];
+    const today = new Date();
+    let currentCycleStart = new Date(employee.payStartDate);
+
+    const getDuration = (freq: PayFrequency): Duration => {
+        switch (freq) {
+            case 'weekly': return { weeks: 1 };
+            case 'bi-weekly': return { weeks: 2 };
+            case 'monthly':
+            default: return { months: 1 };
+        }
+    }
+    const duration = getDuration(employee.payFrequency);
+
+    // Go back a few cycles
+    for (let i = 0; i < 6; i++) {
+        const cycleEnd = sub(add(currentCycleStart, duration), { days: 1 });
+        cycles.push({
+            from: currentCycleStart,
+            to: cycleEnd,
+            label: `${format(currentCycleStart, 'MMM d')} - ${format(cycleEnd, 'MMM d, yyyy')}`,
+            key: format(currentCycleStart, 'yyyy-MM-dd')
+        });
+        currentCycleStart = sub(currentCycleStart, duration);
+    }
+    
+    // Ensure the current cycle is included if the start date was in the future
+    let futureCycleStart = new Date(employee.payStartDate);
+    while(isBefore(futureCycleStart, add(today, { months: 1 }))) {
+        const cycleEnd = sub(add(futureCycleStart, duration), { days: 1 });
+        const key = format(futureCycleStart, 'yyyy-MM-dd');
+        if (!cycles.some(c => c.key === key)) {
+             cycles.push({
+                from: futureCycleStart,
+                to: cycleEnd,
+                label: `${format(futureCycleStart, 'MMM d')} - ${format(cycleEnd, 'MMM d, yyyy')}`,
+                key: key
+            });
+        }
+        futureCycleStart = add(futureCycleStart, duration);
+    }
+    
+    return cycles.sort((a,b) => b.from.getTime() - a.from.getTime());
+};
+
 
 export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], employees: Employee[] }) {
     const [isPending, startTransition] = useTransition();
     const [isDeleting, startDeleteTransition] = useTransition();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [selectedCycleKey, setSelectedCycleKey] = useState<string>('');
     const { toast } = useToast();
     
     const [isClient, setIsClient] = useState(false);
     useEffect(() => { setIsClient(true) }, []);
 
-
     const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
-    const isPayrollConfigured = selectedEmployee && selectedEmployee.monthlySalary && selectedEmployee.payFrequency && selectedEmployee.payStartDate && selectedEmployee.shiftStartTime;
+    const isPayrollConfigured = selectedEmployee && selectedEmployee.monthlySalary && selectedEmployee.payFrequency && selectedEmployee.payStartDate;
+    
+    const payCycles = useMemo(() => getPayCycles(selectedEmployee), [selectedEmployee]);
+    const selectedCycle = payCycles.find(c => c.key === selectedCycleKey);
+
+    useEffect(() => {
+      setSelectedCycleKey('');
+    }, [selectedEmployeeId]);
+
 
     const handleGeneratePayroll = () => {
-        if (!selectedEmployeeId) {
+        if (!selectedEmployeeId || !selectedEmployee) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please select an employee.' });
             return;
         }
 
-        if (!dateRange || !dateRange.from || !dateRange.to) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please select a date range.' });
+        if (!selectedCycle) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a pay cycle.' });
             return;
         }
 
-        if (!isPayrollConfigured || !selectedEmployee) {
+        if (!isPayrollConfigured) {
              toast({ variant: 'destructive', title: 'Error', description: 'Selected employee does not have complete payroll configuration.' });
             return;
         }
 
         startTransition(async () => {
-            const result = await generatePayrollAction(selectedEmployeeId, selectedEmployee.name, {from: dateRange.from!, to: dateRange.to!});
+            const result = await generatePayrollAction(selectedEmployeeId, selectedEmployee.name, {from: selectedCycle.from, to: selectedCycle.to});
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
             } else {
@@ -174,43 +233,21 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                                 {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                id="date"
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !dateRange && "text-muted-foreground"
-                                )}
-                                >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (
-                                    dateRange.to ? (
-                                    <>
-                                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                                        {format(dateRange.to, "LLL dd, y")}
-                                    </>
-                                    ) : (
-                                    format(dateRange.from, "LLL dd, y")
-                                    )
-                                ) : (
-                                    <span>Pick a date range</span>
-                                )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                initialFocus
-                                mode="range"
-                                defaultMonth={dateRange?.from}
-                                selected={dateRange}
-                                onSelect={setDateRange}
-                                numberOfMonths={2}
-                                />
-                            </PopoverContent>
-                        </Popover>
-                        <Button onClick={handleGeneratePayroll} disabled={isPending || !selectedEmployeeId || !isPayrollConfigured} className="w-full lg:w-auto">
+                        
+                        <Select onValueChange={setSelectedCycleKey} value={selectedCycleKey} disabled={isPending || !selectedEmployeeId || !isPayrollConfigured}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Pay Cycle" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {payCycles.map(cycle => (
+                                    <SelectItem key={cycle.key} value={cycle.key}>
+                                        {cycle.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Button onClick={handleGeneratePayroll} disabled={isPending || !selectedEmployeeId || !isPayrollConfigured || !selectedCycle} className="w-full lg:w-auto">
                             {isPending ? <Loader2 className="animate-spin" /> : <FileText />}
                             Generate
                         </Button>
@@ -220,7 +257,7 @@ export function PayrollManager({ payrolls, employees }: { payrolls: Payroll[], e
                             <Info className="h-4 w-4" />
                             <AlertTitle>Missing Configuration</AlertTitle>
                             <AlertDescription>
-                                This employee's payroll information is incomplete. Please set their monthly salary, pay frequency, cycle start date, and shift start time in the Staff Manager.
+                                This employee's payroll information is incomplete. Please set their monthly salary, pay frequency, and cycle start date in the Staff Manager.
                             </AlertDescription>
                         </Alert>
                     )}
