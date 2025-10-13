@@ -16,7 +16,7 @@ export async function logEspressoPullAction(
         await addDoc(collection(db, 'espressoLogs'), {
             employeeName,
             coffeeType,
-            timeTaken,
+            timeTaken, // time is now in milliseconds
             coffeeUsed,
             pullDateTime: new Date(),
         });

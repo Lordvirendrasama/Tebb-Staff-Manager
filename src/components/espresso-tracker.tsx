@@ -26,7 +26,7 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   
-  const [timer, setTimer] = useState(0);
+  const [timer, setTimer] = useState(0); // Time in milliseconds
   const [isActive, setIsActive] = useState(false);
   const countRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -37,9 +37,10 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
 
   const handleStart = () => {
     setIsActive(true);
+    const startTime = Date.now() - timer;
     countRef.current = setInterval(() => {
-      setTimer((timer) => timer + 1);
-    }, 1000);
+      setTimer(Date.now() - startTime);
+    }, 10);
   };
 
   const handleStop = () => {
@@ -67,7 +68,7 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
         const result = await logEspressoPullAction(
             data.employeeName as User,
             data.coffeeType,
-            timer,
+            timer, // Save time in milliseconds
             data.coffeeUsed
         );
         if (result.success) {
@@ -80,10 +81,10 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
     });
   }
 
-  const formatTime = (totalSeconds: number) => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  const formatTime = (timeInMs: number) => {
+    const totalSeconds = Math.floor(timeInMs / 1000);
+    const milliseconds = Math.floor((timeInMs % 1000) / 10); // get 2 digits for ms
+    return `${totalSeconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
   };
 
 
@@ -156,7 +157,7 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
             />
 
             <div className="space-y-2">
-                <FormLabel>Pull Timer</FormLabel>
+                <FormLabel>Pull Timer (ss:ms)</FormLabel>
                 <Card className="bg-muted/50">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">

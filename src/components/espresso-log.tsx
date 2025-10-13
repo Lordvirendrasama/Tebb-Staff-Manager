@@ -45,6 +45,10 @@ export function EspressoLog({ logs }: { logs: EspressoLogType[] }) {
 
   const formatDate = (date: Date) => new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   const formatTime = (date: Date) => new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatPullTime = (timeInMs: number) => {
+    const seconds = (timeInMs / 1000).toFixed(2);
+    return `${seconds}s`;
+  }
 
   return (
     <Card>
@@ -97,7 +101,7 @@ export function EspressoLog({ logs }: { logs: EspressoLogType[] }) {
                         </TableCell>
                         <TableCell>{log.employeeName}</TableCell>
                         <TableCell>{log.coffeeType}</TableCell>
-                        <TableCell className="text-right">{log.timeTaken}s</TableCell>
+                        <TableCell className="text-right">{formatPullTime(log.timeTaken)}</TableCell>
                         <TableCell className="text-right hidden sm:table-cell">{log.coffeeUsed.toFixed(2)}g</TableCell>
                     </TableRow>
                     ))}

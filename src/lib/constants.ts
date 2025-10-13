@@ -74,14 +74,14 @@ export interface LeaveRequest {
     status: 'Pending' | 'Approved' | 'Denied';
 }
 
-export const ESPRESSO_DRINKS = ['Espresso', 'Doppio', 'Ristretto', 'Lungo', 'Macchiato', 'Cortado', 'Americano'] as const;
+export const ESPRESSO_DRINKS = ['Espresso', 'Double Espresso'] as const;
 export type EspressoDrink = typeof ESPRESSO_DRINKS[number];
 
 export interface EspressoLog {
   id: string;
   employeeName: User;
   coffeeType: EspressoDrink;
-  timeTaken: number; // in seconds
+  timeTaken: number; // in milliseconds
   coffeeUsed: number; // in grams
   pullDateTime: Date;
 }
