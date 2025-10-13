@@ -1,6 +1,7 @@
+
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, FileText } from 'lucide-react';
+import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, FileText, Calculator } from 'lucide-react';
 import { getAllUsers } from '@/app/actions/admin-actions';
 import type { Employee } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -44,9 +45,9 @@ function EspressoCard() {
     )
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
-  return (
-    <Card className="bg-card/50 border-border/50">
+function FeatureCard({ icon, title, description, href }: { icon: React.ReactNode, title: string, description: string, href?: string }) {
+  const cardContent = (
+    <Card className="bg-card/50 border-border/50 h-full">
       <CardHeader className="flex flex-row items-center gap-4">
         {icon}
         <div>
@@ -55,7 +56,13 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
         </div>
       </CardHeader>
     </Card>
-  )
+  );
+  
+  if (href) {
+    return <Link href={href} className="block h-full">{cardContent}</Link>;
+  }
+  
+  return cardContent;
 }
 
 export default async function Home() {
@@ -78,7 +85,6 @@ export default async function Home() {
             <EmployeeCard key={employee.id} employee={employee} />
             ))}
             <AdminCard />
-            <EspressoCard />
         </div>
 
         <div className="space-y-8">
@@ -101,18 +107,20 @@ export default async function Home() {
                 />
                  <FeatureCard 
                     icon={<FileText className="w-8 h-8 text-primary" />}
-                    title="Payroll Generation"
+                    title="Payroll Management"
                     description="Automated salary calculation based on attendance and deductions."
                 />
                  <FeatureCard 
                     icon={<Coffee className="w-8 h-8 text-primary" />}
                     title="Espresso Consistency"
                     description="Log and track espresso shots to maintain quality standards."
+                    href="/espresso-tracker"
                 />
-                 <FeatureCard 
-                    icon={<UserCog className="w-8 h-8 text-primary" />}
-                    title="Admin Control"
-                    description="Centralized dashboard for managing staff, items, and data."
+                <FeatureCard
+                    icon={<Calculator className="w-8 h-8 text-primary" />}
+                    title="Payroll Calculator"
+                    description="A simple tool for calculating employee pay based on worked days."
+                    href="/payroll-calculator"
                 />
             </div>
         </div>
