@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, FileText } from 'lucide-react';
 import { getAllUsers } from '@/app/actions/admin-actions';
 import type { Employee } from '@/lib/constants';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 async function EmployeeCard({ employee }: { employee: Employee }) {
   return (
@@ -62,6 +63,9 @@ export default async function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-8">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground font-headline">The 8 Bit Bistro</h1>
