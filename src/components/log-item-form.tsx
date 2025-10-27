@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { User, ConsumableItem, ConsumableItemDef } from '@/lib/constants';
 import { logItemAction } from '@/app/actions';
 import { useTransition, useState, useEffect } from 'react';
@@ -84,22 +84,24 @@ export function LogItemForm({ user, allowances }: { user: User; allowances: { dr
                 </FormControl>
                 <SelectContent>
                   {drinkItems.length > 0 && (
-                     <optgroup label="Drinks">
+                     <SelectGroup>
+                      <SelectLabel>Drinks</SelectLabel>
                       {drinkItems.map((item) => (
                         <SelectItem key={item.id} value={item.name}>
                           {item.name}
                         </SelectItem>
                       ))}
-                    </optgroup>
+                    </SelectGroup>
                   )}
                   {mealItems.length > 0 && (
-                    <optgroup label="Meals">
+                    <SelectGroup>
+                      <SelectLabel>Meals</SelectLabel>
                       {mealItems.map((item) => (
                         <SelectItem key={item.id} value={item.name}>
                           {item.name}
                         </SelectItem>
                       ))}
-                    </optgroup>
+                    </SelectGroup>
                   )}
                 </SelectContent>
               </Select>
