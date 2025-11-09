@@ -44,9 +44,9 @@ export default function EspressoTrackerPage() {
         return (
             <div className="space-y-8">
                 <h2 className="text-3xl font-bold tracking-tight">Espresso Tracker</h2>
-                <div className="grid gap-8 md:grid-cols-2">
-                    <Skeleton className="h-[28rem] w-full" />
-                    <Skeleton className="h-[28rem] w-full" />
+                <div className="flex flex-wrap justify-center gap-8">
+                    <Skeleton className="h-[28rem] w-full max-w-sm" />
+                    <Skeleton className="h-[28rem] w-full max-w-sm" />
                 </div>
                  <Skeleton className="h-[32rem] w-full" />
             </div>
@@ -56,7 +56,7 @@ export default function EspressoTrackerPage() {
     return (
         <div className="space-y-8">
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Espresso Tracker</h2>
-            <div className="grid gap-8 md:grid-cols-2">
+            <div className="flex flex-wrap justify-center gap-8">
                 <EspressoPullCard employees={employees} groupNumber={1} />
                 <EspressoPullCard employees={employees} groupNumber={2} />
             </div>

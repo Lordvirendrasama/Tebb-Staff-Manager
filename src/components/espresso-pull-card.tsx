@@ -95,7 +95,7 @@ export function EspressoPullCard({ employees, groupNumber }: EspressoPullCardPro
 
 
   return (
-    <Card>
+    <Card className="w-full max-w-sm flex-shrink-0">
       <CardHeader>
         <CardTitle>Group {groupNumber} Pull</CardTitle>
       </CardHeader>
