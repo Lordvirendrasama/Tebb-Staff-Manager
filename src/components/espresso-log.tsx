@@ -87,6 +87,11 @@ export function EspressoLog({ logs }: { logs: EspressoLogType[] }) {
                             Drink {getSortIndicator('coffeeType')}
                         </Button>
                     </TableHead>
+                    <TableHead className="text-center">
+                        <Button variant="ghost" onClick={() => requestSort('groupHead')}>
+                           Group {getSortIndicator('groupHead')}
+                        </Button>
+                    </TableHead>
                     <TableHead className="text-right">
                         <Button variant="ghost" onClick={() => requestSort('timeTaken')}>
                             Time {getSortIndicator('timeTaken')}
@@ -108,6 +113,7 @@ export function EspressoLog({ logs }: { logs: EspressoLogType[] }) {
                         </TableCell>
                         <TableCell>{log.employeeName}</TableCell>
                         <TableCell>{log.coffeeType}</TableCell>
+                        <TableCell className="text-center">{log.groupHead}</TableCell>
                         <TableCell className="text-right">{formatPullTime(log.timeTaken)}</TableCell>
                         <TableCell className="text-right hidden sm:table-cell">{log.coffeeUsed.toFixed(2)}g</TableCell>
                     </TableRow>

@@ -10,7 +10,8 @@ export async function logEspressoPullAction(
     employeeName: User,
     coffeeType: EspressoDrink,
     timeTaken: number,
-    coffeeUsed: number
+    coffeeUsed: number,
+    groupHead: 1 | 2
 ) {
     try {
         await addDoc(collection(db, 'espressoLogs'), {
@@ -18,6 +19,7 @@ export async function logEspressoPullAction(
             coffeeType,
             timeTaken, // time is now in milliseconds
             coffeeUsed,
+            groupHead,
             pullDateTime: new Date(),
         });
 

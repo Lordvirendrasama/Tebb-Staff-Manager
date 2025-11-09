@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useTransition, useEffect, useRef } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,7 +22,12 @@ const FormSchema = z.object({
   coffeeUsed: z.coerce.number().min(1, "Coffee amount must be greater than 0.").max(50, "Coffee amount seems too high."),
 });
 
-export function EspressoTracker({ employees }: { employees: Employee[] }) {
+interface EspressoPullCardProps {
+    employees: Employee[];
+    groupNumber: 1 | 2;
+}
+
+export function EspressoPullCard({ employees, groupNumber }: EspressoPullCardProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   
@@ -68,11 +73,12 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
         const result = await logEspressoPullAction(
             data.employeeName as User,
             data.coffeeType,
-            timer, // Save time in milliseconds
-            data.coffeeUsed
+            timer,
+            data.coffeeUsed,
+            groupNumber
         );
         if (result.success) {
-            toast({ title: 'Success', description: result.message });
+            toast({ title: `Group ${groupNumber} pull logged`, description: result.message });
             form.reset({ employeeName: data.employeeName, coffeeType: undefined, coffeeUsed: 18 });
             resetTimer();
         } else {
@@ -91,12 +97,11 @@ export function EspressoTracker({ employees }: { employees: Employee[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>New Espresso Pull</CardTitle>
-        <CardDescription>Track a new espresso shot.</CardDescription>
+        <CardTitle>Group {groupNumber} Pull</CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <FormField
               control={form.control}
               name="employeeName"

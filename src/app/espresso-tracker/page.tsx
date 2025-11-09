@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { EspressoTracker } from '@/components/espresso-tracker';
+import { EspressoPullCard } from '@/components/espresso-pull-card';
 import { EspressoLog } from '@/components/espresso-log';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getEmployees } from '@/services/client/attendance-service';
@@ -44,14 +44,11 @@ export default function EspressoTrackerPage() {
         return (
             <div className="space-y-8">
                 <h2 className="text-3xl font-bold tracking-tight">Espresso Tracker</h2>
-                <div className="grid gap-8 md:grid-cols-3">
-                    <div className="md:col-span-1">
-                        <Skeleton className="h-96 w-full" />
-                    </div>
-                    <div className="md:col-span-2">
-                        <Skeleton className="h-[32rem] w-full" />
-                    </div>
+                <div className="grid gap-8 md:grid-cols-2">
+                    <Skeleton className="h-[28rem] w-full" />
+                    <Skeleton className="h-[28rem] w-full" />
                 </div>
+                 <Skeleton className="h-[32rem] w-full" />
             </div>
         )
     }
@@ -59,13 +56,12 @@ export default function EspressoTrackerPage() {
     return (
         <div className="space-y-8">
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Espresso Tracker</h2>
-            <div className="grid gap-8 md:grid-cols-3">
-                <div className="md:col-span-1">
-                    <EspressoTracker employees={employees} />
-                </div>
-                <div className="md:col-span-2">
-                    <EspressoLog logs={logs} />
-                </div>
+            <div className="grid gap-8 md:grid-cols-2">
+                <EspressoPullCard employees={employees} groupNumber={1} />
+                <EspressoPullCard employees={employees} groupNumber={2} />
+            </div>
+            <div>
+                <EspressoLog logs={logs} />
             </div>
         </div>
     );

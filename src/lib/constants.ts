@@ -84,6 +84,7 @@ export interface EspressoLog {
   timeTaken: number; // in milliseconds
   coffeeUsed: number; // in grams
   pullDateTime: Date;
+  groupHead: 1 | 2;
 }
 
 export interface Payroll {
