@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
 import type { EspressoLog as EspressoLogType } from '@/lib/constants';
+import { formatIST } from '@/lib/date-utils';
 
 type SortKey = keyof EspressoLogType;
 
@@ -43,8 +44,8 @@ export function EspressoLog({ logs }: { logs: EspressoLogType[] }) {
     return sortConfig.direction === 'ascending' ? '▲' : '▼';
   };
 
-  const formatDate = (date: Date) => new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-  const formatTime = (date: Date) => new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatDate = (date: Date) => formatIST(new Date(date), 'MMM d, yyyy');
+  const formatTime = (date: Date) => formatIST(new Date(date), 'p');
   
   const formatPullTime = (timeInMs: number) => {
     // Heuristic: If time is less than 1000, it's likely an old log in seconds.

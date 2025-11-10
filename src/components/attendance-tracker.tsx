@@ -10,6 +10,7 @@ import { Loader2, LogIn, LogOut, History, Clock } from 'lucide-react';
 import type { User, AttendanceStatus, AttendanceLog } from '@/lib/constants';
 import { ScrollArea } from './ui/scroll-area';
 import { Card, CardContent } from './ui/card';
+import { formatIST } from '@/lib/date-utils';
 
 interface AttendanceTrackerProps {
     user: User;
@@ -31,12 +32,14 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
 
   const formatLocaleTime = (date: Date | string | undefined) => {
     if (!date) return '...';
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    if (!isClient) return '...';
+    return formatIST(new Date(date), 'p');
   };
   
   const formatLocaleDate = (date: Date | string | undefined) => {
     if (!date) return '...';
-    return new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    if (!isClient) return '...';
+    return formatIST(new Date(date), 'MMM d, yyyy');
   };
 
   const handleClockIn = () => {

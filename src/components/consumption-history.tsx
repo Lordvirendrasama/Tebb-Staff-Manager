@@ -1,6 +1,7 @@
 'use client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { ConsumptionLog } from '@/lib/constants';
+import { formatIST } from '@/lib/date-utils';
 
 export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
   return (
@@ -16,7 +17,7 @@ export function ConsumptionHistory({ logs }: { logs: ConsumptionLog[] }) {
           {logs.length > 0 ? logs.map((log, index) => (
             <TableRow key={index}>
               <TableCell className="font-medium">{log.itemName}</TableCell>
-              <TableCell className="text-right">{new Date(log.dateTimeLogged).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
+              <TableCell className="text-right">{formatIST(new Date(log.dateTimeLogged), 'p')}</TableCell>
             </TableRow>
           )) : (
             <TableRow>
