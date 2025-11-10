@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
 import { Calendar } from './ui/calendar';
 import { Button } from './ui/button';
@@ -8,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import type { Employee, AttendanceLog } from '@/lib/constants';
 import { getAllAttendanceForMonth } from '@/services/client/attendance-service';
 import { addMonths, format, startOfMonth, differenceInMinutes } from 'date-fns';
-import { ChevronLeft, ChevronRight, Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, CheckCircle, AlertCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 type DayPerformance = 'overtime' | 'undertime' | 'on-time';
@@ -64,13 +65,37 @@ export function AttendanceViewer({ employee }: { employee: Employee }) {
         setCurrentMonth(prev => addMonths(prev, offset));
     };
     
+    const { totalOvertime, totalUndertime } = useMemo(() => {
+        let overtime = 0;
+        let undertime = 0;
+
+        dayLogs.forEach(log => {
+            if (log.minutesDifference > 0) {
+                overtime += log.minutesDifference;
+            } else if (log.minutesDifference < 0) {
+                undertime += Math.abs(log.minutesDifference);
+            }
+        });
+
+        return { totalOvertime: overtime, totalUndertime: undertime };
+    }, [dayLogs]);
+
     const formatDuration = (minutes: number) => {
         const isNegative = minutes < 0;
         const absMinutes = Math.abs(minutes);
         const h = Math.floor(absMinutes / 60);
         const m = absMinutes % 60;
         const sign = isNegative ? '-' : '+';
-        return `${sign} ${h > 0 ? `${h}h ` : ''}${m}m`;
+        if(isNegative) {
+            return `${sign} ${h > 0 ? `${h}h ` : ''}${m}m`;
+        }
+        return `${h > 0 ? `${h}h ` : ''}${m}m`;
+    };
+
+    const formatTotalDuration = (totalMinutes: number) => {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${hours}h ${minutes}m`;
     };
 
     const modifiers = {
@@ -173,6 +198,20 @@ export function AttendanceViewer({ employee }: { employee: Employee }) {
                         }}
                     />
                 </div>
+
+                 <Separator />
+
+                <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><TrendingUp className="h-4 w-4 text-green-500" /> Overtime</p>
+                        <p className="text-xl font-bold">{formatTotalDuration(totalOvertime)}</p>
+                    </div>
+                     <div>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><TrendingDown className="h-4 w-4 text-destructive" /> Undertime</p>
+                        <p className="text-xl font-bold">{formatTotalDuration(totalUndertime)}</p>
+                    </div>
+                </div>
+
                  <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
