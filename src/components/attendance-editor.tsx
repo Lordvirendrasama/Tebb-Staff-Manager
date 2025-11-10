@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -12,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Save, Calendar as CalendarIcon } from 'lucide-react';
 import { getAttendanceForMonth } from '@/services/client/attendance-service';
 import { updateAttendanceForDayAction } from '@/app/actions/attendance-actions';
-import { format, getMonth, getYear, setMonth, setYear } from 'date-fns';
+import { format, getMonth, getYear, setMonth, setYear, isSameDay, startOfDay } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST, toIST } from '@/lib/date-utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -61,7 +60,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     }
     
     setSelectedDay(day);
-    const logForDay = attendance.find(log => format(toIST(log.clockIn), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
+    const logForDay = attendance.find(log => isSameDay(toIST(log.clockIn), day));
     
     if (logForDay) {
         setClockIn(formatIST(toIST(logForDay.clockIn), 'HH:mm'));
