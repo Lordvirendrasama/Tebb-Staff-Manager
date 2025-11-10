@@ -6,7 +6,7 @@ import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type Us
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Upload } from 'lucide-react';
 import { StaffManager } from '@/components/staff-manager';
 import { getAllUsers } from '@/app/actions/admin-actions';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
@@ -16,9 +16,9 @@ import { ExportDataButton } from '@/components/export-data-button';
 import { ResetDataButton } from '@/components/reset-data-button';
 import { AdminAuth } from '@/components/admin-auth';
 import { ItemManager } from '@/components/item-manager';
-import { ExportEspressoDataButton } from '@/components/export-espresso-data-button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AttendanceManager } from '@/components/attendance-manager';
+import { RestoreDataButton } from '@/components/restore-data-button';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -147,17 +147,25 @@ export default function AdminPage() {
                              <Card>
                                 <CardHeader>
                                     <CardTitle>Data Management</CardTitle>
-                                    <CardDescription>Manage and export application data.</CardDescription>
+                                    <CardDescription>Export, restore, or reset application data.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <Card>
                                         <CardHeader>
-                                            <CardTitle className="text-lg">Export Data</CardTitle>
-                                            <CardDescription>Download application data.</CardDescription>
+                                            <CardTitle className="text-lg">Export & Backup</CardTitle>
+                                            <CardDescription>Download application data in various formats.</CardDescription>
                                         </CardHeader>
-                                        <CardContent className="space-y-2">
+                                        <CardContent>
                                             <ExportDataButton />
-                                            <ExportEspressoDataButton />
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg flex items-center gap-2"><Upload className="text-primary"/> Restore from Backup</CardTitle>
+                                            <CardDescription>Restore data from a JSON backup file.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <RestoreDataButton />
                                         </CardContent>
                                     </Card>
                                     <Card>

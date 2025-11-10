@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { User, WeekDay, ItemType, Employee } from '@/lib/constants';
+import type { User, WeekDay, ItemType, Employee, ConsumptionLog, AttendanceLog, EspressoLog } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
@@ -160,7 +160,7 @@ async function seedDefaultData() {
 export async function resetDataAction() {
     try {
         // Clear existing data
-        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems', 'payroll'];
+        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'espressoLogs', 'consumableItems', 'payroll'];
         for (const collectionPath of collectionsToDelete) {
             await deleteCollection(collectionPath);
         }
@@ -178,6 +178,68 @@ export async function resetDataAction() {
         return { success: false, message: `Failed to reset data: ${errorMessage}` };
     }
 }
+
+
+interface BackupData {
+    employees?: Employee[];
+    consumptionLogs?: ConsumptionLog[];
+    attendanceLogs?: AttendanceLog[];
+    espressoLogs?: EspressoLog[];
+    consumableItems?: any[];
+}
+
+
+export async function restoreDataAction(backupJson: string) {
+    try {
+        const backupData: BackupData = JSON.parse(backupJson);
+        const collectionsToRestore = ['employees', 'consumptionLogs', 'attendanceLogs', 'espressoLogs', 'consumableItems'];
+
+        // Clear existing data
+        for (const collectionPath of collectionsToRestore) {
+            await deleteCollection(collectionPath);
+        }
+        await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: null });
+        
+        const batch = writeBatch(db);
+
+        const restoreCollection = (collectionName: keyof BackupData, data: any[]) => {
+            if (data && data.length > 0) {
+                const collectionRef = collection(db, collectionName);
+                data.forEach(item => {
+                    const docRef = doc(collectionRef);
+                    // Convert date strings back to Firestore Timestamps
+                    const newItem: {[key: string]: any} = {};
+                    for (const key in item) {
+                        const value = item[key];
+                        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
+                            newItem[key] = new Date(value);
+                        } else {
+                            newItem[key] = value;
+                        }
+                    }
+                    batch.set(docRef, newItem);
+                });
+            }
+        };
+
+        restoreCollection('employees', backupData.employees || []);
+        restoreCollection('consumptionLogs', backupData.consumptionLogs || []);
+        restoreCollection('attendanceLogs', backupData.attendanceLogs || []);
+        restoreCollection('espressoLogs', backupData.espressoLogs || []);
+        restoreCollection('consumableItems', backupData.consumableItems || []);
+
+        await batch.commit();
+
+        revalidatePath('/');
+        revalidatePath('/admin');
+        return { success: true, message: 'Data restored successfully from backup.' };
+    } catch (error) {
+        console.error('Data restore failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to restore data. Please ensure the backup file is a valid JSON.';
+        return { success: false, message: errorMessage };
+    }
+}
+
 
 export async function addItemAction(name: string, type: ItemType) {
     try {
