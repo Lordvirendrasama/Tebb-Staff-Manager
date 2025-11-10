@@ -12,7 +12,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Card, CardContent } from './ui/card';
 import { formatIST } from '@/lib/date-utils';
 import { ShiftCountdown } from './shift-countdown';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { addHours, addMinutes, set } from 'date-fns';
 
 interface AttendanceTrackerProps {
@@ -28,6 +28,7 @@ export function AttendanceTracker({ user, status, history, employee, setStatus, 
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [showEarlyClockOutAlert, setShowEarlyClockOutAlert] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -106,7 +107,9 @@ export function AttendanceTracker({ user, status, history, employee, setStatus, 
   }
   
   const handleClockOutClick = () => {
-      if (!isEarlyClockOut()) {
+      if (isEarlyClockOut()) {
+          setShowEarlyClockOutAlert(true);
+      } else {
           performClockOut();
       }
   }
@@ -129,39 +132,42 @@ export function AttendanceTracker({ user, status, history, employee, setStatus, 
                     <span>Clock In</span>
                 </Button>
                 
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button
-                            onClick={handleClockOutClick}
-                            disabled={isPending || !isClockedIn}
-                            variant="destructive"
-                            className="w-full"
-                        >
-                            {isPending && isClockedIn === true ? <Loader2 className="animate-spin" /> : <LogOut />}
-                            <span>Clock Out</span>
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                You have not completed your shift yet. Are you sure you want to clock out early?
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={performClockOut} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-                                {isPending ? <Loader2 className="animate-spin" /> : 'Yes, Clock Out'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                <Button
+                    onClick={handleClockOutClick}
+                    disabled={isPending || !isClockedIn}
+                    variant="destructive"
+                    className="w-full"
+                >
+                    {isPending && isClockedIn === true ? <Loader2 className="animate-spin" /> : <LogOut />}
+                    <span>Clock Out</span>
+                </Button>
+                
 
                 {isClockedIn && status.clockInTime && employee && (
                     <ShiftCountdown clockInTime={status.clockInTime} standardWorkHours={employee.standardWorkHours} />
                 )}
             </div>
         </div>
+
+        <AlertDialog open={showEarlyClockOutAlert} onOpenChange={setShowEarlyClockOutAlert}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        You have not completed your shift yet. Are you sure you want to clock out early?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => {
+                        setShowEarlyClockOutAlert(false);
+                        performClockOut();
+                    }} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+                        {isPending ? <Loader2 className="animate-spin" /> : 'Yes, Clock Out'}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       
         <div className="space-y-2">
             <div className='flex items-center gap-2'>
