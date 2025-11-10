@@ -206,7 +206,7 @@ export default function LeaderboardPage() {
                                                          <li key={key} className="flex items-center justify-between gap-2">
                                                             <div className="flex items-center gap-2">
                                                                 <config.icon className="h-4 w-4" style={{ color: config.color }} />
-                                                                <span>{config.label}</span>
+                                                                <span>{config.label} <span className="text-muted-foreground">({config.description})</span></span>
                                                             </div>
                                                             <div className="font-mono text-right">
                                                                 <span className="font-semibold">{statValue}</span>
