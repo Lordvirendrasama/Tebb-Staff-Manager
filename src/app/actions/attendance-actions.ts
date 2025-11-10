@@ -4,7 +4,7 @@
 import type { User, LeaveType } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
-import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
