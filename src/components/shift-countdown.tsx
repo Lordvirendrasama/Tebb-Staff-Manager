@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { addHours, differenceInMilliseconds } from 'date-fns';
+import { addHours, addMinutes, differenceInMilliseconds, set } from 'date-fns';
 import { Timer } from 'lucide-react';
 
 interface ShiftCountdownProps {
@@ -16,7 +17,18 @@ export function ShiftCountdown({ clockInTime, standardWorkHours }: ShiftCountdow
     if (!clockInTime || !standardWorkHours) return;
 
     const clockInDate = new Date(clockInTime);
-    const shiftEndTime = addHours(clockInDate, standardWorkHours);
+    
+    // Define the cutoff time for the early bird bonus
+    const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
+
+    // Check if the employee clocked in before the cutoff
+    const isEarlyBird = clockInDate < cutoffTime;
+    
+    // Calculate the effective shift end time
+    let shiftEndTime = addHours(clockInDate, standardWorkHours);
+    if (isEarlyBird) {
+      shiftEndTime = addMinutes(shiftEndTime, -10);
+    }
 
     const interval = setInterval(() => {
       const now = new Date();
