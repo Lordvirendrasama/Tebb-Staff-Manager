@@ -59,10 +59,11 @@ export default function AdminPage() {
   };
 
   const refreshViewerData = async () => {
-    if (selectedViewerEmployee) {
+    const currentEmployee = employees.find(e => e.id === selectedViewerEmployeeId);
+    if (currentEmployee) {
       setViewerLoading(true);
       try {
-        const logs = await getAllAttendanceForMonth(selectedViewerEmployee.name, viewerMonth);
+        const logs = await getAllAttendanceForMonth(currentEmployee.name, viewerMonth);
         setViewerLogs(logs);
       } catch (error) {
         console.error("Failed to fetch viewer data", error);
@@ -73,7 +74,9 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    refreshViewerData();
+    if (selectedViewerEmployeeId) {
+      refreshViewerData();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedViewerEmployeeId, viewerMonth]);
 
@@ -93,7 +96,8 @@ export default function AdminPage() {
             setSelectedViewerEmployeeId(emps[0].id);
         }
         
-        await refreshGeneralData();
+        // Don't await here, let the subscriptions update the state
+        refreshGeneralData();
         
         unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
         unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
