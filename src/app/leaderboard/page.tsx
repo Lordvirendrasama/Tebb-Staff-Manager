@@ -103,11 +103,10 @@ export default function LeaderboardPage() {
         return (
             <div className="space-y-8">
                 <div className="text-center">
-                  <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center justify-center gap-3">
-                      <Trophy className="h-8 w-8 text-primary" />
-                      Espresso Masters
+                  <Trophy className="h-10 w-10 text-primary mx-auto mb-2" />
+                  <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline">
+                      Leaderboard
                   </h2>
-                  <p className="text-muted-foreground mt-2">The official performance analytics dashboard.</p>
                 </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(3)].map((_, i) => (
@@ -121,9 +120,9 @@ export default function LeaderboardPage() {
     return (
         <div className="space-y-8">
             <div className="text-center">
-                <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center justify-center gap-3">
-                    <Trophy className="h-8 w-8 text-primary" />
-                    Espresso Masters
+                <Trophy className="h-10 w-10 text-primary mx-auto mb-2" />
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline">
+                    Leaderboard
                 </h2>
                 <p className="text-muted-foreground mt-2">The official performance analytics dashboard.</p>
             </div>
