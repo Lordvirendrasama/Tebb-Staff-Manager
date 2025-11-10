@@ -1,3 +1,4 @@
+
 'use client';
 
 import { collection, onSnapshot, query, orderBy, doc, getDocs, where } from 'firebase/firestore';
@@ -88,17 +89,17 @@ export const getAllAttendanceForMonth = async (employeeName: string, month: Date
 
     const q = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employeeName),
-        orderBy('clockIn', 'asc')
+        where('employeeName', '==', employeeName)
     );
 
     const snapshot = await getDocs(q);
     const allLogs = snapshotToDocs<AttendanceLog>(snapshot);
 
-    // Filter by month on the client-side
-    return allLogs.filter(log => 
+    const logsInMonth = allLogs.filter(log => 
         isWithinInterval(new Date(log.clockIn), { start, end })
     );
+
+    return logsInMonth.sort((a, b) => new Date(a.clockIn).getTime() - new Date(b.clockIn).getTime());
 };
 
 
