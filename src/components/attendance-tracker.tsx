@@ -12,6 +12,8 @@ import { ScrollArea } from './ui/scroll-area';
 import { Card, CardContent } from './ui/card';
 import { formatIST } from '@/lib/date-utils';
 import { ShiftCountdown } from './shift-countdown';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from '@/components/ui/alert-dialog';
+import { addHours, addMinutes, set } from 'date-fns';
 
 interface AttendanceTrackerProps {
     user: User;
@@ -64,7 +66,7 @@ export function AttendanceTracker({ user, status, history, employee, setStatus, 
     });
   };
 
-  const handleClockOut = () => {
+  const performClockOut = () => {
     startTransition(async () => {
       const result = await clockOutAction(user);
       if (result.success) {
@@ -87,6 +89,28 @@ export function AttendanceTracker({ user, status, history, employee, setStatus, 
 
   const isClockedIn = status.status === 'Clocked In';
 
+  const isEarlyClockOut = () => {
+    if (!isClockedIn || !status.clockInTime || !employee.standardWorkHours) {
+        return false;
+    }
+    const clockInDate = new Date(status.clockInTime);
+    const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
+    const isEarlyBird = clockInDate < cutoffTime;
+
+    let shiftEndTime = addHours(clockInDate, employee.standardWorkHours);
+    if (isEarlyBird) {
+      shiftEndTime = addMinutes(shiftEndTime, -10);
+    }
+    
+    return new Date() < shiftEndTime;
+  }
+  
+  const handleClockOutClick = () => {
+      if (!isEarlyClockOut()) {
+          performClockOut();
+      }
+  }
+
   return (
     <div className="space-y-4">
         <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
@@ -104,10 +128,35 @@ export function AttendanceTracker({ user, status, history, employee, setStatus, 
                     {isPending && isClockedIn === false ? <Loader2 className="animate-spin" /> : <LogIn />}
                     <span>Clock In</span>
                 </Button>
-                <Button onClick={handleClockOut} disabled={isPending || !isClockedIn} variant="destructive" className="w-full">
-                    {isPending && isClockedIn === true ? <Loader2 className="animate-spin" /> : <LogOut />}
-                    <span>Clock Out</span>
-                </Button>
+                
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            onClick={handleClockOutClick}
+                            disabled={isPending || !isClockedIn}
+                            variant="destructive"
+                            className="w-full"
+                        >
+                            {isPending && isClockedIn === true ? <Loader2 className="animate-spin" /> : <LogOut />}
+                            <span>Clock Out</span>
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                You have not completed your shift yet. Are you sure you want to clock out early?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={performClockOut} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+                                {isPending ? <Loader2 className="animate-spin" /> : 'Yes, Clock Out'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
                 {isClockedIn && status.clockInTime && employee && (
                     <ShiftCountdown clockInTime={status.clockInTime} standardWorkHours={employee.standardWorkHours} />
                 )}
