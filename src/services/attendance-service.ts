@@ -61,7 +61,7 @@ export async function getAttendanceHistory(user: User): Promise<AttendanceLog[]>
     return logs.slice(0, 10);
 }
 
-export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime: number }>> {
+export async function getMonthlyWorkPerformance(): Promise<Array<{ name: User, overtime: number, undertime: number }>> {
     const now = new Date();
     const monthStart = startOfMonth(now);
     
@@ -77,23 +77,32 @@ export async function getMonthlyOvertime(): Promise<Array<{ name: User, overtime
     
     const filteredLogs = attendanceLogs.filter(log => log.clockOut);
 
-    const overtimeByUser: Record<User, number> = employees.reduce((acc, emp) => {
-        acc[emp.name] = 0;
+    const performanceByUser: Record<User, { overtime: number, undertime: number }> = employees.reduce((acc, emp) => {
+        acc[emp.name] = { overtime: 0, undertime: 0 };
         return acc;
-    }, {} as Record<User, number>);
+    }, {} as Record<User, { overtime: number, undertime: number }>);
 
     filteredLogs.forEach(log => {
         const employee = employeeMap.get(log.employeeName);
         if (employee && log.clockOut) {
             const hoursWorked = differenceInHours(new Date(log.clockOut), new Date(log.clockIn));
-            const overtime = Math.max(0, hoursWorked - employee.standardWorkHours);
-            if (overtimeByUser[log.employeeName] !== undefined) {
-                overtimeByUser[log.employeeName] += overtime;
+            const difference = hoursWorked - employee.standardWorkHours;
+
+            if (performanceByUser[log.employeeName] !== undefined) {
+                 if (difference > 0) {
+                    performanceByUser[log.employeeName].overtime += difference;
+                } else if (difference < 0) {
+                    performanceByUser[log.employeeName].undertime += Math.abs(difference);
+                }
             }
         }
     });
 
-    return employees.map(emp => ({ name: emp.name, overtime: overtimeByUser[emp.name] || 0 }));
+    return employees.map(emp => ({ 
+        name: emp.name, 
+        overtime: performanceByUser[emp.name]?.overtime || 0,
+        undertime: performanceByUser[emp.name]?.undertime || 0,
+    }));
 }
 
 export const getEmployees = async (): Promise<Employee[]> => {

@@ -6,12 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
 import { Trash2 } from 'lucide-react';
-import { OvertimeTracker } from '@/components/overtime-tracker';
+import { WorkPerformanceTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { getAllUsers } from '@/app/actions/admin-actions';
-import { getMonthlyOvertime, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
+import { getMonthlyWorkPerformance, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
 import { onConsumptionLogsSnapshot, onConsumableItemsSnapshot } from '@/services/client/consumption-log-service';
 import { onPayrollSnapshot } from '@/services/client/payroll-service';
@@ -29,7 +29,7 @@ import { AttendanceEditor } from '@/components/attendance-editor';
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
   const [employeeOfTheWeek, setEmployeeOfTheWeek] = useState<User | null>(null);
-  const [overtimeData, setOvertimeData] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [monthlyLeaves, setMonthlyLeaves] = useState<any[]>([]);
@@ -51,11 +51,11 @@ export default function AdminPage() {
         setEmployees(emps);
 
         if (emps.length > 0) {
-            const [overtime, monthlyL] = await Promise.all([
-                getMonthlyOvertime(),
+            const [performance, monthlyL] = await Promise.all([
+                getMonthlyWorkPerformance(),
                 getMonthlyLeaves(),
             ]);
-            setOvertimeData(overtime);
+            setPerformanceData(performance);
             setMonthlyLeaves(monthlyL);
         }
         
@@ -156,7 +156,7 @@ export default function AdminPage() {
                             <MonthlyLeavesTracker data={monthlyLeaves} />
                         </div>
                         <div className="lg:col-span-1 space-y-8">
-                            <OvertimeTracker data={overtimeData} />
+                            <WorkPerformanceTracker data={performanceData} />
                         </div>
                     </div>
                 </TabsContent>

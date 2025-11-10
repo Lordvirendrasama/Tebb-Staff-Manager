@@ -21,7 +21,7 @@ function makeSerializable<T>(obj: any): T {
 
 export const getAttendanceStatus = serverService.getAttendanceStatus;
 export const getAttendanceHistory = serverService.getAttendanceHistory;
-export const getMonthlyOvertime = serverService.getMonthlyOvertime;
+export const getMonthlyWorkPerformance = serverService.getMonthlyWorkPerformance;
 export const getEmployees = serverService.getEmployees;
 export const addEmployee = serverService.addEmployee;
 export const getLeaveRequestsForUser = serverService.getLeaveRequestsForUser;

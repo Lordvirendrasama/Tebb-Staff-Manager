@@ -1,21 +1,21 @@
-
 'use client';
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { User } from '@/lib/constants';
 
-interface OvertimeData {
+interface WorkPerformanceData {
     name: User;
     overtime: number;
+    undertime: number;
 }
 
-export function OvertimeTracker({ data }: { data: OvertimeData[] }) {
+export function WorkPerformanceTracker({ data }: { data: WorkPerformanceData[] }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Monthly Overtime</CardTitle>
-                <CardDescription>Total overtime hours logged this month.</CardDescription>
+                <CardTitle>Monthly Work Performance</CardTitle>
+                <CardDescription>Total overtime and undertime hours this month.</CardDescription>
             </CardHeader>
             <CardContent>
                  <ResponsiveContainer width="100%" height={300}>
@@ -42,11 +42,19 @@ export function OvertimeTracker({ data }: { data: OvertimeData[] }) {
                                 <div className="rounded-lg border bg-background p-2 shadow-sm">
                                     <div className="grid grid-cols-2 gap-2">
                                         <div className="flex flex-col">
-                                            <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                            <span className="text-[0.70rem] uppercase text-green-500">
                                             Overtime
                                             </span>
                                             <span className="font-bold text-muted-foreground">
-                                            {payload[0].value}h
+                                            {payload.find(p => p.dataKey === 'overtime')?.value || 0}h
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[0.70rem] uppercase text-destructive">
+                                            Undertime
+                                            </span>
+                                            <span className="font-bold text-muted-foreground">
+                                            {payload.find(p => p.dataKey === 'undertime')?.value || 0}h
                                             </span>
                                         </div>
                                     </div>
@@ -57,7 +65,9 @@ export function OvertimeTracker({ data }: { data: OvertimeData[] }) {
                             return null
                             }}
                         />
-                        <Bar dataKey="overtime" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        <Legend wrapperStyle={{fontSize: "0.75rem"}}/>
+                        <Bar dataKey="overtime" stackId="a" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Overtime" />
+                        <Bar dataKey="undertime" stackId="a" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} name="Undertime" />
                     </BarChart>
                 </ResponsiveContainer>
             </CardContent>
