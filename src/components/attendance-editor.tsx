@@ -41,7 +41,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     useEffect(() => {
         fetchAttendance();
         setRange(undefined);
-    }, [selectedEmployeeId, currentMonth, employee?.name]);
+    }, [selectedEmployeeId, currentMonth]);
 
     const handleRangeUpdate = (worked: boolean) => {
         if (!range?.from || !range.to || !selectedEmployeeId) return;
@@ -79,7 +79,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     };
 
     const modifiers = {
-        worked: workedDays.map(d => startOfMonth(d).getDate() === currentMonth.getDate() ? d : null).filter(Boolean) as Date[],
+        worked: workedDays,
     };
 
     const modifiersStyles = {

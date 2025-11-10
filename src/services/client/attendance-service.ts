@@ -76,7 +76,7 @@ export const getAttendanceForMonth = async (employeeName: string, month: Date): 
     const allLogs = snapshotToDocs<AttendanceLog>(querySnapshot);
     
     const logsInMonth = allLogs.filter(log => 
-        isWithinInterval(log.clockIn, { start, end })
+        isWithinInterval(new Date(log.clockIn), { start, end })
     );
 
     return logsInMonth;
