@@ -13,10 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import { addMonths, format, startOfMonth } from 'date-fns';
 import { ChevronLeft, ChevronRight, Loader2, X, Check, Edit, Save, Trash2, Clock } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 interface EditingState {
     log: AttendanceLog;
@@ -28,6 +27,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
     const [workedLogs, setWorkedLogs] = useState<AttendanceLog[]>([]);
     const [range, setRange] = useState<DateRange | undefined>();
+    const [selectedDay, setSelectedDay] = useState<Date | undefined>();
     const [editingState, setEditingState] = useState<EditingState | null>(null);
 
     const [clockInTime, setClockInTime] = useState('');
@@ -54,6 +54,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     useEffect(() => {
         fetchAttendance();
         setRange(undefined);
+        setSelectedDay(undefined);
     }, [selectedEmployeeId, currentMonth]);
 
     useEffect(() => {
@@ -83,16 +84,20 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         });
     };
     
-    const handleDayClick = (day: Date) => {
+    const handleDayClick = (day: Date | undefined) => {
         if (range) return; // Don't trigger day click if in range selection mode
+        setSelectedDay(day);
+    };
 
-        const logForDay = workedLogs.find(log => format(new Date(log.clockIn), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
+    const handleEditClick = () => {
+        if (!selectedDay) return;
+        const logForDay = workedLogs.find(log => format(new Date(log.clockIn), 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd'));
         if (logForDay) {
-            setEditingState({ log: logForDay, day });
+            setEditingState({ log: logForDay, day: selectedDay });
         } else {
             // If no log, offer to create one
             startUpdateTransition(async () => {
-                const result = await updateAttendanceForDayAction(selectedEmployeeId, day, true);
+                const result = await updateAttendanceForDayAction(selectedEmployeeId, selectedDay, true);
                  if (result.success && result.message !== 'No change needed.') {
                     toast({ title: 'Success', description: result.message });
                     fetchAttendance();
@@ -101,7 +106,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                 }
             });
         }
-    };
+    }
     
     const handleSaveChanges = () => {
         if (!editingState) return;
@@ -112,6 +117,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                 toast({ title: 'Success', description: result.message });
                 fetchAttendance();
                 setEditingState(null);
+                setSelectedDay(undefined);
             } else {
                 toast({ variant: 'destructive', title: 'Error', description: result.message });
             }
@@ -127,6 +133,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                 toast({ title: 'Success', description: result.message });
                 fetchAttendance();
                 setEditingState(null);
+                setSelectedDay(undefined);
             } else {
                 toast({ variant: 'destructive', title: 'Error', description: result.message });
             }
@@ -139,6 +146,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
 
     const modifiers = {
         worked: workedLogs.map(log => new Date(log.clockIn)),
+        selected: selectedDay,
     };
 
     const modifiersStyles = {
@@ -146,6 +154,10 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
             backgroundColor: 'hsl(var(--primary))',
             color: 'hsl(var(--primary-foreground))',
         },
+        selected: {
+            backgroundColor: 'hsl(var(--accent))',
+            color: 'hsl(var(--accent-foreground))'
+        }
     };
     
     return (
@@ -191,9 +203,9 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                         <Calendar
                             month={currentMonth}
                             onMonthChange={setCurrentMonth}
-                            mode={editingState ? undefined : "range"}
-                            selected={range}
-                            onSelect={setRange}
+                            mode={range ? "range" : "single"}
+                            selected={range || selectedDay}
+                            onSelect={range ? setRange : setSelectedDay}
                             onDayClick={handleDayClick}
                             modifiers={modifiers}
                             modifiersStyles={modifiersStyles}
@@ -262,13 +274,32 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                            </div>
                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <Button variant="outline" size="sm" onClick={() => setRange(undefined)}>
-                                    <X className="mr-2 h-4 w-4" /> Clear
+                                    <X className="mr-2 h-4 w-4" /> Clear Range
                                 </Button>
                                 <Button variant="destructive" size="sm" onClick={() => handleRangeUpdate(false)} disabled={!range.to}>
                                     <X className="mr-2 h-4 w-4" /> Mark as Not Worked
                                 </Button>
                                 <Button size="sm" onClick={() => handleRangeUpdate(true)} disabled={!range.to}>
                                     <Check className="mr-2 h-4 w-4" /> Mark as Worked
+                                </Button>
+                           </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {selectedDay && !range && (
+                     <Card className="bg-muted/50">
+                        <CardContent className="p-4 space-y-3">
+                           <div className="text-sm font-medium">
+                                Selected Day: {format(selectedDay, "PPP")}
+                           </div>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <Button variant="outline" size="sm" onClick={() => setSelectedDay(undefined)}>
+                                    <X className="mr-2 h-4 w-4" /> Clear Selection
+                                </Button>
+                                <Button size="sm" onClick={handleEditClick} disabled={isUpdating}>
+                                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="mr-2 h-4 w-4" />}
+                                    Edit Attendance
                                 </Button>
                            </div>
                         </CardContent>
