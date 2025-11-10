@@ -47,6 +47,56 @@ export default function AdminPage() {
   
   const selectedViewerEmployee = employees.find(e => e.id === selectedViewerEmployeeId);
 
+  useEffect(() => {
+    let unsubLeaves: (() => void) | undefined;
+    let unsubEow: (() => void) | undefined;
+    let unsubConsumption: (() => void) | undefined;
+    let unsubItems: (() => void) | undefined;
+    let unsubPayrolls: (() => void) | undefined;
+
+    const fetchAndSubscribe = async () => {
+      setLoading(true);
+      try {
+        const emps = await getAllUsers();
+        setEmployees(emps);
+
+        if (emps.length > 0) {
+          if (!selectedViewerEmployeeId) {
+            setSelectedViewerEmployeeId(emps[0].id);
+          }
+          const [performance, monthlyL] = await Promise.all([
+              getMonthlyWorkPerformance(),
+              getMonthlyLeaves(),
+          ]);
+          setPerformanceData(performance);
+          setMonthlyLeaves(monthlyL);
+        }
+        
+        unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
+        unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
+        unsubConsumption = onConsumptionLogsSnapshot(setAllowanceData, (err) => console.error(err));
+        unsubItems = onConsumableItemsSnapshot(setConsumableItems, (err) => console.error(err));
+        unsubPayrolls = onPayrollSnapshot(setPayrolls, (err) => console.error(err));
+
+      } catch (error) {
+        console.error("Failed to fetch initial admin data or subscribe:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAndSubscribe();
+
+    return () => {
+      unsubLeaves?.();
+      unsubEow?.();
+      unsubConsumption?.();
+      unsubItems?.();
+      unsubPayrolls?.();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
   const refreshGeneralData = async () => {
     if (employees.length > 0) {
         const [performance, monthlyL] = await Promise.all([
@@ -74,55 +124,12 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (selectedViewerEmployeeId) {
+    if (selectedViewerEmployeeId && employees.length > 0) {
       refreshViewerData();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedViewerEmployeeId, viewerMonth]);
+  }, [selectedViewerEmployeeId, viewerMonth, employees]);
 
-  useEffect(() => {
-    let unsubLeaves: (() => void) | undefined;
-    let unsubEow: (() => void) | undefined;
-    let unsubConsumption: (() => void) | undefined;
-    let unsubItems: (() => void) | undefined;
-    let unsubPayrolls: (() => void) | undefined;
-
-    const fetchAndSubscribe = async () => {
-      setLoading(true);
-      try {
-        const emps = await getAllUsers();
-        setEmployees(emps);
-        if (emps.length > 0 && !selectedViewerEmployeeId) {
-            setSelectedViewerEmployeeId(emps[0].id);
-        }
-        
-        // Don't await here, let the subscriptions update the state
-        refreshGeneralData();
-        
-        unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
-        unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
-        unsubConsumption = onConsumptionLogsSnapshot(setAllowanceData, (err) => console.error(err));
-        unsubItems = onConsumableItemsSnapshot(setConsumableItems, (err) => console.error(err));
-        unsubPayrolls = onPayrollSnapshot(setPayrolls, (err) => console.error(err));
-
-      } catch (error) {
-        console.error("Failed to fetch initial admin data or subscribe:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchAndSubscribe();
-
-    return () => {
-      unsubLeaves?.();
-      unsubEow?.();
-      unsubConsumption?.();
-      unsubItems?.();
-      unsubPayrolls?.();
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const onEditorUpdate = () => {
     refreshGeneralData();
