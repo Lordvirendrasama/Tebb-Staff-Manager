@@ -186,14 +186,18 @@ export async function updateAttendanceForDayAction(employeeId: string, day: Date
     const dayStart = startOfDay(day);
     const dayEnd = endOfDay(day);
 
+    // Query just by employee name
     const q = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employee.name),
-        where('clockIn', '>=', dayStart),
-        where('clockIn', '<=', dayEnd)
+        where('employeeName', '==', employee.name)
     );
     const querySnapshot = await getDocs(q);
-    const existingLog = querySnapshot.docs[0];
+
+    // Filter by date in the code
+    const existingLog = querySnapshot.docs.find(d => {
+        const clockInDate = d.data().clockIn.toDate();
+        return isWithinInterval(clockInDate, { start: dayStart, end: dayEnd });
+    });
 
     if (worked) {
         if (existingLog) return { success: true, message: 'No change needed.' };
