@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, Award } from 'lucide-react';
+import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, Award, Trophy } from 'lucide-react';
 import { getAllUsers, getEmployeeOfTheWeek } from '@/app/actions/admin-actions';
 import type { Employee } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -52,6 +52,19 @@ function EspressoCard() {
     )
 }
 
+function LeaderboardCard() {
+    return (
+         <Link href="/leaderboard" className="block h-full">
+            <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-center">
+                <CardHeader className="text-center items-center justify-center p-6">
+                    <Trophy className="h-12 w-12 text-primary mb-4" />
+                    <CardTitle className="text-2xl font-semibold font-headline">Leaderboard</CardTitle>
+                </CardHeader>
+            </Card>
+        </Link>
+    )
+}
+
 function FeatureCard({ icon, title, description, href }: { icon: React.ReactNode, title: string, description: string, href?: string }) {
   const cardContent = (
     <Card className="bg-card/50 border-border/50 h-full">
@@ -89,13 +102,14 @@ export default async function Home() {
           <p className="text-muted-foreground mt-2 text-base sm:text-lg">Your all-in-one solution for managing cafe staff efficiently.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <h3 className="col-span-full text-2xl font-semibold tracking-tight text-center sm:text-left font-headline">Who are you?</h3>
             {employees.map(employee => (
               <EmployeeCard key={employee.id} employee={employee} isEmployeeOfTheWeek={employee.name === employeeOfTheWeek} />
             ))}
             <AdminCard />
             <EspressoCard />
+            <LeaderboardCard />
         </div>
 
         <div className="space-y-8">
