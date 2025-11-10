@@ -5,8 +5,7 @@ import type { User, WeekDay, ItemType, Employee } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { DEFAULT_EMPLOYEES, WEEKDAYS } from '@/lib/constants';
-import { eachDayOfInterval, format } from 'date-fns';
+import { DEFAULT_EMPLOYEES } from '@/lib/constants';
 
 // This function must be in a server-only file.
 async function getEmployeeOfTheWeek(): Promise<User | null> {
@@ -26,6 +25,17 @@ async function setEmployeeOfTheWeek(employeeName: User | null): Promise<void> {
     }
     
     await setDoc(doc(db, 'awards', 'employeeOfTheWeek'), { employeeName: employeeName });
+}
+
+export async function getAllUsers(): Promise<Employee[]> {
+    const snapshot = await getDocs(collection(db, 'employees'));
+    const employees = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Employee));
+    return employees.map(emp => {
+        if (emp.payStartDate && typeof (emp.payStartDate as any)?.toDate === 'function') {
+            emp.payStartDate = (emp.payStartDate as any).toDate().toISOString();
+        }
+        return emp;
+    });
 }
 
 
@@ -57,10 +67,7 @@ export async function addEmployeeAction(employeeData: Partial<Employee>) {
 
 export async function updateEmployeeAction(id: string, employeeData: Partial<Employee>) {
     try {
-        await updateDoc(doc(db, 'employees', id), {
-            ...employeeData,
-            payStartDate: employeeData.payStartDate ? new Date(employeeData.payStartDate) : null
-        });
+        await updateDoc(doc(db, 'employees', id), employeeData);
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };
@@ -83,7 +90,7 @@ export async function deleteEmployeeAction(id: string) {
 
         if (employeeName) {
             const batch = writeBatch(db);
-            const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests', 'payroll'];
+            const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
             
             for (const collectionName of collectionsToDelete) {
                 const q = query(collection(db, collectionName), where('employeeName', '==', employeeName));
@@ -121,54 +128,15 @@ async function deleteCollection(collectionPath: string) {
     await batch.commit();
 }
 
-async function seedAttendanceForEmployee(batch: any, employee: Omit<Employee, 'id'>) {
-    if (!employee.payStartDate || !employee.shiftStartTime || !employee.shiftEndTime) {
-        return;
-    }
-
-    const today = new Date();
-    const startDate = new Date(employee.payStartDate);
-    
-    if (startDate > today) return;
-
-    const daysToSeed = eachDayOfInterval({ start: startDate, end: today });
-    const offDayIndex = WEEKDAYS.indexOf(employee.weeklyOffDay);
-
-    const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
-    const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
-    
-    daysToSeed.forEach(day => {
-        // Special condition for Musaib to seed data for every day.
-        const shouldSkipDay = employee.name === 'Musaib' ? false : day.getDay() === offDayIndex;
-
-        if (!shouldSkipDay) {
-            const clockIn = new Date(day);
-            clockIn.setHours(startHour, startMinute, 0, 0);
-
-            const clockOut = new Date(day);
-            clockOut.setHours(endHour, endMinute, 0, 0);
-
-            const attendanceLog = {
-                employeeName: employee.name,
-                clockIn,
-                clockOut,
-            };
-            const docRef = doc(collection(db, 'attendanceLogs'));
-            batch.set(docRef, attendanceLog);
-        }
-    });
-}
-
 async function seedDefaultData() {
     const batch = writeBatch(db);
 
     // Seed employees
     const employeesCollection = collection(db, 'employees');
-    for (const employee of DEFAULT_EMPLOYEES) {
+    DEFAULT_EMPLOYEES.forEach(employee => {
         const docRef = doc(employeesCollection);
         batch.set(docRef, employee);
-        await seedAttendanceForEmployee(batch, employee);
-    }
+    });
 
     // Seed consumable items
     const itemsCollection = collection(db, 'consumableItems');
@@ -192,7 +160,7 @@ async function seedDefaultData() {
 export async function resetDataAction() {
     try {
         // Clear existing data
-        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems', 'payroll'];
+        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems'];
         for (const collectionPath of collectionsToDelete) {
             await deleteCollection(collectionPath);
         }
@@ -249,11 +217,3 @@ export async function deleteItemAction(id: string) {
         return { success: false, message: `Failed to remove item: ${errorMessage}` };
     }
 }
-
-export async function getAllUsers(): Promise<Employee[]> {
-    const employeesSnapshot = await getDocs(collection(db, 'employees'));
-    const employees = employeesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Employee));
-    return employees;
-}
-
-export { getEmployeeOfTheWeek };

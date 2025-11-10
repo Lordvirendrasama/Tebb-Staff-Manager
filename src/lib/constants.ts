@@ -4,9 +4,9 @@ import { type } from "os";
 export type User = string;
 
 export const DEFAULT_EMPLOYEES = [
-  { name: 'Abbas', weeklyOffDay: 'Monday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00', monthlySalary: 33000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
-  { name: 'Musaib', weeklyOffDay: 'Sunday', standardWorkHours: 9, shiftStartTime: '09:00', shiftEndTime: '18:00', monthlySalary: 35000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
-  { name: 'Viren', weeklyOffDay: 'Friday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00', monthlySalary: 40000, payFrequency: 'monthly', payStartDate: '2024-05-01' },
+  { name: 'Abbas', weeklyOffDay: 'Monday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00' },
+  { name: 'Musaib', weeklyOffDay: 'Sunday', standardWorkHours: 9, shiftStartTime: '09:00', shiftEndTime: '18:00' },
+  { name: 'Viren', weeklyOffDay: 'Friday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00' },
 ] as const;
 
 
@@ -33,9 +33,6 @@ export interface ConsumptionLog {
 export type WeekDay = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 export const WEEKDAYS: WeekDay[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export type PayFrequency = 'monthly' | 'bi-weekly' | 'weekly';
-export const PAY_FREQUENCIES: PayFrequency[] = ['monthly', 'bi-weekly', 'weekly'];
-
 export interface Employee {
   id: string;
   name: User;
@@ -43,10 +40,6 @@ export interface Employee {
   standardWorkHours: number;
   shiftStartTime?: string;
   shiftEndTime?: string;
-  // Payroll info
-  monthlySalary?: number;
-  payFrequency?: PayFrequency;
-  payStartDate?: Date | string; // Date of first day of current pay cycle
 }
 
 export interface AttendanceStatus {
@@ -83,28 +76,4 @@ export interface EspressoLog {
   coffeeType: EspressoDrink;
   timeTaken: number; // in milliseconds
   coffeeUsed: number; // in grams
-  pullDateTime: Date;
-  groupHead: 1 | 2;
-}
-
-export interface Payroll {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  payPeriodStart: Date;
-  payPeriodEnd: Date;
-  monthlySalary: number;
-  totalWorkingDays: number;
-  actualDaysWorked: number;
-  perDaySalary: number;
-  lateDays: number;
-  lateDeductions: number;
-  unpaidLeaveDays: number;
-  unpaidLeaveDeductions: number;
-  tips: number;
-  deductions: number; // Other deductions
-  finalSalary: number;
-  status: 'pending' | 'paid';
-  generatedAt: Date;
-  paymentDate?: Date;
-}
+  pullDateTime: Date
