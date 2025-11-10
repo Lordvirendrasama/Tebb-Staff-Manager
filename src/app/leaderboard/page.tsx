@@ -169,7 +169,11 @@ export default function LeaderboardPage() {
                                                         return (
                                                             <ul className="grid grid-cols-2 gap-x-4 gap-y-1 mt-4 text-sm">
                                                                 {payload?.map((item) => {
-                                                                    const { label, icon: Icon } = chartConfig[item.value as keyof typeof chartConfig];
+                                                                    const configKey = Object.keys(chartConfig).find(
+                                                                      (key) => chartConfig[key]?.label === item.value
+                                                                    );
+                                                                    if (!configKey) return null;
+                                                                    const { label, icon: Icon } = chartConfig[configKey];
                                                                     const pullData = chartData.find(d => d.name === item.value);
                                                                     const percentage = entry.stats.total > 0 ? ((pullData?.value || 0) / entry.stats.total * 100).toFixed(0) : 0;
 
@@ -204,4 +208,3 @@ export default function LeaderboardPage() {
         </div>
     );
 }
-
