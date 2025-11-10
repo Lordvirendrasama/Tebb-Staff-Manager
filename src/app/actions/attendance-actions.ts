@@ -4,14 +4,12 @@
 import type { User, LeaveType } from '@/lib/constants';
 import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
-import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc, endAt, startAt } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay, isWithinInterval, isBefore, setHours, setMinutes, setSeconds, setMilliseconds, addDays, getYear, getMonth, getDate } from 'date-fns';
-
+import { startOfDay, endOfDay, isBefore, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
 
 export async function clockInAction(user: User) {
     try {
-        // First, check for any open shifts from previous days and close them.
         const q = query(
             collection(db, 'attendanceLogs'),
             where('employeeName', '==', user),
@@ -25,8 +23,6 @@ export async function clockInAction(user: User) {
             const latestLog = latestLogDoc.data();
             
             if (!latestLog.clockOut && isBefore(latestLog.clockIn.toDate(), startOfDay(new Date()))) {
-                // The employee forgot to clock out on a previous day.
-                // We'll automatically clock them out at their shift end time.
                 const employeeSnap = await getDocs(query(collection(db, 'employees'), where('name', '==', user)));
 
                 if (!employeeSnap.empty) {
@@ -41,7 +37,6 @@ export async function clockInAction(user: User) {
             }
         }
         
-        // Now, proceed with the clock-in logic.
         const status = await getAttendanceStatus(user);
         if (status.status === 'Clocked In') {
             return { success: false, message: 'You are already clocked in.' };
@@ -55,6 +50,7 @@ export async function clockInAction(user: User) {
 
         revalidatePath(`/dashboard/${user}`);
         revalidatePath('/');
+        revalidatePath('/admin');
         return { success: true, message: 'Clocked in successfully.' };
     } catch (error) {
         console.error(error);
@@ -88,10 +84,90 @@ export async function clockOutAction(user: User) {
 
         revalidatePath(`/dashboard/${user}`);
         revalidatePath('/');
+        revalidatePath('/admin');
         return { success: true, message: 'Clocked out successfully.' };
     } catch (error) {
         console.error(error)
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return { success: false, message: `Failed to clock out: ${errorMessage}` };
     }
+}
+
+export async function getAttendanceForMonthAction(employeeName: User, month: Date) {
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+
+    const q = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employeeName),
+        where('clockIn', '>=', start),
+        where('clockIn', '<=', end),
+        orderBy('clockIn', 'asc')
+    );
+
+    const snapshot = await getDocs(q);
+    const logs = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      clockIn: d.data().clockIn.toDate(),
+      clockOut: d.data().clockOut ? d.data().clockOut.toDate() : null,
+    }));
+    return logs;
+}
+
+
+export async function updateAttendanceForDayAction(employeeName: User, day: Date, clockInTime: string | null, clockOutTime: string | null) {
+  try {
+    const start = startOfDay(day);
+    const end = endOfDay(day);
+
+    const q = query(
+      collection(db, 'attendanceLogs'),
+      where('employeeName', '==', employeeName),
+      where('clockIn', '>=', start),
+      where('clockIn', '<=', end)
+    );
+    const snapshot = await getDocs(q);
+    const existingLog = snapshot.docs[0];
+
+    if (!clockInTime || !clockOutTime) { // Delete record
+      if (existingLog) {
+        await deleteDoc(existingLog.ref);
+        revalidatePath('/admin');
+        return { success: true, message: 'Attendance record deleted.' };
+      }
+      return { success: true, message: 'No record to delete.' }; // No existing log and no new times
+    }
+
+    const [inHours, inMinutes] = clockInTime.split(':').map(Number);
+    const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
+
+    const newClockIn = new Date(day);
+    newClockIn.setHours(inHours, inMinutes, 0, 0);
+
+    const newClockOut = new Date(day);
+    newClockOut.setHours(outHours, outMinutes, 0, 0);
+
+    if (newClockOut <= newClockIn) {
+      newClockOut.setDate(newClockOut.getDate() + 1);
+    }
+    
+    if (existingLog) {
+      await updateDoc(existingLog.ref, { clockIn: newClockIn, clockOut: newClockOut });
+    } else {
+      await addDoc(collection(db, 'attendanceLogs'), {
+        employeeName,
+        clockIn: newClockIn,
+        clockOut: newClockOut,
+      });
+    }
+
+    revalidatePath('/admin');
+    return { success: true, message: 'Attendance updated successfully.' };
+
+  } catch (error) {
+    console.error('Failed to update attendance', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    return { success: false, message: `Failed to update attendance: ${errorMessage}` };
+  }
 }

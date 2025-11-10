@@ -18,6 +18,7 @@ import { AdminAuth } from '@/components/admin-auth';
 import { ItemManager } from '@/components/item-manager';
 import { ExportEspressoDataButton } from '@/components/export-espresso-data-button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AttendanceEditor } from '@/components/attendance-editor';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -76,8 +77,9 @@ export default function AdminPage() {
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h2>
         
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
                     <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
                 
@@ -127,6 +129,10 @@ export default function AdminPage() {
                             </Card>
                         </div>
                     </div>
+                </TabsContent>
+                
+                <TabsContent value="attendance" className="mt-6">
+                    <AttendanceEditor employees={employees} />
                 </TabsContent>
 
                 <TabsContent value="settings" className="mt-6">
