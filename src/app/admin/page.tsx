@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,7 +41,19 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   const [selectedViewerEmployeeId, setSelectedViewerEmployeeId] = useState<string>('');
+  
   const selectedViewerEmployee = employees.find(e => e.id === selectedViewerEmployeeId);
+
+  const refreshAdminData = async (emps: Employee[]) => {
+      if (emps.length > 0) {
+          const [performance, monthlyL] = await Promise.all([
+              getMonthlyWorkPerformance(),
+              getMonthlyLeaves(),
+          ]);
+          setPerformanceData(performance);
+          setMonthlyLeaves(monthlyL);
+      }
+  };
 
   useEffect(() => {
     let unsubLeaves: () => void;
@@ -54,16 +67,11 @@ export default function AdminPage() {
       try {
         const emps = await getAllUsers();
         setEmployees(emps);
-
         if (emps.length > 0) {
             setSelectedViewerEmployeeId(emps[0].id);
-            const [performance, monthlyL] = await Promise.all([
-                getMonthlyWorkPerformance(),
-                getMonthlyLeaves(),
-            ]);
-            setPerformanceData(performance);
-            setMonthlyLeaves(monthlyL);
         }
+        
+        await refreshAdminData(emps);
         
         unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
         unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
@@ -170,7 +178,7 @@ export default function AdminPage() {
 
                 <TabsContent value="attendance" className="mt-6">
                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        <AttendanceEditor employees={employees} />
+                        <AttendanceEditor employees={employees} onUpdate={() => refreshAdminData(employees)} />
                         <div className="space-y-6">
                              <Card>
                                 <CardHeader>
@@ -253,3 +261,5 @@ export default function AdminPage() {
     </AdminAuth>
   );
 }
+
+    

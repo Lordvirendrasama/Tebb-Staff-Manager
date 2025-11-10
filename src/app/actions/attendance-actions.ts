@@ -309,3 +309,5 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         return { success: false, message: `Failed to update attendance: ${errorMessage}` };
     }
 }
+
+    

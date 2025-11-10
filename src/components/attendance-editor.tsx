@@ -22,7 +22,7 @@ interface EditingState {
     day: Date;
 }
 
-export function AttendanceEditor({ employees }: { employees: Employee[] }) {
+export function AttendanceEditor({ employees, onUpdate }: { employees: Employee[], onUpdate: () => void }) {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
     const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
     const [workedLogs, setWorkedLogs] = useState<AttendanceLog[]>([]);
@@ -84,6 +84,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
                 fetchAttendance();
+                onUpdate();
                 setRange(undefined);
             } else {
                 toast({ variant: 'destructive', title: 'Error', description: result.message });
@@ -111,6 +112,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                 if (result.success) {
                     toast({ title: 'Success', description: result.message });
                     fetchAttendance();
+                    onUpdate();
                     setEditingState(null);
                     setSelectedDay(undefined);
                 } else {
@@ -122,6 +124,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                 if (result.success) {
                     toast({ title: 'Success', description: result.message });
                     fetchAttendance();
+                    onUpdate();
                     setEditingState(null);
                     setSelectedDay(undefined);
                 } else {
@@ -140,6 +143,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
             if (result.success) {
                 toast({ title: 'Success', description: result.message });
                 fetchAttendance();
+                onUpdate();
                 setEditingState(null);
                 setSelectedDay(undefined);
             } else {
@@ -322,3 +326,5 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         </Card>
     );
 }
+
+    
