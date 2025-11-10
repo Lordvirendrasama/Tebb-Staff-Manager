@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay, isWithinInterval, isBefore, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
+import { startOfDay, endOfDay, isWithinInterval, isBefore, setHours, setMinutes, setSeconds, setMilliseconds, addDays } from 'date-fns';
 
 
 export async function clockInAction(user: User) {
@@ -145,7 +145,7 @@ export async function markAsUnpaidAction(requestId: string) {
         await updateDoc(docRef, { leaveType: 'Unpaid' });
         revalidatePath('/admin');
         return { success: true, message: 'Leave marked as Unpaid.' };
-    } catch (error) {
+    } catch (error)
         console.error(error);
         return { success: false, message: 'Failed to mark leave as Unpaid.' };
     }
@@ -181,8 +181,12 @@ export async function updateAttendanceForRangeAction(employeeId: string, from: D
                 const clockIn = new Date(day);
                 clockIn.setHours(startHour, startMinute);
 
-                const clockOut = new Date(day);
+                let clockOut = new Date(day);
                 clockOut.setHours(endHour, endMinute);
+                
+                if (isBefore(clockOut, clockIn)) {
+                    clockOut = addDays(clockOut, 1);
+                }
 
                 await addDoc(collection(db, 'attendanceLogs'), {
                     employeeName: employee.name,
@@ -253,6 +257,10 @@ export async function updateAttendanceForDayAction(
             clockIn = setHours(new Date(day), startHour, startMinute);
             clockOut = setHours(new Date(day), endHour, endMinute);
         }
+
+        if (isBefore(clockOut, clockIn)) {
+            clockOut = addDays(clockOut, 1);
+        }
         
         if (existingLog) {
             await updateDoc(existingLog.ref, { clockIn, clockOut });
@@ -285,15 +293,17 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         }
 
         const originalClockIn = logSnap.data().clockIn.toDate();
+        const originalClockOut = logSnap.data().clockOut?.toDate() || originalClockIn;
 
         const [inHours, inMinutes] = clockInTime.split(':').map(Number);
         const newClockIn = setSeconds(setMinutes(setHours(new Date(originalClockIn), inHours), inMinutes), 0);
         
         const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-        const newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
+        let newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
         
         if (isBefore(newClockOut, newClockIn)) {
-            return { success: false, message: 'Clock out time cannot be before clock in time.'};
+            // If clock out time is earlier than clock in, assume it's the next day
+            newClockOut = addDays(newClockOut, 1);
         }
 
         await updateDoc(logRef, {
@@ -302,6 +312,7 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         });
 
         revalidatePath('/admin');
+        revalidatePath(`/dashboard/${logSnap.data().employeeName}`);
         return { success: true, message: 'Attendance times updated successfully.' };
     } catch (error) {
         console.error(error);
