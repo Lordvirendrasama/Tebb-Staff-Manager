@@ -63,8 +63,8 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     const logForDay = attendance.find(log => isSameDay(log.clockIn, day));
     
     if (logForDay) {
-        setClockIn(format(new Date(logForDay.clockIn), 'HH:mm'));
-        setClockOut(logForDay.clockOut ? format(new Date(logForDay.clockOut), 'HH:mm') : '');
+        setClockIn(formatIST(new Date(logForDay.clockIn), 'HH:mm'));
+        setClockOut(logForDay.clockOut ? formatIST(new Date(logForDay.clockOut), 'HH:mm') : '');
     } else {
         const employeeDetails = employees.find(e => e.name === selectedEmployee);
         setClockIn(employeeDetails?.shiftStartTime || '10:00');
