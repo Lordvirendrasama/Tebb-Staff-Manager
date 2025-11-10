@@ -142,11 +142,8 @@ export async function updateAttendanceForDayAction(employeeName: User, day: Date
     const [inHours, inMinutes] = clockInTime.split(':').map(Number);
     const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
 
-    const newClockIn = new Date(day);
-    newClockIn.setHours(inHours, inMinutes, 0, 0);
-
-    const newClockOut = new Date(day);
-    newClockOut.setHours(outHours, outMinutes, 0, 0);
+    const newClockIn = new Date(day.getFullYear(), day.getMonth(), day.getDate(), inHours, inMinutes);
+    const newClockOut = new Date(day.getFullYear(), day.getMonth(), day.getDate(), outHours, outMinutes);
 
     if (newClockOut <= newClockIn) {
       newClockOut.setDate(newClockOut.getDate() + 1);
