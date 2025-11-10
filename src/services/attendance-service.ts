@@ -68,14 +68,13 @@ export async function getMonthlyWorkPerformance(): Promise<Array<{ name: User, o
     const employees = await getEmployees();
     const employeeMap = new Map(employees.map(e => [e.name, e]));
 
-    const attendanceQuery = query(
-        collection(db, 'attendanceLogs'),
-        where('clockIn', '>=', monthStart)
-    );
+    const attendanceQuery = query(collection(db, 'attendanceLogs'));
     const attendanceSnapshot = await getDocs(attendanceQuery);
-    const attendanceLogs = await Promise.all(attendanceSnapshot.docs.map(doc => docWithDates<AttendanceLog>(doc)));
+    const allAttendanceLogs = await Promise.all(attendanceSnapshot.docs.map(doc => docWithDates<AttendanceLog>(doc)));
+
+    const attendanceLogsInMonth = allAttendanceLogs.filter(log => new Date(log.clockIn) >= monthStart);
     
-    const filteredLogs = attendanceLogs.filter(log => log.clockOut);
+    const filteredLogs = attendanceLogsInMonth.filter(log => log.clockOut);
 
     const performanceByUser: Record<User, { overtime: number, undertime: number }> = employees.reduce((acc, emp) => {
         acc[emp.name] = { overtime: 0, undertime: 0 };
