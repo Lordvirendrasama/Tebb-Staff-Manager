@@ -36,7 +36,7 @@ const pullCategories = {
 const chartConfig = Object.fromEntries(
   Object.entries(pullCategories).map(([key, value]) => [
     key,
-    { label: value.label, color: value.color, icon: value.icon },
+    { label: value.label, color: value.color },
   ])
 ) as ChartConfig;
 
@@ -167,22 +167,28 @@ export default function LeaderboardPage() {
                                                 <Legend
                                                     content={({ payload }) => {
                                                         return (
-                                                            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 mt-4 text-sm">
+                                                            <ul className="grid grid-cols-2 gap-x-6 gap-y-2 mt-4 text-sm">
                                                                 {payload?.map((item) => {
-                                                                    const configKey = Object.keys(chartConfig).find(
-                                                                      (key) => chartConfig[key]?.label === item.value
-                                                                    );
-                                                                    if (!configKey) return null;
-                                                                    const { label, icon: Icon } = chartConfig[configKey];
+                                                                    const categoryKey = Object.keys(pullCategories).find(
+                                                                        (key) => pullCategories[key as keyof typeof pullCategories].label === item.value
+                                                                    ) as keyof typeof pullCategories | undefined;
+
+                                                                    if (!categoryKey) return null;
+                                                                    
+                                                                    const { label, icon: Icon } = pullCategories[categoryKey];
                                                                     const pullData = chartData.find(d => d.name === item.value);
                                                                     const percentage = entry.stats.total > 0 ? ((pullData?.value || 0) / entry.stats.total * 100).toFixed(0) : 0;
 
                                                                     return (
                                                                         <li key={item.value} className="flex items-center gap-2">
-                                                                            <Icon className="h-4 w-4" style={{color: item.color}} />
-                                                                            <span className="font-medium">{label}</span>
-                                                                            <span className="ml-auto font-mono">{pullData?.value}</span>
-                                                                            <span className="text-muted-foreground text-xs">({percentage}%)</span>
+                                                                            <Icon className="h-5 w-5" style={{color: item.color}} />
+                                                                            <div className="flex flex-col">
+                                                                                <span className="font-medium">{label}</span>
+                                                                                <div>
+                                                                                    <span className="font-mono text-base">{pullData?.value}</span>
+                                                                                    <span className="text-muted-foreground text-xs ml-1">({percentage}%)</span>
+                                                                                </div>
+                                                                            </div>
                                                                         </li>
                                                                     )
                                                                 })}
