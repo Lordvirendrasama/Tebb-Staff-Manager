@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter, Calendar, TrendingUp, TrendingDown, Clock, CalendarDays } from 'lucide-react';
 import { getAttendanceLogs } from '@/services/client/attendance-service';
 import { updateAttendanceLogAction, deleteAttendanceLogAction } from '@/app/actions/attendance-actions';
-import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore } from 'date-fns';
+import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore, set } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST, toIST } from '@/lib/date-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -73,8 +73,6 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
   }, [logs, sortConfig]);
 
   const monthlySummary = useMemo(() => {
-    const selectedEmployee = filters.employee === 'all' ? null : employees.find(e => e.name === filters.employee);
-    
     const totalMinutes = sortedLogs.reduce((acc, log) => {
         if(log.clockOut) {
             return acc + differenceInMinutes(new Date(log.clockOut), new Date(log.clockIn));
@@ -83,14 +81,24 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
     }, 0);
 
     const totalHours = totalMinutes / 60;
-    const totalDays = sortedLogs.length;
+    const totalDays = new Set(sortedLogs.map(log => format(new Date(log.clockIn), 'yyyy-MM-dd'))).size;
 
     let totalOverUnderMinutes = 0;
-    if (selectedEmployee) {
+    if (filters.employee !== 'all') {
         totalOverUnderMinutes = sortedLogs.reduce((acc, log) => {
-            if(log.clockOut) {
+            const employee = employees.find(e => e.name === log.employeeName);
+            if(log.clockOut && employee) {
                 const minutesWorked = differenceInMinutes(new Date(log.clockOut), new Date(log.clockIn));
-                const standardMinutes = (selectedEmployee.standardWorkHours || 0) * 60;
+                
+                const clockInDate = new Date(log.clockIn);
+                const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
+                const isEarlyBird = clockInDate < cutoffTime;
+                
+                let standardMinutes = (employee.standardWorkHours || 0) * 60;
+                if (isEarlyBird) {
+                    standardMinutes -= 10;
+                }
+
                 return acc + (minutesWorked - standardMinutes);
             }
             return acc;
@@ -297,8 +305,20 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
               ) : sortedLogs.length > 0 ? sortedLogs.map(log => {
                 const hoursWorked = calculateHours(new Date(log.clockIn), log.clockOut ? new Date(log.clockOut) : undefined);
                 const employee = employees.find(e => e.name === log.employeeName);
-                const standardHours = employee?.standardWorkHours || 0;
-                const overUnderHours = (typeof hoursWorked === 'number') ? hoursWorked - standardHours : null;
+                
+                let overUnderHours = null;
+                if (typeof hoursWorked === 'number' && employee) {
+                    const clockInDate = new Date(log.clockIn);
+                    const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
+                    const isEarlyBird = clockInDate < cutoffTime;
+
+                    let effectiveStandardHours = employee.standardWorkHours || 0;
+                    if (isEarlyBird) {
+                        // Subtract 10 minutes from standard hours
+                        effectiveStandardHours -= (10 / 60);
+                    }
+                    overUnderHours = hoursWorked - effectiveStandardHours;
+                }
 
                 return (
                   <TableRow key={log.id}>
