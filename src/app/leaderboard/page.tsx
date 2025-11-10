@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { Trophy, Zap, Coffee, Flame, ThumbsUp, Frown, Star } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import type { ChartConfig } from '@/components/ui/chart';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
