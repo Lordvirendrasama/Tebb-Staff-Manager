@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -9,10 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter } from 'lucide-react';
+import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter, Calendar } from 'lucide-react';
 import { getAttendanceLogs } from '@/services/client/attendance-service';
 import { updateAttendanceLogAction, deleteAttendanceLogAction } from '@/app/actions/attendance-actions';
-import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes } from 'date-fns';
+import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST, toIST } from '@/lib/date-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -81,25 +80,65 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
     }
     setSortConfig({ key, direction });
   };
+  
+  const dateTimeFormat = 'MM/dd/yyyy hh:mm a';
 
   const handleEditClick = (log: AttendanceLog) => {
+    const employee = employees.find(e => e.name === log.employeeName);
+    const logDate = new Date(log.clockIn);
+
+    let clockInDateTime;
+    if (log.clockIn) {
+        clockInDateTime = new Date(log.clockIn);
+    } else if (employee?.shiftStartTime) {
+        const [hours, minutes] = employee.shiftStartTime.split(':').map(Number);
+        clockInDateTime = new Date(logDate.setHours(hours, minutes));
+    } else {
+        clockInDateTime = logDate;
+    }
+
+    let clockOutDateTime;
+    if (log.clockOut) {
+        clockOutDateTime = new Date(log.clockOut);
+    } else if (employee?.shiftEndTime) {
+        const [hours, minutes] = employee.shiftEndTime.split(':').map(Number);
+        clockOutDateTime = new Date(logDate.setHours(hours, minutes));
+        if (clockOutDateTime <= clockInDateTime) {
+             clockOutDateTime.setDate(clockOutDateTime.getDate() + 1);
+        }
+    }
+
     setEditingLog(log);
-    setEditClockIn(format(new Date(log.clockIn), "yyyy-MM-dd'T'HH:mm"));
-    setEditClockOut(log.clockOut ? format(new Date(log.clockOut), "yyyy-MM-dd'T'HH:mm") : '');
+    setEditClockIn(format(clockInDateTime, dateTimeFormat));
+    setEditClockOut(clockOutDateTime ? format(clockOutDateTime, dateTimeFormat) : '');
   };
 
   const handleSave = () => {
     if (!editingLog || !editClockIn) return;
-    startTransition(async () => {
-      const result = await updateAttendanceLogAction(editingLog.id, editClockIn, editClockOut);
-      if (result.success) {
-        toast({ title: 'Success', description: result.message });
-        setEditingLog(null);
-        fetchLogs();
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.message });
-      }
-    });
+
+    try {
+        const newClockIn = parse(editClockIn, dateTimeFormat, new Date());
+        const newClockOut = editClockOut ? parse(editClockOut, dateTimeFormat, new Date()) : null;
+
+        if (isNaN(newClockIn.getTime()) || (newClockOut && isNaN(newClockOut.getTime()))) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Invalid date format. Please use MM/DD/YYYY hh:mm AM/PM' });
+            return;
+        }
+
+        startTransition(async () => {
+          const result = await updateAttendanceLogAction(editingLog.id, newClockIn.toISOString(), newClockOut ? newClockOut.toISOString() : null);
+          if (result.success) {
+            toast({ title: 'Success', description: result.message });
+            setEditingLog(null);
+            fetchLogs();
+          } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+          }
+        });
+
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Invalid date format. Please use MM/DD/YYYY hh:mm AM/PM' });
+    }
   };
 
   const handleDelete = (logId: string) => {
@@ -219,11 +258,17 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-clock-in">Clock In</Label>
-                <Input id="edit-clock-in" type="datetime-local" value={editClockIn} onChange={e => setEditClockIn(e.target.value)} />
+                <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="edit-clock-in" type="text" value={editClockIn} onChange={e => setEditClockIn(e.target.value)} className="pl-9" />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-clock-out">Clock Out</Label>
-                <Input id="edit-clock-out" type="datetime-local" value={editClockOut} onChange={e => setEditClockOut(e.target.value)} />
+                <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="edit-clock-out" type="text" value={editClockOut} onChange={e => setEditClockOut(e.target.value)} placeholder="MM/DD/YYYY hh:mm AM/PM" className="pl-9" />
+                </div>
               </div>
             </div>
             <DialogFooter>
