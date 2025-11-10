@@ -250,20 +250,17 @@ export async function updateAttendanceForDayAction(
 
         if (clockInTime && clockOutTime) {
             const [inHours, inMinutes] = clockInTime.split(':').map(Number);
-            clockIn = setSeconds(setMinutes(setHours(baseDate, inHours), inMinutes), 0);
+            clockIn = setSeconds(setMinutes(setHours(new Date(baseDate), inHours), inMinutes), 0);
 
             const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-            // Create a new date object for clockOut to avoid mutation issues
-            let clockOutBaseDate = new Date(year, month, date);
-            clockOut = setSeconds(setMinutes(setHours(clockOutBaseDate, outHours), outMinutes), 0);
+            clockOut = setSeconds(setMinutes(setHours(new Date(baseDate), outHours), outMinutes), 0);
         } else {
             const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
             const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
             
-            clockIn = setSeconds(setMinutes(setHours(baseDate, startHour), startMinute), 0);
+            clockIn = setSeconds(setMinutes(setHours(new Date(baseDate), startHour), startMinute), 0);
             
-            let clockOutBaseDate = new Date(year, month, date);
-            clockOut = setSeconds(setMinutes(setHours(clockOutBaseDate, endHour), endMinute), 0);
+            clockOut = setSeconds(setMinutes(setHours(new Date(baseDate), endHour), endMinute), 0);
         }
 
         if (isBefore(clockOut, clockIn)) {

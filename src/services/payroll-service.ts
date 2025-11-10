@@ -4,7 +4,7 @@
 import { collection, query, where, getDocs, getDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import type { Employee, AttendanceLog, Payroll, PayFrequency, WeekDay } from '@/lib/constants';
-import { differenceInHours, add, startOfDay, isSameDay, eachDayOfInterval, format, isAfter } from 'date-fns';
+import { differenceInHours, add, startOfDay, isSameDay, eachDayOfInterval, format, isAfter, getYear, getMonth, getDate } from 'date-fns';
 
 const LATE_DEDUCTION_AMOUNT = 50;
 const LATE_BUFFER_MINUTES = 10;
@@ -69,10 +69,13 @@ export async function generatePayrollForEmployee(employeeId: string, employeeNam
     if (!employee.monthlySalary || !employee.shiftStartTime) {
         throw new Error('Employee is missing required payroll configuration (monthly salary or shift start time).');
     }
-
-    const payPeriodStart = startOfDay(dateRange.from);
-    const payPeriodEnd = startOfDay(dateRange.to);
     
+    // Reconstruct dates on server to avoid timezone issues from client
+    const fromDate = dateRange.from;
+    const toDate = dateRange.to;
+    const payPeriodStart = new Date(getYear(fromDate), getMonth(fromDate), getDate(fromDate));
+    const payPeriodEnd = new Date(getYear(toDate), getMonth(toDate), getDate(toDate));
+
     const payrollQuery = query(
         collection(db, 'payroll'), 
         where('employeeId', '==', employee.id)
