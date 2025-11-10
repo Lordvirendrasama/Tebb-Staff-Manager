@@ -145,7 +145,7 @@ export async function markAsUnpaidAction(requestId: string) {
         await updateDoc(docRef, { leaveType: 'Unpaid' });
         revalidatePath('/admin');
         return { success: true, message: 'Leave marked as Unpaid.' };
-    } catch (error)
+    } catch (error) {
         console.error(error);
         return { success: false, message: 'Failed to mark leave as Unpaid.' };
     }
@@ -293,7 +293,6 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         }
 
         const originalClockIn = logSnap.data().clockIn.toDate();
-        const originalClockOut = logSnap.data().clockOut?.toDate() || originalClockIn;
 
         const [inHours, inMinutes] = clockInTime.split(':').map(Number);
         const newClockIn = setSeconds(setMinutes(setHours(new Date(originalClockIn), inHours), inMinutes), 0);
