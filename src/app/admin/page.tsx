@@ -12,7 +12,7 @@ import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { getAllUsers } from '@/app/actions/admin-actions';
-import { getMonthlyWorkPerformance, onLeaveRequestsSnapshot, getMonthlyLeaves, getAllAttendanceForMonth } from '@/services/client/attendance-service';
+import { getMonthlyWorkPerformance, onLeaveRequestsSnapshot, getMonthlyLeaves, onAttendanceForMonthSnapshot } from '@/services/client/attendance-service';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
 import { onConsumptionLogsSnapshot, onConsumableItemsSnapshot } from '@/services/client/consumption-log-service';
 import { onPayrollSnapshot } from '@/services/client/payroll-service';
@@ -108,32 +108,31 @@ export default function AdminPage() {
     }
   };
 
-  const refreshViewerData = async () => {
+  useEffect(() => {
     const currentEmployee = employees.find(e => e.id === selectedViewerEmployeeId);
-    if (currentEmployee) {
-      setViewerLoading(true);
-      try {
-        const logs = await getAllAttendanceForMonth(currentEmployee.name, viewerMonth);
+    if (!currentEmployee) return;
+
+    setViewerLoading(true);
+    const unsubscribe = onAttendanceForMonthSnapshot(
+      currentEmployee.name,
+      viewerMonth,
+      (logs) => {
         setViewerLogs(logs);
-      } catch (error) {
-        console.error("Failed to fetch viewer data", error);
-      } finally {
+        setViewerLoading(false);
+      },
+      (error) => {
+        console.error("Failed to subscribe to attendance logs", error);
         setViewerLoading(false);
       }
-    }
-  };
+    );
 
-  useEffect(() => {
-    if (selectedViewerEmployeeId && employees.length > 0) {
-      refreshViewerData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => unsubscribe();
   }, [selectedViewerEmployeeId, viewerMonth, employees]);
 
 
   const onEditorUpdate = () => {
     refreshGeneralData();
-    refreshViewerData();
+    // Viewer data is now updated via its own real-time subscription
   };
 
   if (loading && employees.length === 0) {

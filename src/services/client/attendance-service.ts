@@ -102,6 +102,34 @@ export const getAllAttendanceForMonth = async (employeeName: string, month: Date
     return logsInMonth.sort((a, b) => new Date(a.clockIn).getTime() - new Date(b.clockIn).getTime());
 };
 
+export const onAttendanceForMonthSnapshot = (
+    employeeName: string,
+    month: Date,
+    callback: (logs: AttendanceLog[]) => void,
+    onError: (error: Error) => void
+) => {
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+
+    const q = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employeeName),
+        where('clockIn', '>=', start),
+        where('clockIn', '<=', end)
+    );
+
+    return onSnapshot(q,
+        (snapshot) => {
+            const logs = snapshotToDocs<AttendanceLog>(snapshot);
+            callback(logs.sort((a, b) => new Date(a.clockIn).getTime() - new Date(b.clockIn).getTime()));
+        },
+        (error) => {
+            console.error("Error listening to attendance logs:", error);
+            onError(error);
+        }
+    );
+};
+
 
 export const onUserPayrollSnapshot = (
     userName: string,
