@@ -7,20 +7,22 @@ import { Button } from '@/components/ui/button';
 import { clockInAction, clockOutAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, LogOut, History, Clock } from 'lucide-react';
-import type { User, AttendanceStatus, AttendanceLog } from '@/lib/constants';
+import type { User, AttendanceStatus, AttendanceLog, Employee } from '@/lib/constants';
 import { ScrollArea } from './ui/scroll-area';
 import { Card, CardContent } from './ui/card';
 import { formatIST } from '@/lib/date-utils';
+import { ShiftCountdown } from './shift-countdown';
 
 interface AttendanceTrackerProps {
     user: User;
     status: AttendanceStatus;
     history: AttendanceLog[];
+    employee: Employee;
     setStatus: Dispatch<SetStateAction<AttendanceStatus | null>>;
     setHistory: Dispatch<SetStateAction<AttendanceLog[]>>;
 }
 
-export function AttendanceTracker({ user, status, history, setStatus, setHistory }: AttendanceTrackerProps) {
+export function AttendanceTracker({ user, status, history, employee, setStatus, setHistory }: AttendanceTrackerProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
@@ -106,6 +108,9 @@ export function AttendanceTracker({ user, status, history, setStatus, setHistory
                     {isPending && isClockedIn === true ? <Loader2 className="animate-spin" /> : <LogOut />}
                     <span>Clock Out</span>
                 </Button>
+                {isClockedIn && status.clockInTime && employee && (
+                    <ShiftCountdown clockInTime={status.clockInTime} standardWorkHours={employee.standardWorkHours} />
+                )}
             </div>
         </div>
       

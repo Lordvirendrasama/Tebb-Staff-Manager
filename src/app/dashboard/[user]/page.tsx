@@ -122,7 +122,7 @@ export default function UserDashboard() {
           </Card>
         </div>
         <div className="lg:col-span-1 space-y-8">
-            {attendanceStatus && <AttendanceTracker user={user} status={attendanceStatus} history={attendanceHistory} setStatus={setAttendanceStatus} setHistory={setAttendanceHistory} />}
+            {attendanceStatus && employee && <AttendanceTracker user={user} status={attendanceStatus} history={attendanceHistory} employee={employee} setStatus={setAttendanceStatus} setHistory={setAttendanceHistory} />}
         </div>
         <div className="lg:col-span-1 space-y-8">
              <Card>
