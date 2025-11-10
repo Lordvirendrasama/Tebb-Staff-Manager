@@ -206,7 +206,13 @@ export async function updateAttendanceForRangeAction(employeeId: string, from: D
     }
 }
 
-export async function updateAttendanceForDayAction(employeeId: string, day: Date, worked: boolean) {
+export async function updateAttendanceForDayAction(
+    employeeId: string, 
+    day: Date, 
+    worked: boolean,
+    clockInTime?: string,
+    clockOutTime?: string
+) {
     const employeeRef = doc(db, 'employees', employeeId);
     const employeeSnap = await getDoc(employeeRef);
     if (!employeeSnap.exists()) {
@@ -231,22 +237,32 @@ export async function updateAttendanceForDayAction(employeeId: string, day: Date
     });
 
     if (worked) {
-        if (existingLog) return { success: true, message: 'No change needed.' };
-        
-        const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
-        const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
-        
-        const clockIn = new Date(day);
-        clockIn.setHours(startHour, startMinute);
+        let clockIn: Date;
+        let clockOut: Date;
 
-        const clockOut = new Date(day);
-        clockOut.setHours(endHour, endMinute);
+        if (clockInTime && clockOutTime) {
+            const [inHours, inMinutes] = clockInTime.split(':').map(Number);
+            clockIn = setSeconds(setMinutes(setHours(day, inHours), inMinutes), 0);
 
-        await addDoc(collection(db, 'attendanceLogs'), {
-            employeeName: employee.name,
-            clockIn,
-            clockOut,
-        });
+            const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
+            clockOut = setSeconds(setMinutes(setHours(day, outHours), outMinutes), 0);
+        } else {
+            const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
+            const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
+            
+            clockIn = setHours(new Date(day), startHour, startMinute);
+            clockOut = setHours(new Date(day), endHour, endMinute);
+        }
+        
+        if (existingLog) {
+            await updateDoc(existingLog.ref, { clockIn, clockOut });
+        } else {
+            await addDoc(collection(db, 'attendanceLogs'), {
+                employeeName: employee.name,
+                clockIn,
+                clockOut,
+            });
+        }
         revalidatePath('/admin');
         return { success: true, message: 'Attendance marked as worked.' };
 

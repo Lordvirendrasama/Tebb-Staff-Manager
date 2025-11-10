@@ -18,7 +18,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 
 interface EditingState {
-    log: AttendanceLog;
+    log: AttendanceLog | null; // Can be null if creating a new log
     day: Date;
 }
 
@@ -65,8 +65,15 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
             } else {
                 setClockOutTime('');
             }
+        } else if (editingState && employee?.shiftStartTime && employee?.shiftEndTime) {
+            // Pre-fill with default shift times if creating a new log
+            setClockInTime(employee.shiftStartTime);
+            setClockOutTime(employee.shiftEndTime);
+        } else {
+            setClockInTime('');
+            setClockOutTime('');
         }
-    }, [editingState]);
+    }, [editingState, employee]);
 
     const handleRangeUpdate = (worked: boolean) => {
         if (!range?.from || !range.to || !selectedEmployeeId) return;
@@ -92,40 +99,41 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     const handleEditClick = () => {
         if (!selectedDay) return;
         const logForDay = workedLogs.find(log => format(new Date(log.clockIn), 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd'));
-        if (logForDay) {
-            setEditingState({ log: logForDay, day: selectedDay });
-        } else {
-            // If no log, offer to create one
-            startUpdateTransition(async () => {
-                const result = await updateAttendanceForDayAction(selectedEmployeeId, selectedDay, true);
-                 if (result.success && result.message !== 'No change needed.') {
-                    toast({ title: 'Success', description: result.message });
-                    fetchAttendance();
-                } else if (!result.success) {
-                    toast({ variant: 'destructive', title: 'Error', description: result.message });
-                }
-            });
-        }
+        setEditingState({ log: logForDay || null, day: selectedDay });
     }
     
     const handleSaveChanges = () => {
-        if (!editingState) return;
+        if (!editingState || !employee) return;
 
         startUpdateTransition(async () => {
-            const result = await updateAttendanceTimesAction(editingState.log.id, clockInTime, clockOutTime);
-            if (result.success) {
-                toast({ title: 'Success', description: result.message });
-                fetchAttendance();
-                setEditingState(null);
-                setSelectedDay(undefined);
+            if (editingState.log) {
+                 const result = await updateAttendanceTimesAction(editingState.log.id, clockInTime, clockOutTime);
+                if (result.success) {
+                    toast({ title: 'Success', description: result.message });
+                    fetchAttendance();
+                    setEditingState(null);
+                    setSelectedDay(undefined);
+                } else {
+                    toast({ variant: 'destructive', title: 'Error', description: result.message });
+                }
             } else {
-                toast({ variant: 'destructive', title: 'Error', description: result.message });
+                // Creating new log
+                const result = await updateAttendanceForDayAction(employee.id, editingState.day, true, clockInTime, clockOutTime);
+                if (result.success) {
+                    toast({ title: 'Success', description: result.message });
+                    fetchAttendance();
+                    setEditingState(null);
+                    setSelectedDay(undefined);
+                } else {
+                    toast({ variant: 'destructive', title: 'Error', description: result.message });
+                }
             }
+           
         });
     }
 
     const handleDeleteAttendance = () => {
-        if (!editingState) return;
+        if (!editingState || !editingState.log) return; // Can't delete if no log exists
 
         startUpdateTransition(async () => {
             const result = await updateAttendanceForDayAction(selectedEmployeeId, editingState.day, false);
@@ -248,10 +256,12 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                                 </div>
                             </div>
                             <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-                                <Button variant="destructive" onClick={handleDeleteAttendance} disabled={isUpdating}>
-                                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                    Not Worked
-                                </Button>
+                                {editingState.log && (
+                                     <Button variant="destructive" onClick={handleDeleteAttendance} disabled={isUpdating}>
+                                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                        Not Worked
+                                    </Button>
+                                )}
                                 <div className="flex-1" />
                                 <DialogClose asChild>
                                     <Button type="button" variant="secondary" disabled={isUpdating}>Cancel</Button>
