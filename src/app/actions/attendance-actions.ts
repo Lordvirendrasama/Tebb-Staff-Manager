@@ -108,12 +108,15 @@ export async function getAttendanceLogsAction({ employeeName, month }: { employe
     }
 
     const snapshot = await getDocs(q);
-    const logs = snapshot.docs.map(d => ({
-      id: d.id,
-      ...d.data(),
-      clockIn: d.data().clockIn.toDate().toISOString(), // Serialize dates
-      clockOut: d.data().clockOut ? d.data().clockOut.toDate().toISOString() : null,
-    }));
+    const logs = snapshot.docs.map(d => {
+      const data = d.data();
+      return {
+          id: d.id,
+          employeeName: data.employeeName,
+          clockIn: data.clockIn.toDate(),
+          clockOut: data.clockOut ? data.clockOut.toDate() : null,
+      };
+    });
     return logs;
 }
 
@@ -123,14 +126,7 @@ export async function updateAttendanceLogAction(logId: string, clockIn: string, 
     const logRef = doc(db, 'attendanceLogs', logId);
 
     const newClockIn = new Date(clockIn);
-    let newClockOut: Date | null = null;
-    
-    if (clockOut) {
-        newClockOut = new Date(clockOut);
-        if (newClockOut <= newClockIn) {
-            newClockOut.setDate(newClockOut.getDate() + 1);
-        }
-    }
+    const newClockOut = clockOut ? new Date(clockOut) : null;
     
     await updateDoc(logRef, { clockIn: newClockIn, clockOut: newClockOut });
 

@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter, Calendar } from 'lucide-react';
 import { getAttendanceLogs } from '@/services/client/attendance-service';
 import { updateAttendanceLogAction, deleteAttendanceLogAction } from '@/app/actions/attendance-actions';
-import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse } from 'date-fns';
+import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST, toIST } from '@/lib/date-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -103,7 +103,7 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
     } else if (employee?.shiftEndTime) {
         const [hours, minutes] = employee.shiftEndTime.split(':').map(Number);
         clockOutDateTime = new Date(logDate.setHours(hours, minutes));
-        if (clockOutDateTime <= clockInDateTime) {
+        if (isBefore(clockOutDateTime, clockInDateTime)) {
              clockOutDateTime.setDate(clockOutDateTime.getDate() + 1);
         }
     }
@@ -118,11 +118,15 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
 
     try {
         const newClockIn = parse(editClockIn, dateTimeFormat, new Date());
-        const newClockOut = editClockOut ? parse(editClockOut, dateTimeFormat, new Date()) : null;
+        let newClockOut = editClockOut ? parse(editClockOut, dateTimeFormat, new Date()) : null;
 
         if (isNaN(newClockIn.getTime()) || (newClockOut && isNaN(newClockOut.getTime()))) {
             toast({ variant: 'destructive', title: 'Error', description: 'Invalid date format. Please use MM/DD/YYYY hh:mm AM/PM' });
             return;
+        }
+
+        if (newClockOut && isBefore(newClockOut, newClockIn)) {
+            newClockOut.setDate(newClockOut.getDate() + 1);
         }
 
         startTransition(async () => {
