@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter, Calendar } from 'lucide-react';
+import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter, Calendar, TrendingUp, TrendingDown, Clock, CalendarDays } from 'lucide-react';
 import { getAttendanceLogs } from '@/services/client/attendance-service';
 import { updateAttendanceLogAction, deleteAttendanceLogAction } from '@/app/actions/attendance-actions';
 import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore } from 'date-fns';
@@ -16,6 +16,7 @@ import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST, toIST } from '@/lib/date-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 type SortKey = 'employeeName' | 'clockIn';
 
@@ -24,7 +25,6 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
-  // Filtering and Sorting
   const [filters, setFilters] = useState<{ employee: User | 'all'; month: number; year: number }>({
     employee: 'all',
     month: getMonth(new Date()),
@@ -32,7 +32,6 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
   });
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>({ key: 'clockIn', direction: 'desc' });
 
-  // Editing
   const [editingLog, setEditingLog] = useState<AttendanceLog | null>(null);
   const [editClockIn, setEditClockIn] = useState('');
   const [editClockOut, setEditClockOut] = useState('');
@@ -72,6 +71,41 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
     }
     return sortableLogs;
   }, [logs, sortConfig]);
+
+  const monthlySummary = useMemo(() => {
+    const selectedEmployee = filters.employee === 'all' ? null : employees.find(e => e.name === filters.employee);
+    
+    const totalMinutes = sortedLogs.reduce((acc, log) => {
+        if(log.clockOut) {
+            return acc + differenceInMinutes(new Date(log.clockOut), new Date(log.clockIn));
+        }
+        return acc;
+    }, 0);
+
+    const totalHours = totalMinutes / 60;
+    const totalDays = sortedLogs.length;
+
+    let totalOverUnderMinutes = 0;
+    if (selectedEmployee) {
+        totalOverUnderMinutes = sortedLogs.reduce((acc, log) => {
+            if(log.clockOut) {
+                const minutesWorked = differenceInMinutes(new Date(log.clockOut), new Date(log.clockIn));
+                const standardMinutes = (selectedEmployee.standardWorkHours || 0) * 60;
+                return acc + (minutesWorked - standardMinutes);
+            }
+            return acc;
+        }, 0);
+    }
+
+    const totalOverUnderHours = totalOverUnderMinutes / 60;
+
+    return {
+        totalDays,
+        totalHours: totalHours.toFixed(2),
+        totalOverUnderHours: totalOverUnderHours.toFixed(2)
+    };
+
+  }, [sortedLogs, filters.employee, employees]);
 
   const requestSort = (key: SortKey) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -157,13 +191,18 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
     });
   };
 
-  const calculateHours = (start: Date, end: Date | undefined) => {
-    if (!end) return '-';
+  const calculateHours = (start?: Date, end?: Date) => {
+    if (!start || !end) return '-';
     const minutes = differenceInMinutes(new Date(end), new Date(start));
     if (minutes < 0) return '-';
-    const hours = (minutes / 60).toFixed(2);
-    return `${hours} hrs`;
+    const hours = (minutes / 60);
+    return hours;
   };
+  
+  const formatOverUnderTime = (hours: number) => {
+      const prefix = hours >= 0 ? '+' : '';
+      return `${prefix}${hours.toFixed(2)} hrs`;
+  }
 
   return (
     <Card>
@@ -197,6 +236,40 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
           </div>
         </div>
 
+        {filters.employee !== 'all' && !loading && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Days Worked</CardTitle>
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{monthlySummary.totalDays}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Hours Worked</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{monthlySummary.totalHours}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Over/Under Time</CardTitle>
+                        {parseFloat(monthlySummary.totalOverUnderHours) >= 0 ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
+                    </CardHeader>
+                    <CardContent>
+                        <div className={cn("text-2xl font-bold", parseFloat(monthlySummary.totalOverUnderHours) >= 0 ? "text-green-500" : "text-destructive")}>
+                            {formatOverUnderTime(parseFloat(monthlySummary.totalOverUnderHours))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )}
+
         <div className="border rounded-lg">
           <Table>
             <TableHeader>
@@ -214,38 +287,55 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
                 <TableHead>Clock In</TableHead>
                 <TableHead>Clock Out</TableHead>
                 <TableHead>Hours</TableHead>
+                {filters.employee !== 'all' && <TableHead>Over/Under</TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>
-              ) : sortedLogs.length > 0 ? sortedLogs.map(log => (
-                <TableRow key={log.id}>
-                  <TableCell className="font-medium">{log.employeeName}</TableCell>
-                  <TableCell>{formatIST(new Date(log.clockIn), 'MMM d, yyyy')}</TableCell>
-                  <TableCell>{formatIST(new Date(log.clockIn), 'p')}</TableCell>
-                  <TableCell>{log.clockOut ? formatIST(new Date(log.clockOut), 'p') : 'N/A'}</TableCell>
-                  <TableCell>{calculateHours(new Date(log.clockIn), log.clockOut ? new Date(log.clockOut) : undefined)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(log)}><Edit className="h-4 w-4" /></Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>This will permanently delete this attendance record. This action cannot be undone.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(log.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              )) : (
-                <TableRow><TableCell colSpan={6} className="text-center h-24">No records found for the selected filters.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>
+              ) : sortedLogs.length > 0 ? sortedLogs.map(log => {
+                const hoursWorked = calculateHours(new Date(log.clockIn), log.clockOut ? new Date(log.clockOut) : undefined);
+                const employee = employees.find(e => e.name === log.employeeName);
+                const standardHours = employee?.standardWorkHours || 0;
+                const overUnderHours = (typeof hoursWorked === 'number') ? hoursWorked - standardHours : null;
+
+                return (
+                  <TableRow key={log.id}>
+                    <TableCell className="font-medium">{log.employeeName}</TableCell>
+                    <TableCell>{formatIST(new Date(log.clockIn), 'MMM d, yyyy')}</TableCell>
+                    <TableCell>{formatIST(new Date(log.clockIn), 'p')}</TableCell>
+                    <TableCell>{log.clockOut ? formatIST(new Date(log.clockOut), 'p') : 'N/A'}</TableCell>
+                    <TableCell>{typeof hoursWorked === 'number' ? `${hoursWorked.toFixed(2)} hrs` : '-'}</TableCell>
+                    {filters.employee !== 'all' && (
+                        <TableCell className={cn(
+                            'font-medium',
+                            overUnderHours === null ? '' :
+                            overUnderHours >= 0 ? 'text-green-500' : 'text-destructive'
+                        )}>
+                            {overUnderHours !== null ? formatOverUnderTime(overUnderHours) : '-'}
+                        </TableCell>
+                    )}
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditClick(log)}><Edit className="h-4 w-4" /></Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This will permanently delete this attendance record. This action cannot be undone.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(log.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                )
+              }) : (
+                <TableRow><TableCell colSpan={7} className="text-center h-24">No records found for the selected filters.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
