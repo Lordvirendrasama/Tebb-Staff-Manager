@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay, isWithinInterval, isBefore } from 'date-fns';
+import { startOfDay, endOfDay, isWithinInterval, isBefore, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 
 
 export async function clockInAction(user: User) {
@@ -259,3 +259,37 @@ export async function updateAttendanceForDayAction(employeeId: string, day: Date
     }
 }
 
+
+export async function updateAttendanceTimesAction(logId: string, clockInTime: string, clockOutTime: string) {
+    try {
+        const logRef = doc(db, 'attendanceLogs', logId);
+        const logSnap = await getDoc(logRef);
+        if (!logSnap.exists()) {
+            return { success: false, message: 'Attendance log not found.' };
+        }
+
+        const originalClockIn = logSnap.data().clockIn.toDate();
+
+        const [inHours, inMinutes] = clockInTime.split(':').map(Number);
+        const newClockIn = setSeconds(setMinutes(setHours(originalClockIn, inHours), inMinutes), 0);
+        
+        const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
+        const newClockOut = setSeconds(setMinutes(setHours(originalClockIn, outHours), outMinutes), 0);
+        
+        if (isBefore(newClockOut, newClockIn)) {
+            return { success: false, message: 'Clock out time cannot be before clock in time.'};
+        }
+
+        await updateDoc(logRef, {
+            clockIn: newClockIn,
+            clockOut: newClockOut,
+        });
+
+        revalidatePath('/admin');
+        return { success: true, message: 'Attendance times updated successfully.' };
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to update attendance: ${errorMessage}` };
+    }
+}

@@ -6,19 +6,32 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Calendar } from './ui/calendar';
 import { Button } from './ui/button';
-import type { Employee } from '@/lib/constants';
+import type { Employee, AttendanceLog } from '@/lib/constants';
 import { getAttendanceForMonth } from '@/services/client/attendance-service';
-import { updateAttendanceForRangeAction, updateAttendanceForDayAction } from '@/app/actions/attendance-actions';
+import { updateAttendanceForRangeAction, updateAttendanceForDayAction, updateAttendanceTimesAction } from '@/app/actions/attendance-actions';
 import { useToast } from '@/hooks/use-toast';
-import { addMonths, format, startOfMonth, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Loader2, X, Check } from 'lucide-react';
-import type { DateRange, DayModifiers } from 'react-day-picker';
+import { addMonths, format, startOfMonth } from 'date-fns';
+import { ChevronLeft, ChevronRight, Loader2, X, Check, Edit, Save, Trash2, Clock } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+
+interface EditingState {
+    log: AttendanceLog;
+    day: Date;
+}
 
 export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
     const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
-    const [workedDays, setWorkedDays] = useState<Date[]>([]);
+    const [workedLogs, setWorkedLogs] = useState<AttendanceLog[]>([]);
     const [range, setRange] = useState<DateRange | undefined>();
+    const [editingState, setEditingState] = useState<EditingState | null>(null);
+
+    const [clockInTime, setClockInTime] = useState('');
+    const [clockOutTime, setClockOutTime] = useState('');
     
     const [loading, setLoading] = useState(false);
     const [isUpdating, startUpdateTransition] = useTransition();
@@ -30,11 +43,11 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         if (selectedEmployeeId && employee) {
             setLoading(true);
             getAttendanceForMonth(employee.name, currentMonth).then(logs => {
-                setWorkedDays(logs.map(log => new Date(log.clockIn)));
+                setWorkedLogs(logs);
                 setLoading(false);
             });
         } else {
-            setWorkedDays([]);
+            setWorkedLogs([]);
         }
     };
     
@@ -42,6 +55,17 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         fetchAttendance();
         setRange(undefined);
     }, [selectedEmployeeId, currentMonth]);
+
+    useEffect(() => {
+        if (editingState?.log) {
+            setClockInTime(format(new Date(editingState.log.clockIn), 'HH:mm'));
+            if(editingState.log.clockOut) {
+                setClockOutTime(format(new Date(editingState.log.clockOut), 'HH:mm'));
+            } else {
+                setClockOutTime('');
+            }
+        }
+    }, [editingState]);
 
     const handleRangeUpdate = (worked: boolean) => {
         if (!range?.from || !range.to || !selectedEmployeeId) return;
@@ -59,27 +83,62 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         });
     };
     
-    const handleDayUpdate = (day: Date, modifiers: DayModifiers) => {
-        if (!selectedEmployeeId || range) return;
-        const isWorked = modifiers.worked;
+    const handleDayClick = (day: Date) => {
+        if (range) return; // Don't trigger day click if in range selection mode
+
+        const logForDay = workedLogs.find(log => format(new Date(log.clockIn), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
+        if (logForDay) {
+            setEditingState({ log: logForDay, day });
+        } else {
+            // If no log, offer to create one
+            startUpdateTransition(async () => {
+                const result = await updateAttendanceForDayAction(selectedEmployeeId, day, true);
+                 if (result.success && result.message !== 'No change needed.') {
+                    toast({ title: 'Success', description: result.message });
+                    fetchAttendance();
+                } else if (!result.success) {
+                    toast({ variant: 'destructive', title: 'Error', description: result.message });
+                }
+            });
+        }
+    };
+    
+    const handleSaveChanges = () => {
+        if (!editingState) return;
 
         startUpdateTransition(async () => {
-            const result = await updateAttendanceForDayAction(selectedEmployeeId, day, !isWorked);
-             if (result.success && result.message !== 'No change needed.') {
+            const result = await updateAttendanceTimesAction(editingState.log.id, clockInTime, clockOutTime);
+            if (result.success) {
                 toast({ title: 'Success', description: result.message });
                 fetchAttendance();
-            } else if (!result.success) {
+                setEditingState(null);
+            } else {
                 toast({ variant: 'destructive', title: 'Error', description: result.message });
             }
         });
-    };
+    }
+
+    const handleDeleteAttendance = () => {
+        if (!editingState) return;
+
+        startUpdateTransition(async () => {
+            const result = await updateAttendanceForDayAction(selectedEmployeeId, editingState.day, false);
+            if (result.success) {
+                toast({ title: 'Success', description: result.message });
+                fetchAttendance();
+                setEditingState(null);
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: result.message });
+            }
+        });
+    }
 
     const changeMonth = (offset: number) => {
         setCurrentMonth(prev => addMonths(prev, offset));
     };
 
     const modifiers = {
-        worked: workedDays,
+        worked: workedLogs.map(log => new Date(log.clockIn)),
     };
 
     const modifiersStyles = {
@@ -93,7 +152,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         <Card>
             <CardHeader>
                 <CardTitle>Attendance Editor</CardTitle>
-                <CardDescription>Select a date range, or click a single day to toggle attendance.</CardDescription>
+                <CardDescription>Select a date range, or click a day to edit or toggle attendance.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -132,16 +191,68 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                         <Calendar
                             month={currentMonth}
                             onMonthChange={setCurrentMonth}
-                            mode="range"
+                            mode={editingState ? undefined : "range"}
                             selected={range}
                             onSelect={setRange}
-                            onDayClick={handleDayUpdate}
+                            onDayClick={handleDayClick}
                             modifiers={modifiers}
                             modifiersStyles={modifiersStyles}
                             className="w-full"
                         />
                      )}
                 </div>
+
+                {editingState && (
+                    <Dialog open={!!editingState} onOpenChange={(isOpen) => !isOpen && setEditingState(null)}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Edit Attendance</DialogTitle>
+                                <DialogDescription>
+                                    Editing attendance for {employee?.name} on {format(editingState.day, 'PPP')}.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="clock-in">Clock In</Label>
+                                        <Input
+                                            id="clock-in"
+                                            type="time"
+                                            value={clockInTime}
+                                            onChange={(e) => setClockInTime(e.target.value)}
+                                            disabled={isUpdating}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="clock-out">Clock Out</Label>
+                                        <Input
+                                            id="clock-out"
+                                            type="time"
+                                            value={clockOutTime}
+                                            onChange={(e) => setClockOutTime(e.target.value)}
+                                            disabled={isUpdating}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                                <Button variant="destructive" onClick={handleDeleteAttendance} disabled={isUpdating}>
+                                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                    Not Worked
+                                </Button>
+                                <div className="flex-1" />
+                                <DialogClose asChild>
+                                    <Button type="button" variant="secondary" disabled={isUpdating}>Cancel</Button>
+                                </DialogClose>
+                                <Button onClick={handleSaveChanges} disabled={isUpdating || !clockInTime || !clockOutTime}>
+                                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
 
                 {range?.from && (
                     <Card className="bg-muted/50">
