@@ -12,9 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Save, Calendar as CalendarIcon } from 'lucide-react';
 import { getAttendanceForMonth } from '@/services/client/attendance-service';
 import { updateAttendanceForDayAction } from '@/app/actions/attendance-actions';
-import { format, getMonth, getYear, setMonth, setYear, isSameDay } from 'date-fns';
+import { format, getMonth, getYear, setMonth, setYear } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
-import { formatIST } from '@/lib/date-utils';
+import { formatIST, toIST } from '@/lib/date-utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export function AttendanceEditor({ employees }: { employees: Employee[] }) {
@@ -37,6 +37,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
       setAttendance([]);
       setSelectedDay(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmployee, currentMonth]);
 
   const fetchAttendance = async () => {
@@ -60,11 +61,11 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     }
     
     setSelectedDay(day);
-    const logForDay = attendance.find(log => isSameDay(log.clockIn, day));
+    const logForDay = attendance.find(log => format(toIST(log.clockIn), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
     
     if (logForDay) {
-        setClockIn(formatIST(new Date(logForDay.clockIn), 'HH:mm'));
-        setClockOut(logForDay.clockOut ? formatIST(new Date(logForDay.clockOut), 'HH:mm') : '');
+        setClockIn(formatIST(toIST(logForDay.clockIn), 'HH:mm'));
+        setClockOut(logForDay.clockOut ? formatIST(toIST(logForDay.clockOut), 'HH:mm') : '');
     } else {
         const employeeDetails = employees.find(e => e.name === selectedEmployee);
         setClockIn(employeeDetails?.shiftStartTime || '10:00');
@@ -101,7 +102,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     });
   };
   
-  const workedDays = attendance.map(log => log.clockIn);
+  const workedDays = attendance.map(log => toIST(log.clockIn));
 
   const handleMonthChange = (date: Date) => {
     setCurrentMonth(date);

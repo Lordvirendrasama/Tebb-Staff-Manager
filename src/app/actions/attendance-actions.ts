@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc, endAt, startAt } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay, isBefore, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
+import { isBefore, startOfMonth, endOfMonth } from 'date-fns';
 
 export async function clockInAction(user: User) {
     try {
@@ -22,7 +22,8 @@ export async function clockInAction(user: User) {
             const latestLogDoc = latestLogSnapshot.docs[0];
             const latestLog = latestLogDoc.data();
             
-            if (!latestLog.clockOut && isBefore(latestLog.clockIn.toDate(), startOfDay(new Date()))) {
+            // Check if the latest log is from a previous day and wasn't clocked out
+            if (!latestLog.clockOut && new Date(latestLog.clockIn.toDate()).toDateString() !== new Date().toDateString()) {
                 const employeeSnap = await getDocs(query(collection(db, 'employees'), where('name', '==', user)));
 
                 if (!employeeSnap.empty) {
@@ -118,8 +119,8 @@ export async function getAttendanceForMonthAction(employeeName: User, month: Dat
 
 export async function updateAttendanceForDayAction(employeeName: User, day: Date, clockInTime: string | null, clockOutTime: string | null) {
   try {
-    const start = startOfDay(day);
-    const end = endOfDay(day);
+    const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0);
+    const end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59);
 
     const q = query(
       collection(db, 'attendanceLogs'),
