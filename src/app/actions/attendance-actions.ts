@@ -147,7 +147,8 @@ export async function markAsUnpaidAction(requestId: string) {
         return { success: true, message: 'Leave marked as Unpaid.' };
     } catch (error) {
         console.error(error);
-        return { success: false, message: 'Failed to mark leave as Unpaid.' };
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: `Failed to mark leave as Unpaid: ${errorMessage}` };
     }
 }
 
@@ -227,18 +228,14 @@ export async function updateAttendanceForDayAction(
     const dayStart = startOfDay(day);
     const dayEnd = endOfDay(day);
 
-    // Query just by employee name
     const q = query(
         collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employee.name)
+        where('employeeName', '==', employee.name),
+        where('clockIn', '>=', dayStart),
+        where('clockIn', '<=', dayEnd)
     );
     const querySnapshot = await getDocs(q);
-
-    // Filter by date in the code
-    const existingLog = querySnapshot.docs.find(d => {
-        const clockInDate = d.data().clockIn.toDate();
-        return isWithinInterval(clockInDate, { start: dayStart, end: dayEnd });
-    });
+    const existingLog = querySnapshot.docs.length > 0 ? querySnapshot.docs[0] : undefined;
 
     if (worked) {
         let clockIn: Date;
@@ -298,10 +295,8 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         const newClockIn = setSeconds(setMinutes(setHours(new Date(originalClockIn), inHours), inMinutes), 0);
         
         const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-        // Use a clean date object for clockOut to avoid mutation issues
         let newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
         
-        // If clock out time is earlier than clock in, it must be the next day
         if (isBefore(newClockOut, newClockIn)) {
             newClockOut = addDays(newClockOut, 1);
         }
