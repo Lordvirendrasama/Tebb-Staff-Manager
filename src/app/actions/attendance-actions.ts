@@ -298,13 +298,13 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         }
 
         const originalClockIn = logSnap.data().clockIn.toDate();
+        const baseDate = startOfDay(originalClockIn);
 
         const [inHours, inMinutes] = clockInTime.split(':').map(Number);
-        const newClockIn = setSeconds(setMinutes(setHours(new Date(originalClockIn), inHours), inMinutes), 0);
+        const newClockIn = setSeconds(setMinutes(setHours(new Date(baseDate), inHours), inMinutes), 0);
         
         const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-        // Use a new Date object for clock out to avoid mutation issues
-        let newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
+        let newClockOut = setSeconds(setMinutes(setHours(new Date(baseDate), outHours), outMinutes), 0);
         
         if (isBefore(newClockOut, newClockIn)) {
             newClockOut = addDays(newClockOut, 1);
