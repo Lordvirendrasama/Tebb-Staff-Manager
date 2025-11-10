@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase-client';
 import { DEFAULT_EMPLOYEES } from '@/lib/constants';
 
 // This function must be in a server-only file.
-async function getEmployeeOfTheWeek(): Promise<User | null> {
+export async function getEmployeeOfTheWeek(): Promise<User | null> {
     const docSnap = await getDoc(doc(db, 'awards', 'employeeOfTheWeek'));
     if (docSnap.exists()) {
         return docSnap.data()?.employeeName ?? null;
@@ -90,7 +90,7 @@ export async function deleteEmployeeAction(id: string) {
 
         if (employeeName) {
             const batch = writeBatch(db);
-            const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests'];
+            const collectionsToDelete = ['consumptionLogs', 'attendanceLogs', 'leaveRequests', 'payroll'];
             
             for (const collectionName of collectionsToDelete) {
                 const q = query(collection(db, collectionName), where('employeeName', '==', employeeName));
@@ -160,7 +160,7 @@ async function seedDefaultData() {
 export async function resetDataAction() {
     try {
         // Clear existing data
-        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems'];
+        const collectionsToDelete = ['employees', 'consumptionLogs', 'attendanceLogs', 'leaveRequests', 'consumableItems', 'payroll'];
         for (const collectionPath of collectionsToDelete) {
             await deleteCollection(collectionPath);
         }

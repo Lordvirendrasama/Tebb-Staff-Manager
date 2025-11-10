@@ -33,6 +33,9 @@ export interface ConsumptionLog {
 export type WeekDay = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 export const WEEKDAYS: WeekDay[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+export type PayFrequency = 'weekly' | 'bi-weekly' | 'monthly';
+export const PAY_FREQUENCIES: PayFrequency[] = ['weekly', 'bi-weekly', 'monthly'];
+
 export interface Employee {
   id: string;
   name: User;
@@ -40,6 +43,9 @@ export interface Employee {
   standardWorkHours: number;
   shiftStartTime?: string;
   shiftEndTime?: string;
+  monthlySalary?: number;
+  payFrequency?: PayFrequency;
+  payStartDate?: string;
 }
 
 export interface AttendanceStatus {
@@ -76,4 +82,28 @@ export interface EspressoLog {
   coffeeType: EspressoDrink;
   timeTaken: number; // in milliseconds
   coffeeUsed: number; // in grams
-  pullDateTime: Date
+  pullDateTime: Date;
+  groupHead: 1 | 2;
+}
+
+export interface Payroll {
+  id: string;
+  employeeId: string;
+  employeeName: User;
+  payPeriodStart: Date;
+  payPeriodEnd: Date;
+  monthlySalary: number;
+  totalWorkingDays: number;
+  actualDaysWorked: number;
+  perDaySalary: number;
+  lateDays: number;
+  lateDeductions: number;
+  unpaidLeaveDays: number;
+  unpaidLeaveDeductions: number;
+  tips?: number;
+  deductions?: number;
+  finalSalary: number;
+  status: 'pending' | 'paid';
+  generatedAt: Date;
+  paymentDate?: Date;
+}
