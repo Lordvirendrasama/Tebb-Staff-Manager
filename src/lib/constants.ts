@@ -60,19 +60,6 @@ export interface AttendanceLog {
     clockOut?: Date;
 }
 
-export type LeaveType = 'Paid' | 'Unpaid' | 'Paid (Made Up)';
-export const LEAVE_TYPES: LeaveType[] = ['Paid', 'Unpaid', 'Paid (Made Up)'];
-
-export interface LeaveRequest {
-    id: string;
-    employeeName: User;
-    startDate: Date;
-    endDate: Date;
-    reason: string;
-    leaveType: LeaveType;
-    status: 'Pending' | 'Approved' | 'Denied';
-}
-
 export const ESPRESSO_DRINKS = ['Espresso', 'Double Espresso'] as const;
 export type EspressoDrink = typeof ESPRESSO_DRINKS[number];
 
@@ -84,26 +71,4 @@ export interface EspressoLog {
   coffeeUsed: number; // in grams
   pullDateTime: Date;
   groupHead: 1 | 2;
-}
-
-export interface Payroll {
-  id: string;
-  employeeId: string;
-  employeeName: User;
-  payPeriodStart: Date;
-  payPeriodEnd: Date;
-  monthlySalary: number;
-  totalWorkingDays: number;
-  actualDaysWorked: number;
-  perDaySalary: number;
-  lateDays: number;
-  lateDeductions: number;
-  unpaidLeaveDays: number;
-  unpaidLeaveDeductions: number;
-  tips?: number;
-  deductions?: number;
-  finalSalary: number;
-  status: 'pending' | 'paid';
-  generatedAt: Date;
-  paymentDate?: Date;
 }

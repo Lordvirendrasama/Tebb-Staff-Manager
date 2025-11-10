@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, FileText, Calculator, Award } from 'lucide-react';
+import { Users, UserCog, Coffee, Utensils, LogIn, CalendarDays, Award } from 'lucide-react';
 import { getAllUsers, getEmployeeOfTheWeek } from '@/app/actions/admin-actions';
 import type { Employee } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -52,20 +52,6 @@ function EspressoCard() {
     )
 }
 
-function PayrollCalculatorCard() {
-    return (
-        <Link href="/payroll-calculator" className="block h-full">
-            <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-center">
-                <CardHeader className="text-center items-center justify-center p-6">
-                    <Calculator className="h-12 w-12 text-primary mb-4" />
-                    <CardTitle className="text-2xl font-semibold font-headline">Payroll Calculator</CardTitle>
-                </CardHeader>
-            </Card>
-        </Link>
-    );
-}
-
-
 function FeatureCard({ icon, title, description, href }: { icon: React.ReactNode, title: string, description: string, href?: string }) {
   const cardContent = (
     <Card className="bg-card/50 border-border/50 h-full">
@@ -110,7 +96,6 @@ export default async function Home() {
             ))}
             <AdminCard />
             <EspressoCard />
-            <PayrollCalculatorCard />
         </div>
 
         <div className="space-y-8">
@@ -124,27 +109,12 @@ export default async function Home() {
                  <FeatureCard 
                     icon={<LogIn className="w-8 h-8 text-primary" />}
                     title="Attendance Management"
-                    description="Clock-in and clock-out system with overtime calculation."
-                />
-                 <FeatureCard 
-                    icon={<CalendarDays className="w-8 h-8 text-primary" />}
-                    title="Leave Requests"
-                    description="Streamlined process for submitting and approving leave requests."
-                />
-                 <FeatureCard 
-                    icon={<FileText className="w-8 h-8 text-primary" />}
-                    title="Payroll Management"
-                    description="Automated salary calculation based on attendance and deductions."
+                    description="Simple clock-in and clock-out system for staff."
                 />
                 <FeatureCard
                     icon={<Coffee className="w-8 h-8 text-primary" />}
                     title="Espresso Consistency"
                     description="Log and track espresso shots to maintain quality standards."
-                />
-                <FeatureCard
-                    icon={<Calculator className="w-8 h-8 text-primary" />}
-                    title="Payroll Calculator"
-                    description="A simple tool for calculating employee pay based on worked days."
                 />
             </div>
         </div>

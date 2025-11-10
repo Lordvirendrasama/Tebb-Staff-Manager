@@ -9,12 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Ban, GlassWater, Utensils, Loader2 } from 'lucide-react';
 import { getRemainingAllowances } from '@/services/client/consumption-log-service';
 import { onUserConsumptionLogsSnapshot } from '@/services/client/consumption-log-service';
-import { getAttendanceStatus, getAttendanceHistory, getLeaveRequestsForUser, onUserPayrollSnapshot, getEmployees } from '@/services/client/attendance-service';
-import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, LeaveRequest, Payroll, Employee } from '@/lib/constants';
+import { getAttendanceStatus, getAttendanceHistory, getEmployees } from '@/services/client/attendance-service';
+import type { User, ConsumptionLog, AttendanceStatus, AttendanceLog, Employee } from '@/lib/constants';
 import { AttendanceTracker } from '@/components/attendance-tracker';
-import { LeaveTracker } from '@/components/leave-tracker';
-import { PayrollViewer } from '@/components/payroll-viewer';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function UserDashboard() {
   const params = useParams();
@@ -25,36 +22,30 @@ export default function UserDashboard() {
   const [consumptionLogs, setConsumptionLogs] = useState<ConsumptionLog[]>([]);
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceLog[]>([]);
-  const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
-  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [employee, setEmployee] = useState<Employee | null>(null);
 
   useEffect(() => {
     if (!user) return;
     
     let unsubConsumption: () => void;
-    let unsubPayroll: () => void;
 
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [allowanceData, statusData, attHistoryData, leaveData, allEmployees] = await Promise.all([
+        const [allowanceData, statusData, attHistoryData, allEmployees] = await Promise.all([
           getRemainingAllowances(user),
           getAttendanceStatus(user),
           getAttendanceHistory(user),
-          getLeaveRequestsForUser(user),
           getEmployees(),
         ]);
         setAllowances(allowanceData);
         setAttendanceStatus(statusData);
         setAttendanceHistory(attHistoryData);
-        setLeaveHistory(leaveData);
 
         const currentEmployee = allEmployees.find(e => e.name === user);
         setEmployee(currentEmployee || null);
 
         unsubConsumption = onUserConsumptionLogsSnapshot(user, setConsumptionLogs, console.error);
-        unsubPayroll = onUserPayrollSnapshot(user, setPayrolls, console.error);
 
       } catch (error) {
         console.error("Failed to fetch initial dashboard data:", error);
@@ -67,7 +58,6 @@ export default function UserDashboard() {
 
     return () => {
       unsubConsumption?.();
-      unsubPayroll?.();
     }
   }, [user]);
 
@@ -133,7 +123,9 @@ export default function UserDashboard() {
         </div>
         <div className="lg:col-span-1 space-y-8">
             {attendanceStatus && <AttendanceTracker user={user} status={attendanceStatus} history={attendanceHistory} setStatus={setAttendanceStatus} setHistory={setAttendanceHistory} />}
-            <Card>
+        </div>
+        <div className="lg:col-span-1 space-y-8">
+             <Card>
                 <CardHeader>
                   <CardTitle>Consumption History</CardTitle>
                   <CardDescription>Your last 5 logged items this month.</CardDescription>
@@ -143,12 +135,6 @@ export default function UserDashboard() {
                 </CardContent>
             </Card>
         </div>
-        <div className="lg:col-span-1 space-y-8">
-            <LeaveTracker user={user} history={leaveHistory} />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-8">
-        <PayrollViewer payrolls={payrolls} />
       </div>
     </div>
   );
