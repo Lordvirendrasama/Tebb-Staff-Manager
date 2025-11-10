@@ -326,5 +326,3 @@ export function AttendanceEditor({ employees, onUpdate }: { employees: Employee[
         </Card>
     );
 }
-
-    

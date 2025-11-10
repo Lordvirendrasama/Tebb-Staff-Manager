@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
 import { Calendar } from './ui/calendar';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import type { Employee, AttendanceLog } from '@/lib/constants';
-import { getAllAttendanceForMonth } from '@/services/client/attendance-service';
-import { addMonths, format, startOfMonth, differenceInMinutes } from 'date-fns';
+import { addMonths, format, differenceInMinutes } from 'date-fns';
 import { ChevronLeft, ChevronRight, Loader2, CheckCircle, AlertCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { Separator } from './ui/separator';
 
@@ -23,46 +22,42 @@ interface DayLog {
   clockOut?: Date;
 }
 
-export function AttendanceViewer({ employee }: { employee: Employee }) {
-    const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
-    const [dayLogs, setDayLogs] = useState<Map<string, DayLog>>(new Map());
-    const [loading, setLoading] = useState(false);
+interface AttendanceViewerProps {
+    employee: Employee;
+    month: Date;
+    onMonthChange: (date: Date) => void;
+    attendanceLogs: AttendanceLog[];
+    loading: boolean;
+}
 
-    const fetchAttendance = () => {
-        setLoading(true);
-        getAllAttendanceForMonth(employee.name, currentMonth).then(logs => {
-            const newDayLogs = new Map<string, DayLog>();
-            logs.forEach(log => {
-                if (!log.clockOut) return;
+export function AttendanceViewer({ employee, month, onMonthChange, attendanceLogs, loading }: AttendanceViewerProps) {
+    const dayLogs = useMemo(() => {
+        const newDayLogs = new Map<string, DayLog>();
+        attendanceLogs.forEach(log => {
+            if (!log.clockOut) return;
 
-                const dayKey = format(log.clockIn, 'yyyy-MM-dd');
-                const hoursWorked = differenceInMinutes(log.clockOut, log.clockIn) / 60;
-                const minutesDifference = Math.round((hoursWorked - employee.standardWorkHours) * 60);
+            const dayKey = format(log.clockIn, 'yyyy-MM-dd');
+            const hoursWorked = differenceInMinutes(log.clockOut, log.clockIn) / 60;
+            const minutesDifference = Math.round((hoursWorked - employee.standardWorkHours) * 60);
 
-                let performance: DayPerformance = 'on-time';
-                if (minutesDifference > 15) performance = 'overtime';
-                if (minutesDifference < -15) performance = 'undertime';
+            let performance: DayPerformance = 'on-time';
+            if (minutesDifference > 15) performance = 'overtime';
+            if (minutesDifference < -15) performance = 'undertime';
 
-                newDayLogs.set(dayKey, {
-                    date: log.clockIn,
-                    performance,
-                    hoursWorked,
-                    minutesDifference,
-                    clockIn: log.clockIn,
-                    clockOut: log.clockOut,
-                });
+            newDayLogs.set(dayKey, {
+                date: log.clockIn,
+                performance,
+                hoursWorked,
+                minutesDifference,
+                clockIn: log.clockIn,
+                clockOut: log.clockOut,
             });
-            setDayLogs(newDayLogs);
-            setLoading(false);
         });
-    };
-    
-    useEffect(() => {
-        fetchAttendance();
-    }, [employee.id, currentMonth]);
+        return newDayLogs;
+    }, [attendanceLogs, employee.standardWorkHours]);
 
     const changeMonth = (offset: number) => {
-        setCurrentMonth(prev => addMonths(prev, offset));
+        onMonthChange(addMonths(month, offset));
     };
     
     const { totalOvertime, totalUndertime } = useMemo(() => {
@@ -122,7 +117,7 @@ export function AttendanceViewer({ employee }: { employee: Employee }) {
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <span className="text-sm font-medium text-center w-32">
-                        {format(currentMonth, 'MMMM yyyy')}
+                        {format(month, 'MMMM yyyy')}
                     </span>
                     <Button variant="outline" size="icon" onClick={() => changeMonth(1)}>
                         <ChevronRight className="h-4 w-4" />
@@ -136,8 +131,8 @@ export function AttendanceViewer({ employee }: { employee: Employee }) {
                         </div>
                     )}
                     <Calendar
-                        month={currentMonth}
-                        onMonthChange={setCurrentMonth}
+                        month={month}
+                        onMonthChange={onMonthChange}
                         modifiers={modifiers}
                         modifiersStyles={modifiersStyles}
                         className="w-full"

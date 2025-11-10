@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type User, type LeaveRequest, type ConsumableItemDef, type Payroll } from '@/lib/constants';
+import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type User, type LeaveRequest, type ConsumableItemDef, type Payroll, type AttendanceLog } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
@@ -12,7 +12,7 @@ import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
 import { MonthlyLeavesTracker } from '@/components/monthly-leaves-tracker';
 import { getAllUsers } from '@/app/actions/admin-actions';
-import { getMonthlyWorkPerformance, onLeaveRequestsSnapshot, getMonthlyLeaves } from '@/services/client/attendance-service';
+import { getMonthlyWorkPerformance, onLeaveRequestsSnapshot, getMonthlyLeaves, getAllAttendanceForMonth } from '@/services/client/attendance-service';
 import { onEmployeeOfTheWeekSnapshot } from '@/services/client/awards-service';
 import { onConsumptionLogsSnapshot, onConsumableItemsSnapshot } from '@/services/client/consumption-log-service';
 import { onPayrollSnapshot } from '@/services/client/payroll-service';
@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AttendanceEditor } from '@/components/attendance-editor';
 import { AttendanceViewer } from '@/components/attendance-viewer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+import { addMonths, startOfMonth } from 'date-fns';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -41,19 +41,40 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   const [selectedViewerEmployeeId, setSelectedViewerEmployeeId] = useState<string>('');
+  const [viewerMonth, setViewerMonth] = useState<Date>(startOfMonth(new Date()));
+  const [viewerLogs, setViewerLogs] = useState<AttendanceLog[]>([]);
+  const [viewerLoading, setViewerLoading] = useState(false);
   
   const selectedViewerEmployee = employees.find(e => e.id === selectedViewerEmployeeId);
 
-  const refreshAdminData = async (emps: Employee[]) => {
-      if (emps.length > 0) {
-          const [performance, monthlyL] = await Promise.all([
-              getMonthlyWorkPerformance(),
-              getMonthlyLeaves(),
-          ]);
-          setPerformanceData(performance);
-          setMonthlyLeaves(monthlyL);
-      }
+  const refreshGeneralData = async () => {
+    if (employees.length > 0) {
+        const [performance, monthlyL] = await Promise.all([
+            getMonthlyWorkPerformance(),
+            getMonthlyLeaves(),
+        ]);
+        setPerformanceData(performance);
+        setMonthlyLeaves(monthlyL);
+    }
   };
+
+  const refreshViewerData = async () => {
+    if (selectedViewerEmployee) {
+      setViewerLoading(true);
+      try {
+        const logs = await getAllAttendanceForMonth(selectedViewerEmployee.name, viewerMonth);
+        setViewerLogs(logs);
+      } catch (error) {
+        console.error("Failed to fetch viewer data", error);
+      } finally {
+        setViewerLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    refreshViewerData();
+  }, [selectedViewerEmployeeId, viewerMonth]);
 
   useEffect(() => {
     let unsubLeaves: () => void;
@@ -67,11 +88,11 @@ export default function AdminPage() {
       try {
         const emps = await getAllUsers();
         setEmployees(emps);
-        if (emps.length > 0) {
+        if (emps.length > 0 && !selectedViewerEmployeeId) {
             setSelectedViewerEmployeeId(emps[0].id);
         }
         
-        await refreshAdminData(emps);
+        await refreshGeneralData();
         
         unsubLeaves = onLeaveRequestsSnapshot(setLeaveRequests, (err) => console.error(err));
         unsubEow = onEmployeeOfTheWeekSnapshot(setEmployeeOfTheWeek, (err) => console.error(err));
@@ -97,6 +118,12 @@ export default function AdminPage() {
     };
   }, []);
 
+  const onEditorUpdate = () => {
+    refreshGeneralData(); // Refreshes charts
+    refreshViewerData(); // Refreshes the viewer calendar
+  };
+
+
   if (loading && employees.length === 0) {
     return (
         <AdminAuth>
@@ -115,7 +142,7 @@ export default function AdminPage() {
         <div className="space-y-8">
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h2>
         
-            <Tabs defaultValue="general" className="w-full">
+            <Tabs defaultValue="attendance" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 md:grid-cols-4">
                     <TabsTrigger value="general">General</TabsTrigger>
                     <TabsTrigger value="attendance">Attendance</TabsTrigger>
@@ -178,7 +205,7 @@ export default function AdminPage() {
 
                 <TabsContent value="attendance" className="mt-6">
                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        <AttendanceEditor employees={employees} onUpdate={() => refreshAdminData(employees)} />
+                        <AttendanceEditor employees={employees} onUpdate={onEditorUpdate} />
                         <div className="space-y-6">
                              <Card>
                                 <CardHeader>
@@ -198,7 +225,13 @@ export default function AdminPage() {
                             </Card>
                            
                            {selectedViewerEmployee ? (
-                                <AttendanceViewer employee={selectedViewerEmployee} />
+                                <AttendanceViewer 
+                                    employee={selectedViewerEmployee}
+                                    month={viewerMonth}
+                                    onMonthChange={setViewerMonth}
+                                    attendanceLogs={viewerLogs}
+                                    loading={viewerLoading}
+                                />
                            ) : (
                                 <Card>
                                     <CardContent className="h-96 flex items-center justify-center">
@@ -236,7 +269,7 @@ export default function AdminPage() {
                                         <CardHeader>
                                             <CardTitle className="text-lg">Export Data</CardTitle>
                                             <CardDescription>Download application data.</CardDescription>
-                                        </CardHeader>
+                                        </Header>
                                         <CardContent className="space-y-2">
                                             <ExportDataButton />
                                             <ExportEspressoDataButton />
@@ -246,7 +279,7 @@ export default function AdminPage() {
                                         <CardHeader>
                                             <CardTitle className="text-lg flex items-center gap-2"><Trash2 className="text-destructive"/> Reset Application Data</CardTitle>
                                             <CardDescription>Permanently delete all data from the application.</CardDescription>
-                                        </CardHeader>
+                                        </Header>
                                         <CardContent>
                                             <ResetDataButton />
                                         </CardContent>
@@ -261,5 +294,3 @@ export default function AdminPage() {
     </AdminAuth>
   );
 }
-
-    
