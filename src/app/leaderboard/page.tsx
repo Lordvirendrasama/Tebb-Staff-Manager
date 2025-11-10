@@ -148,9 +148,7 @@ export default function LeaderboardPage() {
                                 fill: pullCategories[key as keyof typeof pullCategories].color,
                             }));
                         const { medal, shadow, sparkle } = getMedal(index);
-                        const { rank, color: rankColor } = getPerformanceRank(entry.performanceScore);
-                        const userImage = placeholderImages.users.find(u => u.name === entry.employeeName)?.image || placeholderImages.users.find(u => u.name === 'default')?.image;
-
+                        
                         return (
                             <motion.div
                                 key={entry.employeeName}
@@ -162,24 +160,18 @@ export default function LeaderboardPage() {
                                 <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
                                     <CardHeader className="p-4 pb-0">
                                         <div className="flex items-start justify-between">
-                                            <div className="flex items-center gap-4">
-                                                 <div className="relative">
-                                                    {userImage && (
-                                                        <Image src={userImage.src} alt={entry.employeeName} width={64} height={64} className="rounded-full border-2 border-border" data-ai-hint={userImage['data-ai-hint']} />
-                                                    )}
-                                                    <span className={cn("absolute -bottom-2 -right-2 text-3xl", shadow)}>{medal}</span>
-                                                    {sparkle && <Star className="absolute -top-1 -right-1 h-5 w-5 text-yellow-400 sparkle" fill="currentColor" />}
-                                                </div>
-                                                <div>
-                                                    <CardTitle className="text-xl font-headline">{entry.employeeName}</CardTitle>
-                                                    <p className="text-sm text-muted-foreground"><AnimatedCounter value={entry.stats.perfect} /> Perfect Pulls</p>
-                                                </div>
+                                            <div>
+                                                <CardTitle className="text-xl font-headline">{entry.employeeName}</CardTitle>
+                                                <p className="text-sm text-muted-foreground"><AnimatedCounter value={entry.stats.perfect} /> Perfect Pulls</p>
                                             </div>
                                             <div className="text-right">
-                                                <div className="font-bold text-3xl">
-                                                    <AnimatedCounter value={Math.round(entry.performanceScore)} />
+                                                 <div className="flex items-center justify-end gap-2">
+                                                    <span className={cn("text-3xl", shadow)}>{medal}</span>
+                                                    {sparkle && <Star className="h-5 w-5 text-yellow-400 sparkle" fill="currentColor" />}
+                                                    <div className="font-bold text-3xl">
+                                                        <AnimatedCounter value={Math.round(entry.performanceScore)} />
+                                                    </div>
                                                 </div>
-                                                <Badge style={{ backgroundColor: rankColor, color: 'white' }} className="text-xs">{rank} Rank</Badge>
                                             </div>
                                         </div>
                                     </CardHeader>
