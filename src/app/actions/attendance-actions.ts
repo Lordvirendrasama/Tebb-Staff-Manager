@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay, isWithinInterval, isBefore, setHours, setMinutes, setSeconds, setMilliseconds, addDays } from 'date-fns';
+import { startOfDay, endOfDay, isWithinInterval, isBefore, setHours, setMinutes, setSeconds, setMilliseconds, addDays, getYear, getMonth, getDate } from 'date-fns';
 
 
 export async function clockInAction(user: User) {
@@ -225,8 +225,13 @@ export async function updateAttendanceForDayAction(
     }
     const employee = employeeSnap.data();
     
-    const dayStart = startOfDay(day);
-    const dayEnd = endOfDay(day);
+    // The 'day' object from the client is timezone-aware, which can cause it to be off by one day on the server.
+    // Reconstruct the start and end of day using server's perception of date parts to avoid timezone shift.
+    const year = getYear(day);
+    const month = getMonth(day);
+    const date = getDate(day);
+    const dayStart = startOfDay(new Date(year, month, date));
+    const dayEnd = endOfDay(new Date(year, month, date));
 
     const q = query(
         collection(db, 'attendanceLogs'),
@@ -240,19 +245,25 @@ export async function updateAttendanceForDayAction(
     if (worked) {
         let clockIn: Date;
         let clockOut: Date;
+        
+        const baseDate = new Date(year, month, date);
 
         if (clockInTime && clockOutTime) {
             const [inHours, inMinutes] = clockInTime.split(':').map(Number);
-            clockIn = setSeconds(setMinutes(setHours(day, inHours), inMinutes), 0);
+            clockIn = setSeconds(setMinutes(setHours(baseDate, inHours), inMinutes), 0);
 
             const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-            clockOut = setSeconds(setMinutes(setHours(day, outHours), outMinutes), 0);
+            // Create a new date object for clockOut to avoid mutation issues
+            let clockOutBaseDate = new Date(year, month, date);
+            clockOut = setSeconds(setMinutes(setHours(clockOutBaseDate, outHours), outMinutes), 0);
         } else {
             const [startHour, startMinute] = employee.shiftStartTime.split(':').map(Number);
             const [endHour, endMinute] = employee.shiftEndTime.split(':').map(Number);
             
-            clockIn = setHours(new Date(day), startHour, startMinute);
-            clockOut = setHours(new Date(day), endHour, endMinute);
+            clockIn = setSeconds(setMinutes(setHours(baseDate, startHour), startMinute), 0);
+            
+            let clockOutBaseDate = new Date(year, month, date);
+            clockOut = setSeconds(setMinutes(setHours(clockOutBaseDate, endHour), endMinute), 0);
         }
 
         if (isBefore(clockOut, clockIn)) {
@@ -295,6 +306,7 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         const newClockIn = setSeconds(setMinutes(setHours(new Date(originalClockIn), inHours), inMinutes), 0);
         
         const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
+        // Use a new Date object for clock out to avoid mutation issues
         let newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
         
         if (isBefore(newClockOut, newClockIn)) {
