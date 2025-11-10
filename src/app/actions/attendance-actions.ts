@@ -298,11 +298,11 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         const newClockIn = setSeconds(setMinutes(setHours(new Date(originalClockIn), inHours), inMinutes), 0);
         
         const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-        // Create a new date object for clockOut based on the original clockIn day to avoid mutation issues
+        // Use a clean date object for clockOut to avoid mutation issues
         let newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
         
         if (isBefore(newClockOut, newClockIn)) {
-            // If clock out time is earlier than clock in, assume it's the next day
+            // If clock out time is earlier than clock in, it must be the next day
             newClockOut = addDays(newClockOut, 1);
         }
 
@@ -320,5 +320,3 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         return { success: false, message: `Failed to update attendance: ${errorMessage}` };
     }
 }
-
-    
