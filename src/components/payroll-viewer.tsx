@@ -9,8 +9,6 @@ import { Badge } from './ui/badge';
 import { PayrollDetailsDialog } from './payroll-details-dialog';
 
 export function PayrollViewer({ payrolls }: { payrolls: Payroll[] }) {
-    const latestPayroll = payrolls.length > 0 ? payrolls[0] : null;
-    const payrollHistory = payrolls.slice(0); // Show all payrolls in history now
 
     const formatDateRange = (start: Date, end: Date) => {
         return `${format(new Date(start), 'MMM d, yyyy')} - ${format(new Date(end), 'MMM d, yyyy')}`;
@@ -41,10 +39,10 @@ export function PayrollViewer({ payrolls }: { payrolls: Payroll[] }) {
                 <CardDescription>Your previous salary slips.</CardDescription>
             </CardHeader>
             <CardContent>
-                {payrollHistory.length > 0 ? (
+                {payrolls.length > 0 ? (
                     <ScrollArea className="h-96 w-full">
                         <div className="space-y-2">
-                            {payrollHistory.map(p => (
+                            {payrolls.map(p => (
                                 <div key={p.id} className="p-3 border rounded-lg">
                                     <div className="flex justify-between items-start">
                                         <div>
@@ -63,7 +61,7 @@ export function PayrollViewer({ payrolls }: { payrolls: Payroll[] }) {
                         </div>
                     </ScrollArea>
                 ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">No past payrolls found.</p>
+                    <p className="text-sm text-muted-foreground text-center py-8">No payrolls found.</p>
                 )}
             </CardContent>
         </Card>

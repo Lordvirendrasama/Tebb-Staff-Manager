@@ -5,7 +5,7 @@ import { MONTHLY_DRINK_ALLOWANCE, MONTHLY_MEAL_ALLOWANCE, type Employee, type Us
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmployeeOfTheWeekManager } from '@/components/employee-of-the-week-manager';
-import { Trash2 } from 'lucide-react';
+import { Trash2, User as UserIcon } from 'lucide-react';
 import { WorkPerformanceTracker } from '@/components/overtime-tracker';
 import { StaffManager } from '@/components/staff-manager';
 import { LeaveRequestManager } from '@/components/leave-request-manager';
@@ -24,7 +24,9 @@ import { ExportEspressoDataButton } from '@/components/export-espresso-data-butt
 import { PayrollManager } from '@/components/payroll-manager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AttendanceEditor } from '@/components/attendance-editor';
-
+import { AttendanceViewer } from '@/components/attendance-viewer';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -36,6 +38,9 @@ export default function AdminPage() {
   const [consumableItems, setConsumableItems] = useState<ConsumableItemDef[]>([]);
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [selectedViewerEmployeeId, setSelectedViewerEmployeeId] = useState<string>('');
+  const selectedViewerEmployee = employees.find(e => e.id === selectedViewerEmployeeId);
 
   useEffect(() => {
     let unsubLeaves: () => void;
@@ -51,6 +56,7 @@ export default function AdminPage() {
         setEmployees(emps);
 
         if (emps.length > 0) {
+            setSelectedViewerEmployeeId(emps[0].id);
             const [performance, monthlyL] = await Promise.all([
                 getMonthlyWorkPerformance(),
                 getMonthlyLeaves(),
@@ -163,7 +169,40 @@ export default function AdminPage() {
                 </TabsContent>
 
                 <TabsContent value="attendance" className="mt-6">
-                    <AttendanceEditor employees={employees} />
+                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <AttendanceEditor employees={employees} />
+                        <div className="space-y-6">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Attendance Viewer</CardTitle>
+                                    <CardDescription>Select an employee to view their attendance calendar.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                     <Select onValueChange={setSelectedViewerEmployeeId} value={selectedViewerEmployeeId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Employee to View" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </CardContent>
+                            </Card>
+                           
+                           {selectedViewerEmployee ? (
+                                <AttendanceViewer employee={selectedViewerEmployee} />
+                           ) : (
+                                <Card>
+                                    <CardContent className="h-96 flex items-center justify-center">
+                                        <div className="text-center text-muted-foreground">
+                                            <UserIcon className="mx-auto h-12 w-12" />
+                                            <p>Please select an employee to view their attendance.</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                           )}
+                        </div>
+                   </div>
                 </TabsContent>
                 
                 <TabsContent value="payroll" className="mt-6">

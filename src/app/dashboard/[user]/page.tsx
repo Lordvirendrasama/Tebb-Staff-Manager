@@ -15,7 +15,6 @@ import { AttendanceTracker } from '@/components/attendance-tracker';
 import { LeaveTracker } from '@/components/leave-tracker';
 import { PayrollViewer } from '@/components/payroll-viewer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AttendanceViewer } from '@/components/attendance-viewer';
 
 export default function UserDashboard() {
   const params = useParams();
@@ -149,20 +148,7 @@ export default function UserDashboard() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-8">
-        <Tabs defaultValue="attendance">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="payroll">Payroll</TabsTrigger>
-          </TabsList>
-          <TabsContent value="attendance" className="mt-6">
-            {employee ? (
-              <AttendanceViewer employee={employee} />
-            ) : <Loader2 className="animate-spin"/>}
-          </TabsContent>
-          <TabsContent value="payroll" className="mt-6">
-            <PayrollViewer payrolls={payrolls} />
-          </TabsContent>
-        </Tabs>
+        <PayrollViewer payrolls={payrolls} />
       </div>
     </div>
   );
