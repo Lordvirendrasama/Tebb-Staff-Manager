@@ -119,10 +119,9 @@ export default function AdminPage() {
   }, []);
 
   const onEditorUpdate = () => {
-    refreshGeneralData(); // Refreshes charts
-    refreshViewerData(); // Refreshes the viewer calendar
+    refreshGeneralData();
+    refreshViewerData();
   };
-
 
   if (loading && employees.length === 0) {
     return (
