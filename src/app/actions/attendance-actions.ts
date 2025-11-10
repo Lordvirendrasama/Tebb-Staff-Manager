@@ -6,11 +6,42 @@ import { revalidatePath } from 'next/cache';
 import { getAttendanceStatus } from '@/services/attendance-service';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
-import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { startOfDay, endOfDay, isWithinInterval, isBefore } from 'date-fns';
 
 
 export async function clockInAction(user: User) {
     try {
+        // First, check for any open shifts from previous days and close them.
+        const q = query(
+            collection(db, 'attendanceLogs'),
+            where('employeeName', '==', user),
+            orderBy('clockIn', 'desc'),
+            limit(1)
+        );
+        const latestLogSnapshot = await getDocs(q);
+
+        if (!latestLogSnapshot.empty) {
+            const latestLogDoc = latestLogSnapshot.docs[0];
+            const latestLog = latestLogDoc.data();
+            
+            if (!latestLog.clockOut && isBefore(latestLog.clockIn.toDate(), startOfDay(new Date()))) {
+                // The employee forgot to clock out on a previous day.
+                // We'll automatically clock them out at their shift end time.
+                const employeeSnap = await getDocs(query(collection(db, 'employees'), where('name', '==', user)));
+
+                if (!employeeSnap.empty) {
+                    const employeeData = employeeSnap.docs[0].data();
+                    const [endHour, endMinute] = (employeeData.shiftEndTime || '18:00').split(':').map(Number);
+                    
+                    const clockOutTime = latestLog.clockIn.toDate();
+                    clockOutTime.setHours(endHour, endMinute, 0, 0);
+
+                    await updateDoc(latestLogDoc.ref, { clockOut: clockOutTime });
+                }
+            }
+        }
+        
+        // Now, proceed with the clock-in logic.
         const status = await getAttendanceStatus(user);
         if (status.status === 'Clocked In') {
             return { success: false, message: 'You are already clocked in.' };
@@ -227,3 +258,4 @@ export async function updateAttendanceForDayAction(employeeId: string, day: Date
         return { success: true, message: 'Attendance marked as not worked.' };
     }
 }
+
