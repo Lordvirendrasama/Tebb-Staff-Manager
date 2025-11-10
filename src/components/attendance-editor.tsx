@@ -270,7 +270,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                                     </DialogClose>
                                     <Button onClick={handleSaveChanges} disabled={isUpdating || !clockInTime || !clockOutTime}>
                                         {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                        Save
+                                        Save / Mark Worked
                                     </Button>
                                 </div>
                             </DialogFooter>
