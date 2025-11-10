@@ -2,12 +2,14 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { onEspressoLogsSnapshot } from '@/services/client/espresso-service';
 import type { EspressoLog } from '@/lib/constants';
 import { Trophy, Zap, Coffee, Flame, ThumbsUp, Frown } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import type { ChartConfig } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 interface PullStats {
     unservable: number;
@@ -24,12 +26,19 @@ interface LeaderboardEntry {
 }
 
 const pullCategories = {
-    perfect: { label: 'Perfect', icon: <ThumbsUp className="h-4 w-4 text-green-500" />, description: '22-33 seconds' },
-    gettingThere: { label: 'Getting There', icon: <Zap className="h-4 w-4 text-yellow-500" />, description: '19-22 seconds' },
-    needsWork: { label: 'Needs Work', icon: <Coffee className="h-4 w-4 text-orange-500" />, description: '13-18 seconds' },
-    burnt: { label: 'Burnt', icon: <Flame className="h-4 w-4 text-red-500" />, description: '33+ seconds' },
-    unservable: { label: 'Unservable', icon: <Frown className="h-4 w-4 text-gray-500" />, description: '0-12 seconds' },
+    perfect: { label: 'Perfect', icon: ThumbsUp, color: 'hsl(var(--chart-1))', description: '22-33s' },
+    gettingThere: { label: 'Getting There', icon: Zap, color: 'hsl(var(--chart-2))', description: '19-22s' },
+    needsWork: { label: 'Needs Work', icon: Coffee, color: 'hsl(var(--chart-3))', description: '13-18s' },
+    burnt: { label: 'Burnt', icon: Flame, color: 'hsl(var(--chart-4))', description: '33+s' },
+    unservable: { label: 'Unservable', icon: Frown, color: 'hsl(var(--chart-5))', description: '0-12s' },
 };
+
+const chartConfig = Object.fromEntries(
+  Object.entries(pullCategories).map(([key, value]) => [
+    key,
+    { label: value.label, color: value.color, icon: value.icon },
+  ])
+) as ChartConfig;
 
 
 export default function LeaderboardPage() {
@@ -83,36 +92,33 @@ export default function LeaderboardPage() {
     }, [logs]);
 
     const getMedal = (index: number) => {
-        if (index === 0) return <span className="text-2xl" role="img" aria-label="gold medal">🥇</span>;
-        if (index === 1) return <span className="text-2xl" role="img" aria-label="silver medal">🥈</span>;
-        if (index === 2) return <span className="text-2xl" role="img" aria-label="bronze medal">🥉</span>;
-        return <span className="text-muted-foreground font-bold">{index + 1}</span>;
+        if (index === 0) return <span className="text-3xl" role="img" aria-label="gold medal">🥇</span>;
+        if (index === 1) return <span className="text-3xl" role="img" aria-label="silver medal">🥈</span>;
+        if (index === 2) return <span className="text-3xl" role="img" aria-label="bronze medal">🥉</span>;
+        return <span className="text-muted-foreground font-bold text-xl">{index + 1}</span>;
     };
 
     if (loading) {
         return (
-            <div className="space-y-8 max-w-2xl mx-auto">
+            <div className="space-y-8">
                 <div className="text-center">
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline">Espresso Masters</h2>
-                    <p className="text-muted-foreground mt-2">Ranking of baristas by perfect pulls (22-33 seconds).</p>
+                  <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center justify-center gap-3">
+                      <Trophy className="h-8 w-8 text-primary" />
+                      Espresso Masters
+                  </h2>
+                  <p className="text-muted-foreground mt-2">Ranking of baristas by the number of perfect pulls and detailed analytics.</p>
                 </div>
-                <Card>
-                    <CardContent className="p-6 space-y-4">
-                        {[...Array(5)].map((_, i) => (
-                             <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
-                                <Skeleton className="h-8 w-8 rounded-full" />
-                                <Skeleton className="h-6 flex-grow" />
-                                <Skeleton className="h-8 w-16" />
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(3)].map((_, i) => (
+                        <Card key={i}><CardHeader><Skeleton className="h-8 w-32" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+                    ))}
+                </div>
             </div>
         );
     }
     
     return (
-        <div className="space-y-8 max-w-2xl mx-auto">
+        <div className="space-y-8">
             <div className="text-center">
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center justify-center gap-3">
                     <Trophy className="h-8 w-8 text-primary" />
@@ -121,58 +127,81 @@ export default function LeaderboardPage() {
                 <p className="text-muted-foreground mt-2">Ranking of baristas by the number of perfect pulls and detailed analytics.</p>
             </div>
 
-            <Card className="shadow-lg">
-                <CardContent className="p-4 md:p-6">
-                    {leaderboardData.length > 0 ? (
-                        <Accordion type="single" collapsible className="w-full">
-                            {leaderboardData.map((entry, index) => (
-                                <AccordionItem value={entry.employeeName} key={entry.employeeName}>
-                                    <AccordionTrigger className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors w-full">
-                                        <div className="w-8 text-center text-xl font-headline">
-                                            {getMedal(index)}
-                                        </div>
-                                        <div className="flex-grow text-left">
-                                            <p className="text-lg font-medium">{entry.employeeName}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xl font-bold text-primary">{entry.stats.perfect}</p>
-                                            <p className="text-xs text-muted-foreground">Perfect Pulls</p>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="p-4 bg-muted/30 rounded-b-lg">
-                                        <h4 className="font-semibold mb-3 text-center">Pull Analytics ({entry.stats.total} total)</h4>
-                                        <ul className="space-y-2 text-sm">
-                                            {Object.entries(pullCategories).map(([key, value]) => {
-                                                const statKey = key as keyof PullStats;
-                                                const count = entry.stats[statKey];
-                                                const percentage = entry.stats.total > 0 ? ((count / entry.stats.total) * 100).toFixed(0) : 0;
-                                                return (
-                                                    <li key={key} className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            {value.icon}
-                                                            <div>
-                                                                <span className="font-medium">{value.label}</span>
-                                                                <span className="text-xs text-muted-foreground ml-2">({value.description})</span>
-                                                            </div>
-                                                        </div>
-                                                        <span className="font-mono text-right">{count} <span className="text-muted-foreground text-xs">({percentage}%)</span></span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center text-center py-16">
-                            <Trophy className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                            <h3 className="font-semibold">No Perfect Pulls Yet</h3>
-                            <p className="text-sm text-muted-foreground">Start logging espresso shots to climb the leaderboard!</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            {leaderboardData.length > 0 ? (
+                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                    {leaderboardData.map((entry, index) => {
+                        const chartData = Object.entries(pullCategories).map(([key, value]) => ({
+                            name: value.label,
+                            value: entry.stats[key as keyof PullStats],
+                            fill: value.color,
+                        })).filter(d => d.value > 0);
+
+                        return (
+                            <Card key={entry.employeeName} className="flex flex-col h-full shadow-lg">
+                                <CardHeader className="flex flex-row items-center gap-4">
+                                    <div className="w-10 text-center">{getMedal(index)}</div>
+                                    <div>
+                                        <CardTitle className="text-2xl font-headline">{entry.employeeName}</CardTitle>
+                                        <CardDescription>{entry.stats.perfect} Perfect Pulls</CardDescription>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="flex-1 flex flex-col justify-center">
+                                    <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
+                                        <ResponsiveContainer>
+                                            <PieChart>
+                                                <Tooltip
+                                                    cursor={false}
+                                                    content={<ChartTooltipContent hideLabel indicator="dot" nameKey="name" />}
+                                                />
+                                                <Pie
+                                                    data={chartData}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    innerRadius={60}
+                                                    strokeWidth={5}
+                                                >
+                                                    {chartData.map((d) => (
+                                                        <Cell key={d.name} fill={d.fill} />
+                                                    ))}
+                                                </Pie>
+                                                <Legend
+                                                    content={({ payload }) => {
+                                                        return (
+                                                            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 mt-4 text-sm">
+                                                                {payload?.map((item) => {
+                                                                    const { label, icon: Icon } = chartConfig[item.value as keyof typeof chartConfig];
+                                                                    const pullData = chartData.find(d => d.name === item.value);
+                                                                    const percentage = entry.stats.total > 0 ? ((pullData?.value || 0) / entry.stats.total * 100).toFixed(0) : 0;
+
+                                                                    return (
+                                                                        <li key={item.value} className="flex items-center gap-2">
+                                                                            <Icon className="h-4 w-4" style={{color: item.color}} />
+                                                                            <span className="font-medium">{label}</span>
+                                                                            <span className="ml-auto font-mono">{pullData?.value}</span>
+                                                                            <span className="text-muted-foreground text-xs">({percentage}%)</span>
+                                                                        </li>
+                                                                    )
+                                                                })}
+                                                            </ul>
+                                                        )
+                                                    }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </ChartContainer>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center text-center py-24 border-2 border-dashed rounded-lg">
+                    <Trophy className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-xl font-semibold">No Espresso Pulls Logged Yet</h3>
+                    <p className="text-muted-foreground mt-2">Start using the Espresso Tracker to climb the leaderboard!</p>
+                </div>
+            )}
         </div>
     );
 }
+

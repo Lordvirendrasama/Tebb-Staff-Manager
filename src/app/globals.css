@@ -24,11 +24,11 @@
     --input: 0 0% 89.8%;
     --ring: 347 99% 47%;
     --radius: 0.5rem;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 120 80% 45%; /* Perfect - Green */
+    --chart-2: 45 90% 55%;  /* Getting There - Yellow */
+    --chart-3: 25 95% 60%;  /* Needs Work - Orange */
+    --chart-4: 0 85% 60%;   /* Burnt - Red */
+    --chart-5: 220 15% 50%; /* Unservable - Gray */
   }
 
   .dark {
@@ -51,11 +51,11 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 347 99% 47%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 120 70% 50%;
+    --chart-2: 45 80% 55%;
+    --chart-3: 25 85% 60%;
+    --chart-4: 0 75% 60%;
+    --chart-5: 220 10% 60%;
   }
 }
 
