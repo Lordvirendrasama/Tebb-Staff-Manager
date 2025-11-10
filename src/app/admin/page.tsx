@@ -18,7 +18,7 @@ import { AdminAuth } from '@/components/admin-auth';
 import { ItemManager } from '@/components/item-manager';
 import { ExportEspressoDataButton } from '@/components/export-espresso-data-button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AttendanceEditor } from '@/components/attendance-editor';
+import { AttendanceManager } from '@/components/attendance-manager';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -132,7 +132,7 @@ export default function AdminPage() {
                 </TabsContent>
                 
                 <TabsContent value="attendance" className="mt-6">
-                    <AttendanceEditor employees={employees} />
+                    <AttendanceManager employees={employees} />
                 </TabsContent>
 
                 <TabsContent value="settings" className="mt-6">

@@ -94,71 +94,45 @@ export async function clockOutAction(user: User) {
     }
 }
 
-export async function getAttendanceForMonthAction(employeeName: User, month: Date) {
-    const start = startOfMonth(month);
-    const end = endOfMonth(month);
+export async function getAttendanceLogsAction({ employeeName, month }: { employeeName?: User | null, month?: Date | null }) {
+    let q = query(collection(db, 'attendanceLogs'), orderBy('clockIn', 'desc'));
 
-    const q = query(
-        collection(db, 'attendanceLogs'),
-        where('employeeName', '==', employeeName),
-        where('clockIn', '>=', start),
-        where('clockIn', '<=', end),
-        orderBy('clockIn', 'asc')
-    );
+    if (employeeName) {
+        q = query(q, where('employeeName', '==', employeeName));
+    }
+
+    if (month) {
+        const start = startOfMonth(month);
+        const end = endOfMonth(month);
+        q = query(q, where('clockIn', '>=', start), where('clockIn', '<=', end));
+    }
 
     const snapshot = await getDocs(q);
     const logs = snapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
-      clockIn: d.data().clockIn.toDate(),
-      clockOut: d.data().clockOut ? d.data().clockOut.toDate() : null,
+      clockIn: d.data().clockIn.toDate().toISOString(), // Serialize dates
+      clockOut: d.data().clockOut ? d.data().clockOut.toDate().toISOString() : null,
     }));
     return logs;
 }
 
 
-export async function updateAttendanceForDayAction(employeeName: User, day: Date, clockInTime: string | null, clockOutTime: string | null) {
+export async function updateAttendanceLogAction(logId: string, clockIn: string, clockOut: string | null) {
   try {
-    const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0);
-    const end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59);
+    const logRef = doc(db, 'attendanceLogs', logId);
 
-    const q = query(
-      collection(db, 'attendanceLogs'),
-      where('employeeName', '==', employeeName),
-      where('clockIn', '>=', start),
-      where('clockIn', '<=', end)
-    );
-    const snapshot = await getDocs(q);
-    const existingLog = snapshot.docs[0];
-
-    if (!clockInTime || !clockOutTime) { // Delete record
-      if (existingLog) {
-        await deleteDoc(existingLog.ref);
-        revalidatePath('/admin');
-        return { success: true, message: 'Attendance record deleted.' };
-      }
-      return { success: true, message: 'No record to delete.' }; // No existing log and no new times
-    }
-
-    const [inHours, inMinutes] = clockInTime.split(':').map(Number);
-    const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-
-    const newClockIn = new Date(day.getFullYear(), day.getMonth(), day.getDate(), inHours, inMinutes);
-    const newClockOut = new Date(day.getFullYear(), day.getMonth(), day.getDate(), outHours, outMinutes);
-
-    if (newClockOut <= newClockIn) {
-      newClockOut.setDate(newClockOut.getDate() + 1);
+    const newClockIn = new Date(clockIn);
+    let newClockOut: Date | null = null;
+    
+    if (clockOut) {
+        newClockOut = new Date(clockOut);
+        if (newClockOut <= newClockIn) {
+            newClockOut.setDate(newClockOut.getDate() + 1);
+        }
     }
     
-    if (existingLog) {
-      await updateDoc(existingLog.ref, { clockIn: newClockIn, clockOut: newClockOut });
-    } else {
-      await addDoc(collection(db, 'attendanceLogs'), {
-        employeeName,
-        clockIn: newClockIn,
-        clockOut: newClockOut,
-      });
-    }
+    await updateDoc(logRef, { clockIn: newClockIn, clockOut: newClockOut });
 
     revalidatePath('/admin');
     return { success: true, message: 'Attendance updated successfully.' };
@@ -168,4 +142,16 @@ export async function updateAttendanceForDayAction(employeeName: User, day: Date
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { success: false, message: `Failed to update attendance: ${errorMessage}` };
   }
+}
+
+export async function deleteAttendanceLogAction(logId: string) {
+    try {
+        await deleteDoc(doc(db, 'attendanceLogs', logId));
+        revalidatePath('/admin');
+        return { success: true, message: 'Attendance record deleted.' };
+    } catch (error) {
+        console.error('Failed to delete attendance', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, message: `Failed to delete attendance record: ${errorMessage}` };
+    }
 }
