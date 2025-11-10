@@ -60,8 +60,8 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         setClockOut(logForDay.clockOut ? format(new Date(logForDay.clockOut), 'HH:mm') : '');
     } else {
         const employeeDetails = employees.find(e => e.name === selectedEmployee);
-        setClockIn(employeeDetails?.shiftStartTime || '');
-        setClockOut(employeeDetails?.shiftEndTime || '');
+        setClockIn(employeeDetails?.shiftStartTime || '10:00');
+        setClockOut(employeeDetails?.shiftEndTime || '18:00');
     }
     setIsDialogOpen(true);
   };
