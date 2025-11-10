@@ -60,7 +60,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     }
     
     setSelectedDay(day);
-    const logForDay = attendance.find(log => isSameDay(new Date(log.clockIn), day));
+    const logForDay = attendance.find(log => isSameDay(log.clockIn, day));
     
     if (logForDay) {
         setClockIn(format(new Date(logForDay.clockIn), 'HH:mm'));
@@ -101,7 +101,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     });
   };
   
-  const workedDays = attendance.map(log => new Date(log.clockIn));
+  const workedDays = attendance.map(log => log.clockIn);
 
   const handleMonthChange = (date: Date) => {
     setCurrentMonth(date);
