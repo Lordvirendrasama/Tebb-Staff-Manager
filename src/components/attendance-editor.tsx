@@ -133,7 +133,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
     }
 
     const handleDeleteAttendance = () => {
-        if (!editingState || !editingState.log) return; // Can't delete if no log exists
+        if (!editingState || !editingState.log || !selectedEmployeeId) return; // Can't delete if no log exists
 
         startUpdateTransition(async () => {
             const result = await updateAttendanceForDayAction(selectedEmployeeId, editingState.day, false);
@@ -255,21 +255,24 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
                                     </div>
                                 </div>
                             </div>
-                            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-                                {editingState.log && (
-                                     <Button variant="destructive" onClick={handleDeleteAttendance} disabled={isUpdating}>
-                                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                        Not Worked
+                            <DialogFooter className="sm:justify-between gap-2">
+                                <div>
+                                    {editingState.log && (
+                                        <Button variant="destructive" onClick={handleDeleteAttendance} disabled={isUpdating}>
+                                            {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                            Not Worked
+                                        </Button>
+                                    )}
+                                </div>
+                                <div className="flex gap-2 justify-end">
+                                    <DialogClose asChild>
+                                        <Button type="button" variant="secondary" disabled={isUpdating}>Cancel</Button>
+                                    </DialogClose>
+                                    <Button onClick={handleSaveChanges} disabled={isUpdating || !clockInTime || !clockOutTime}>
+                                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                        Save
                                     </Button>
-                                )}
-                                <div className="flex-1" />
-                                <DialogClose asChild>
-                                    <Button type="button" variant="secondary" disabled={isUpdating}>Cancel</Button>
-                                </DialogClose>
-                                <Button onClick={handleSaveChanges} disabled={isUpdating || !clockInTime || !clockOutTime}>
-                                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    Save
-                                </Button>
+                                </div>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
