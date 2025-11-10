@@ -281,7 +281,7 @@ export default function AdminPage() {
                                         <CardHeader>
                                             <CardTitle className="text-lg">Export Data</CardTitle>
                                             <CardDescription>Download application data.</CardDescription>
-                                        </Header>
+                                        </CardHeader>
                                         <CardContent className="space-y-2">
                                             <ExportDataButton />
                                             <ExportEspressoDataButton />
@@ -291,7 +291,7 @@ export default function AdminPage() {
                                         <CardHeader>
                                             <CardTitle className="text-lg flex items-center gap-2"><Trash2 className="text-destructive"/> Reset Application Data</CardTitle>
                                             <CardDescription>Permanently delete all data from the application.</CardDescription>
-                                        </Header>
+                                        </CardHeader>
                                         <CardContent>
                                             <ResetDataButton />
                                         </CardContent>
