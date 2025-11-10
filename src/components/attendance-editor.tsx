@@ -15,6 +15,7 @@ import { updateAttendanceForDayAction } from '@/app/actions/attendance-actions';
 import { format, getMonth, getYear, setMonth, setYear, isSameDay } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST } from '@/lib/date-utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export function AttendanceEditor({ employees }: { employees: Employee[] }) {
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
@@ -93,6 +94,7 @@ export function AttendanceEditor({ employees }: { employees: Employee[] }) {
         if (result.success) {
             toast({ title: 'Success', description: result.message });
             fetchAttendance();
+            setSelectedDay(null);
         } else {
             toast({ variant: 'destructive', title: 'Error', description: result.message });
         }
