@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AttendanceEditor } from '@/components/attendance-editor';
 import { AttendanceViewer } from '@/components/attendance-viewer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { addMonths, startOfMonth } from 'date-fns';
+import { startOfMonth } from 'date-fns';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -74,14 +74,15 @@ export default function AdminPage() {
 
   useEffect(() => {
     refreshViewerData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedViewerEmployeeId, viewerMonth]);
 
   useEffect(() => {
-    let unsubLeaves: () => void;
-    let unsubEow: () => void;
-    let unsubConsumption: () => void;
-    let unsubItems: () => void;
-    let unsubPayrolls: () => void;
+    let unsubLeaves: (() => void) | undefined;
+    let unsubEow: (() => void) | undefined;
+    let unsubConsumption: (() => void) | undefined;
+    let unsubItems: (() => void) | undefined;
+    let unsubPayrolls: (() => void) | undefined;
 
     const fetchAndSubscribe = async () => {
       setLoading(true);
@@ -116,6 +117,7 @@ export default function AdminPage() {
       unsubItems?.();
       unsubPayrolls?.();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onEditorUpdate = () => {
