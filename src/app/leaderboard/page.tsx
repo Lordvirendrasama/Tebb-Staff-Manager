@@ -12,8 +12,6 @@ import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Badge } from '@/components/ui/badge';
 import placeholderImages from '@/lib/placeholder-images.json';
 
@@ -46,13 +44,6 @@ const chartConfig = Object.fromEntries(
     { label: value.label, color: value.color },
   ])
 ) as ChartConfig;
-
-const getPerformanceRank = (score: number) => {
-    if (score >= 90) return { rank: 'S', color: 'hsl(var(--rank-s))' };
-    if (score >= 75) return { rank: 'A', color: 'hsl(var(--rank-a))' };
-    if (score >= 60) return { rank: 'B', color: 'hsl(var(--rank-b))' };
-    return { rank: 'C', color: 'hsl(var(--rank-c))' };
-}
 
 export default function LeaderboardPage() {
     const [loading, setLoading] = useState(true);
@@ -129,13 +120,13 @@ export default function LeaderboardPage() {
     
     return (
         <div className="space-y-8">
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
+            <div className="text-center">
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center justify-center gap-3">
                     <Trophy className="h-8 w-8 text-primary" />
                     Espresso Masters
                 </h2>
                 <p className="text-muted-foreground mt-2">The official performance analytics dashboard.</p>
-            </motion.div>
+            </div>
 
             {leaderboardData.length > 0 ? (
                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
@@ -147,14 +138,11 @@ export default function LeaderboardPage() {
                                 value,
                                 fill: pullCategories[key as keyof typeof pullCategories].color,
                             }));
-                        const { medal, shadow, sparkle } = getMedal(index);
+                        const { medal, shadow } = getMedal(index);
                         
                         return (
-                            <motion.div
+                            <div
                                 key={entry.employeeName}
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
                                 className="h-full"
                             >
                                 <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
@@ -162,14 +150,13 @@ export default function LeaderboardPage() {
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <CardTitle className="text-xl font-headline">{entry.employeeName}</CardTitle>
-                                                <p className="text-sm text-muted-foreground"><AnimatedCounter value={entry.stats.perfect} /> Perfect Pulls</p>
+                                                <p className="text-sm text-muted-foreground"><span>{entry.stats.perfect}</span> Perfect Pulls</p>
                                             </div>
                                             <div className="text-right">
                                                  <div className="flex items-center justify-end gap-2">
                                                     <span className={cn("text-3xl", shadow)}>{medal}</span>
-                                                    {sparkle && <Star className="h-5 w-5 text-yellow-400 sparkle" fill="currentColor" />}
                                                     <div className="font-bold text-3xl">
-                                                        <AnimatedCounter value={Math.round(entry.performanceScore)} />
+                                                        <span>{Math.round(entry.performanceScore)}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -212,16 +199,16 @@ export default function LeaderboardPage() {
 
                                     </CardContent>
                                 </Card>
-                            </motion.div>
+                            </div>
                         )
                     })}
                 </div>
             ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-col items-center justify-center text-center py-24 border-2 border-dashed rounded-lg">
+                <div className="flex flex-col items-center justify-center text-center py-24 border-2 border-dashed rounded-lg">
                     <Trophy className="h-16 w-16 text-muted-foreground/50 mb-4" />
                     <h3 className="text-xl font-semibold">No Espresso Pulls Logged Yet</h3>
                     <p className="text-muted-foreground mt-2">Start using the Espresso Tracker to climb the leaderboard!</p>
-                </motion.div>
+                </div>
             )}
         </div>
     );
