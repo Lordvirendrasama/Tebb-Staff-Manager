@@ -93,10 +93,10 @@ export default function LeaderboardPage() {
     }, [logs]);
 
     const getMedal = (index: number) => {
-        if (index === 0) return { medal: '🥇', shadow: 'shadow-[0_0_20px_gold]', sparkle: true };
-        if (index === 1) return { medal: '🥈', shadow: 'shadow-[0_0_20px_silver]', sparkle: false };
-        if (index === 2) return { medal: '🥉', shadow: 'shadow-[0_0_20px_#CD7F32]', sparkle: false };
-        return { medal: `#${index + 1}`, shadow: '', sparkle: false };
+        if (index === 0) return '🥇';
+        if (index === 1) return '🥈';
+        if (index === 2) return '🥉';
+        return `#${index + 1}`;
     };
 
     if (loading) {
@@ -138,7 +138,7 @@ export default function LeaderboardPage() {
                                 value,
                                 fill: pullCategories[key as keyof typeof pullCategories].color,
                             }));
-                        const { medal, shadow } = getMedal(index);
+                        const medal = getMedal(index);
                         
                         return (
                             <div
@@ -154,7 +154,7 @@ export default function LeaderboardPage() {
                                             </div>
                                             <div className="text-right">
                                                  <div className="flex items-center justify-end gap-2">
-                                                    <span className={cn("text-3xl", shadow)}>{medal}</span>
+                                                    <span className="text-3xl">{medal}</span>
                                                     <div className="font-bold text-3xl">
                                                         <span>{Math.round(entry.performanceScore)}</span>
                                                     </div>
