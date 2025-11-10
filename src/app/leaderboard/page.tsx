@@ -161,7 +161,7 @@ export default function LeaderboardPage() {
                                                     strokeWidth={5}
                                                 >
                                                     {chartData.map((d) => (
-                                                        <Cell key={d.name} fill={d.fill} />
+                                                        <Cell key={d.name} fill={d.fill} className="stroke-background" />
                                                     ))}
                                                 </Pie>
                                                 <Legend
