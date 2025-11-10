@@ -10,13 +10,13 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 347 99% 47%; /* Red: #EF0035 */
+    --primary: 347 99% 47%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 114 98% 48%; /* Pixel Green: #1FF202 */
+    --accent: 114 98% 48%;
     --accent-foreground: 0 0% 0%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -29,6 +29,12 @@
     --chart-3: 25 95% 60%;  /* Needs Work - Orange */
     --chart-4: 0 85% 60%;   /* Burnt - Red */
     --chart-5: 220 15% 50%; /* Unservable - Gray */
+
+    /* Rank Colors */
+    --rank-s: 217 91% 60%; /* Blue */
+    --rank-a: 271 91% 63%; /* Purple */
+    --rank-b: 171 91% 41%; /* Teal */
+    --rank-c: 0 72% 51%; /* Red */
   }
 
   .dark {
@@ -38,13 +44,13 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 347 99% 47%; /* Red: #EF0035 */
+    --primary: 347 99% 47%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 114 98% 48%; /* Pixel Green: #1FF202 */
+    --accent: 114 98% 48%;
     --accent-foreground: 0 0% 0%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -56,6 +62,12 @@
     --chart-3: 25 85% 60%;
     --chart-4: 0 75% 60%;
     --chart-5: 220 10% 60%;
+
+    /* Rank Colors */
+    --rank-s: 217 91% 60%;
+    --rank-a: 271 91% 63%;
+    --rank-b: 171 91% 41%;
+    --rank-c: 0 62% 51%;
   }
 }
 
@@ -70,4 +82,15 @@
   h1, h2, h3, h4, h5, h6, .font-headline {
     font-family: var(--font-karmatic-arcade), sans-serif;
   }
+}
+
+@layer utilities {
+    @keyframes sparkle {
+        0% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.5); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.5; }
+    }
+    .sparkle {
+        animation: sparkle 1.5s infinite;
+    }
 }

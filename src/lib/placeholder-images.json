@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "name": "Abbas",
+      "image": {
+        "src": "https://picsum.photos/seed/abbas/128/128",
+        "data-ai-hint": "male avatar"
+      }
+    },
+    {
+      "name": "Musaib",
+      "image": {
+        "src": "https://picsum.photos/seed/musaib/128/128",
+        "data-ai-hint": "male avatar"
+      }
+    },
+    {
+      "name": "Viren",
+      "image": {
+        "src": "https://picsum.photos/seed/viren/128/128",
+        "data-ai-hint": "male avatar"
+      }
+    },
+    {
+      "name": "Riyyan",
+      "image": {
+        "src": "https://picsum.photos/seed/riyyan/128/128",
+        "data-ai-hint": "male avatar"
+      }
+    },
+    {
+      "name": "default",
+      "image": {
+        "src": "https://picsum.photos/seed/defaultUser/128/128",
+        "data-ai-hint": "abstract avatar"
+      }
+    }
+  ]
+}
