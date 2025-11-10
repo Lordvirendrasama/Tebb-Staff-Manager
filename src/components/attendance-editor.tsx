@@ -55,6 +55,7 @@ export function AttendanceEditor({ employees, onUpdate }: { employees: Employee[
         fetchAttendance();
         setRange(undefined);
         setSelectedDay(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedEmployeeId, currentMonth]);
 
     useEffect(() => {

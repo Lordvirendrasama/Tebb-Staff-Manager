@@ -301,8 +301,8 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         // Use a clean date object for clockOut to avoid mutation issues
         let newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
         
+        // If clock out time is earlier than clock in, it must be the next day
         if (isBefore(newClockOut, newClockIn)) {
-            // If clock out time is earlier than clock in, it must be the next day
             newClockOut = addDays(newClockOut, 1);
         }
 
