@@ -5,7 +5,7 @@ export type User = string;
 
 export const DEFAULT_EMPLOYEES = [
   { name: 'Abbas', weeklyOffDay: 'Monday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00' },
-  { name: 'Musaib', weeklyOffDay: 'Sunday', standardWorkHours: 9, shiftStartTime: '09:00', shiftEndTime: '18:00' },
+  { name: 'Musaib', weeklyOffDay: 'Sunday', standardWorkHours: 7, shiftStartTime: '16:00', shiftEndTime: '23:00' },
   { name: 'Viren', weeklyOffDay: 'Friday', standardWorkHours: 8, shiftStartTime: '10:00', shiftEndTime: '18:00' },
 ] as const;
 
