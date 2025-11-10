@@ -82,6 +82,22 @@ export const getAttendanceForMonth = async (employeeName: string, month: Date): 
     return logsInMonth;
 };
 
+export const getAllAttendanceForMonth = async (employeeName: string, month: Date): Promise<AttendanceLog[]> => {
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+
+    const q = query(
+        collection(db, 'attendanceLogs'),
+        where('employeeName', '==', employeeName),
+        where('clockIn', '>=', start),
+        where('clockIn', '<=', end),
+        orderBy('clockIn', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshotToDocs<AttendanceLog>(snapshot);
+};
+
+
 export const onUserPayrollSnapshot = (
     userName: string,
     callback: (payrolls: Payroll[]) => void,
