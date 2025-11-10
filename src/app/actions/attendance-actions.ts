@@ -287,10 +287,10 @@ export async function updateAttendanceTimesAction(logId: string, clockInTime: st
         const originalClockIn = logSnap.data().clockIn.toDate();
 
         const [inHours, inMinutes] = clockInTime.split(':').map(Number);
-        const newClockIn = setSeconds(setMinutes(setHours(originalClockIn, inHours), inMinutes), 0);
+        const newClockIn = setSeconds(setMinutes(setHours(new Date(originalClockIn), inHours), inMinutes), 0);
         
         const [outHours, outMinutes] = clockOutTime.split(':').map(Number);
-        const newClockOut = setSeconds(setMinutes(setHours(originalClockIn, outHours), outMinutes), 0);
+        const newClockOut = setSeconds(setMinutes(setHours(new Date(originalClockIn), outHours), outMinutes), 0);
         
         if (isBefore(newClockOut, newClockIn)) {
             return { success: false, message: 'Clock out time cannot be before clock in time.'};
