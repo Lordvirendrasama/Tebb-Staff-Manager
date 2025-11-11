@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter, Calendar, TrendingUp, TrendingDown, Clock, CalendarDays } from 'lucide-react';
 import { getAttendanceLogs } from '@/services/client/attendance-service';
 import { updateAttendanceLogAction, deleteAttendanceLogAction } from '@/app/actions/attendance-actions';
-import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore, set, startOfMonth } from 'date-fns';
+import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore, set, startOfMonth, addMonths, addDays, endOfMonth } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST, toIST } from '@/lib/date-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -26,7 +26,7 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
-  const [filters, setFilters] = useState<{ employee: User | 'all'; month: number; year: number }>({
+  const [filters, setFilters] = useState<{ employee: string; month: number; year: number }>({
     employee: 'all',
     month: getMonth(new Date()),
     year: getYear(new Date()),
@@ -41,21 +41,60 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
 
   useEffect(() => {
     fetchLogs();
-  }, [filters]);
+  }, [filters, employees]);
 
   const fetchLogs = async () => {
     setLoading(true);
-    const monthDate = startOfMonth(new Date(filters.year, filters.month));
     try {
-      const fetchedLogs = await getAttendanceLogs({
-        employeeName: filters.employee === 'all' ? null : filters.employee,
-        month: monthDate
-      });
-      setLogs(fetchedLogs as AttendanceLog[]);
+        let startDate: Date;
+        let endDate: Date;
+        const selectedEmployee = employees.find(e => e.id === filters.employee);
+
+        if (selectedEmployee && selectedEmployee.payStartDate && selectedEmployee.payFrequency) {
+            // Logic to calculate pay period for a specific employee
+            const payStartDate = new Date(selectedEmployee.payStartDate);
+            
+            const periodStartForSelectedMonth = new Date(filters.year, filters.month, payStartDate.getDate());
+            if (periodStartForSelectedMonth > new Date(filters.year, filters.month, 1) && getMonth(periodStartForSelectedMonth) !== filters.month) {
+                 periodStartForSelectedMonth.setMonth(periodStartForSelectedMonth.getMonth() -1);
+            }
+             if (periodStartForSelectedMonth > new Date() && getMonth(periodStartForSelectedMonth) === getMonth(new Date()) ) {
+                 periodStartForSelectedMonth.setMonth(periodStartForSelectedMonth.getMonth()-1);
+            }
+
+
+            startDate = periodStartForSelectedMonth;
+
+            switch (selectedEmployee.payFrequency) {
+                case 'monthly':
+                    endDate = addDays(addMonths(startDate, 1), -1);
+                    break;
+                case 'bi-weekly':
+                    endDate = addDays(startDate, 13);
+                    break;
+                case 'weekly':
+                    endDate = addDays(startDate, 6);
+                    break;
+                default:
+                    endDate = endOfMonth(startDate);
+            }
+        } else {
+            // Default to calendar month if "All" is selected or employee has no pay config
+            startDate = startOfMonth(new Date(filters.year, filters.month));
+            endDate = endOfMonth(startDate);
+        }
+
+        const fetchedLogs = await getAttendanceLogs({
+            employeeName: filters.employee === 'all' ? null : selectedEmployee?.name,
+            month: startDate,
+            endDate: endDate
+        });
+        setLogs(fetchedLogs as AttendanceLog[]);
+
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch attendance logs.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch attendance logs.' });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -86,7 +125,7 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
 
     let totalOverUnderMinutes = 0;
     if (filters.employee !== 'all') {
-        const employee = employees.find(e => e.name === filters.employee);
+        const employee = employees.find(e => e.id === filters.employee);
         if (employee) {
             totalOverUnderMinutes = sortedLogs.reduce((acc, log) => {
                 if(log.clockOut && employee.standardWorkHours) {
@@ -224,11 +263,11 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
       <CardContent className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 items-center">
           <Filter className="h-5 w-5 text-muted-foreground hidden sm:block" />
-          <Select value={filters.employee} onValueChange={(val) => setFilters(f => ({ ...f, employee: val as User }))}>
+          <Select value={filters.employee} onValueChange={(val) => setFilters(f => ({ ...f, employee: val }))}>
             <SelectTrigger className="w-full sm:w-[200px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Employees</SelectItem>
-              {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
+              {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <div className="flex gap-2 w-full sm:w-auto">
