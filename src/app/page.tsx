@@ -91,6 +91,8 @@ export default async function Home() {
     getEmployeeOfTheWeek()
   ]);
 
+  const nonAdminEmployees = employees.filter(emp => emp.name !== 'Admin');
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-8">
       <div className="absolute top-4 right-4">
@@ -102,9 +104,9 @@ export default async function Home() {
           <p className="text-muted-foreground mt-2 text-base sm:text-lg">Your all-in-one solution for managing cafe staff efficiently.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             <h3 className="col-span-full text-2xl font-semibold tracking-tight text-center sm:text-left font-headline">Who are you?</h3>
-            {employees.map(employee => (
+            {nonAdminEmployees.map(employee => (
               <EmployeeCard key={employee.id} employee={employee} isEmployeeOfTheWeek={employee.name === employeeOfTheWeek} />
             ))}
             <AdminCard />
