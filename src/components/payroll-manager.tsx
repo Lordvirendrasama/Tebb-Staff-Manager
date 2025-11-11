@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAttendanceLogsAction } from '@/app/actions/attendance-actions';
 import type { Employee, User, AttendanceLog, WeekDay } from '@/lib/constants';
-import { Loader2, Calculator, Wallet } from 'lucide-react';
-import { format, getDay, getYear, getMonth, setYear, setMonth, addDays, addMonths, differenceInDays, startOfMonth } from 'date-fns';
+import { Loader2, Calculator, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { format, getDay, getYear, getMonth, setYear, setMonth, addDays, addMonths, differenceInDays, startOfMonth, differenceInMinutes, set } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { WEEKDAYS } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 interface PayrollDetails {
     totalDays: number;
@@ -20,6 +21,7 @@ interface PayrollDetails {
     perDaySalary: number;
     payPeriodStart: Date;
     payPeriodEnd: Date;
+    totalOverUnderHours: number;
 }
 
 export function PayrollManager({ employees }: { employees: Employee[] }) {
@@ -31,6 +33,11 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
     const [selectedYear, setSelectedYear] = useState<number>(getYear(new Date()));
 
     const [payrollDetails, setPayrollDetails] = useState<PayrollDetails | null>(null);
+    
+    const formatOverUnderTime = (hours: number) => {
+      const prefix = hours >= 0 ? '+' : '';
+      return `${prefix}${hours.toFixed(2)} hrs`;
+    }
 
     const handleCalculate = () => {
         if (!selectedEmployeeId) {
@@ -81,6 +88,24 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                 }
 
                 const logs = await getAttendanceLogsAction({ employeeName: employee.name, month: payPeriodStart, endDate: payPeriodEnd });
+                
+                let totalOverUnderMinutes = 0;
+                logs.forEach(log => {
+                    if (log.clockOut && employee.standardWorkHours) {
+                        const minutesWorked = differenceInMinutes(new Date(log.clockOut), new Date(log.clockIn));
+                        
+                        const clockInDate = new Date(log.clockIn);
+                        const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
+                        const isEarlyBird = clockInDate < cutoffTime;
+
+                        let standardMinutes = employee.standardWorkHours * 60;
+                        if (isEarlyBird) {
+                           standardMinutes -= 10;
+                        }
+                        
+                        totalOverUnderMinutes += (minutesWorked - standardMinutes);
+                    }
+                });
 
                 const daysInPeriod = differenceInDays(payPeriodEnd, payPeriodStart) + 1;
                 const weekOffDayIndex = WEEKDAYS.indexOf(employee.weeklyOffDay);
@@ -107,7 +132,8 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                     payableAmount: parseFloat(payableAmount.toFixed(2)),
                     perDaySalary: parseFloat(perDaySalary.toFixed(2)),
                     payPeriodStart: payPeriodStart,
-                    payPeriodEnd: payPeriodEnd
+                    payPeriodEnd: payPeriodEnd,
+                    totalOverUnderHours: totalOverUnderMinutes / 60
                 });
 
             } catch (error) {
@@ -174,7 +200,7 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                                 For {employees.find(e => e.id === selectedEmployeeId)?.name} from {format(payrollDetails.payPeriodStart, 'MMM d, yyyy')} to {format(payrollDetails.payPeriodEnd, 'MMM d, yyyy')}
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
+                        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 text-center">
                             <div className="p-4 border rounded-lg">
                                 <p className="text-2xl font-bold">{payrollDetails.daysWorked}</p>
                                 <p className="text-sm text-muted-foreground">Days Worked</p>
@@ -194,6 +220,13 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                             <div className="p-4 border rounded-lg">
                                 <p className="text-2xl font-bold">{payrollDetails.totalDays}</p>
                                 <p className="text-sm text-muted-foreground">Days in Period</p>
+                            </div>
+                            <div className={cn("p-4 border rounded-lg", payrollDetails.totalOverUnderHours >= 0 ? "text-green-500" : "text-destructive")}>
+                                <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                                    {payrollDetails.totalOverUnderHours >= 0 ? <TrendingUp/> : <TrendingDown/>}
+                                    {formatOverUnderTime(payrollDetails.totalOverUnderHours)}
+                                </p>
+                                <p className="text-sm text-muted-foreground">Over/Under Time</p>
                             </div>
                         </CardContent>
                         <CardFooter className="flex-col items-center justify-center p-6 mt-4 bg-muted/50 rounded-b-lg">

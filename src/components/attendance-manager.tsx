@@ -85,24 +85,26 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
 
     let totalOverUnderMinutes = 0;
     if (filters.employee !== 'all') {
-        totalOverUnderMinutes = sortedLogs.reduce((acc, log) => {
-            const employee = employees.find(e => e.name === log.employeeName);
-            if(log.clockOut && employee) {
-                const minutesWorked = differenceInMinutes(new Date(log.clockOut), new Date(log.clockIn));
-                
-                const clockInDate = new Date(log.clockIn);
-                const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
-                const isEarlyBird = clockInDate < cutoffTime;
-                
-                let standardMinutes = (employee.standardWorkHours || 0) * 60;
-                if (isEarlyBird) {
-                    standardMinutes -= 10;
-                }
+        const employee = employees.find(e => e.name === filters.employee);
+        if (employee) {
+            totalOverUnderMinutes = sortedLogs.reduce((acc, log) => {
+                if(log.clockOut && employee.standardWorkHours) {
+                    const minutesWorked = differenceInMinutes(new Date(log.clockOut), new Date(log.clockIn));
+                    
+                    const clockInDate = new Date(log.clockIn);
+                    const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
+                    const isEarlyBird = clockInDate < cutoffTime;
+                    
+                    let standardMinutes = employee.standardWorkHours * 60;
+                    if (isEarlyBird) {
+                        standardMinutes -= 10;
+                    }
 
-                return acc + (minutesWorked - standardMinutes);
-            }
-            return acc;
-        }, 0);
+                    return acc + (minutesWorked - standardMinutes);
+                }
+                return acc;
+            }, 0);
+        }
     }
 
     const totalOverUnderHours = totalOverUnderMinutes / 60;
@@ -307,12 +309,12 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
                 const employee = employees.find(e => e.name === log.employeeName);
                 
                 let overUnderHours = null;
-                if (typeof hoursWorked === 'number' && employee) {
+                if (typeof hoursWorked === 'number' && employee && employee.standardWorkHours) {
                     const clockInDate = new Date(log.clockIn);
                     const cutoffTime = set(clockInDate, { hours: 10, minutes: 15, seconds: 0, milliseconds: 0 });
                     const isEarlyBird = clockInDate < cutoffTime;
 
-                    let effectiveStandardHours = employee.standardWorkHours || 0;
+                    let effectiveStandardHours = employee.standardWorkHours;
                     if (isEarlyBird) {
                         // Subtract 10 minutes from standard hours
                         effectiveStandardHours -= (10 / 60);
