@@ -95,18 +95,19 @@ export async function clockOutAction(user: User) {
 }
 
 export async function getAttendanceLogsAction({ employeeName, month }: { employeeName?: User | null, month?: Date | null }) {
-    let q = query(collection(db, 'attendanceLogs'), orderBy('clockIn', 'desc'));
-
+    let conditions = [];
     if (employeeName) {
-        q = query(q, where('employeeName', '==', employeeName));
+        conditions.push(where('employeeName', '==', employeeName));
     }
-
     if (month) {
         const start = startOfMonth(month);
         const end = endOfMonth(month);
-        q = query(q, where('clockIn', '>=', start), where('clockIn', '<=', end));
+        conditions.push(where('clockIn', '>=', start));
+        conditions.push(where('clockIn', '<=', end));
     }
 
+    const q = query(collection(db, 'attendanceLogs'), ...conditions, orderBy('clockIn', 'desc'));
+    
     const snapshot = await getDocs(q);
     const logs = snapshot.docs.map(d => {
       const data = d.data();
