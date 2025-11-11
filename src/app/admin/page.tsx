@@ -59,7 +59,7 @@ export default function AdminPage() {
     };
   }, []);
   
-  if (loading && employees.length === 0) {
+  if (loading) {
     return (
         <AdminAuth>
             <div className="space-y-8">
