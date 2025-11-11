@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAttendanceLogsAction } from '@/app/actions/attendance-actions';
 import type { Employee, User, AttendanceLog, WeekDay } from '@/lib/constants';
-import { Loader2, Calculator, CalendarDays, User as UserIcon, Wallet } from 'lucide-react';
+import { Loader2, Calculator, CalendarDays, User as UserIcon, Wallet, Coins } from 'lucide-react';
 import { format, getDaysInMonth, getDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { WEEKDAYS } from '@/lib/constants';
@@ -18,6 +17,7 @@ interface PayrollDetails {
     totalWorkingDays: number;
     daysWorked: number;
     payableAmount: number;
+    perDaySalary: number;
 }
 
 export function PayrollManager({ employees }: { employees: Employee[] }) {
@@ -61,7 +61,7 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                 const totalWorkingDays = daysInMonth - weekOffs;
                 const daysWorked = new Set(logs.map(log => format(new Date(log.clockIn), 'yyyy-MM-dd'))).size;
                 
-                const perDaySalary = employee.monthlySalary / totalWorkingDays;
+                const perDaySalary = totalWorkingDays > 0 ? employee.monthlySalary / totalWorkingDays : 0;
                 const payableAmount = perDaySalary * daysWorked;
 
                 setPayrollDetails({
@@ -69,7 +69,8 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                     weekOffs,
                     totalWorkingDays,
                     daysWorked,
-                    payableAmount: parseFloat(payableAmount.toFixed(2))
+                    payableAmount: parseFloat(payableAmount.toFixed(2)),
+                    perDaySalary: parseFloat(perDaySalary.toFixed(2)),
                 });
 
             } catch (error) {
@@ -136,7 +137,7 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                                 For {employees.find(e => e.id === selectedEmployeeId)?.name} in {format(new Date(selectedYear, selectedMonth), 'MMMM yyyy')}
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
                             <div className="p-4 border rounded-lg">
                                 <p className="text-2xl font-bold">{payrollDetails.daysWorked}</p>
                                 <p className="text-sm text-muted-foreground">Days Worked</p>
@@ -144,6 +145,10 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                             <div className="p-4 border rounded-lg">
                                 <p className="text-2xl font-bold">{payrollDetails.totalWorkingDays}</p>
                                 <p className="text-sm text-muted-foreground">Working Days</p>
+                            </div>
+                             <div className="p-4 border rounded-lg">
+                                <p className="text-2xl font-bold">₹{payrollDetails.perDaySalary.toLocaleString()}</p>
+                                <p className="text-sm text-muted-foreground">Per-Day Salary</p>
                             </div>
                             <div className="p-4 border rounded-lg">
                                 <p className="text-2xl font-bold">{payrollDetails.weekOffs}</p>
