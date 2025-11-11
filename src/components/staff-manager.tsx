@@ -87,7 +87,7 @@ export function StaffManager({ employees }: { employees: Employee[] }) {
       shiftEndTime,
       monthlySalary: monthlySalary || null,
       payFrequency: payFrequency || null,
-      payStartDate: payStartDate || null,
+      payStartDate: payStartDate ? payStartDate.toISOString() : null,
     };
 
     startTransition(async () => {

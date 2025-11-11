@@ -30,6 +30,7 @@ async function setEmployeeOfTheWeek(employeeName: User | null): Promise<void> {
 export async function getAllUsers(): Promise<Employee[]> {
     const snapshot = await getDocs(collection(db, 'employees'));
     const employees = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Employee));
+    // Manually serialize date fields to prevent passing raw Date objects to client components
     return employees.map(emp => {
         if (emp.payStartDate && typeof (emp.payStartDate as any)?.toDate === 'function') {
             emp.payStartDate = (emp.payStartDate as any).toDate().toISOString();
@@ -54,7 +55,11 @@ export async function setEmployeeOfTheWeekAction(employeeName: User | null) {
 
 export async function addEmployeeAction(employeeData: Partial<Employee>) {
     try {
-        await addDoc(collection(db, 'employees'), employeeData);
+        const dataToAdd = { ...employeeData };
+        if (dataToAdd.payStartDate) {
+            dataToAdd.payStartDate = new Date(dataToAdd.payStartDate) as any;
+        }
+        await addDoc(collection(db, 'employees'), dataToAdd);
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee added successfully!' };
@@ -67,7 +72,11 @@ export async function addEmployeeAction(employeeData: Partial<Employee>) {
 
 export async function updateEmployeeAction(id: string, employeeData: Partial<Employee>) {
     try {
-        await updateDoc(doc(db, 'employees', id), employeeData);
+        const dataToUpdate = { ...employeeData };
+        if (dataToUpdate.payStartDate) {
+            dataToUpdate.payStartDate = new Date(dataToUpdate.payStartDate) as any;
+        }
+        await updateDoc(doc(db, 'employees', id), dataToUpdate);
         revalidatePath('/admin');
         revalidatePath('/');
         return { success: true, message: 'Employee updated successfully!' };
