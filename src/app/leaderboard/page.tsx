@@ -105,7 +105,7 @@ export default function LeaderboardPage() {
                 <div className="text-center">
                   <Trophy className="h-10 w-10 text-primary mx-auto mb-2" />
                   <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline">
-                      Leaderboard
+                      Espresso Leaderboard
                   </h2>
                 </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -122,7 +122,7 @@ export default function LeaderboardPage() {
             <div className="text-center">
                 <Trophy className="h-10 w-10 text-primary mx-auto mb-2" />
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline">
-                    Leaderboard
+                    Espresso Leaderboard
                 </h2>
                 <p className="text-muted-foreground mt-2">The official performance analytics dashboard.</p>
             </div>
