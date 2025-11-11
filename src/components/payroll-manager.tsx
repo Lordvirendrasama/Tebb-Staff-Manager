@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAttendanceLogsAction } from '@/app/actions/attendance-actions';
 import type { Employee, User, AttendanceLog, WeekDay } from '@/lib/constants';
-import { Loader2, Calculator, CalendarDays, User as UserIcon, Wallet, Coins } from 'lucide-react';
-import { format, getDaysInMonth, getDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
+import { Loader2, Calculator, Wallet } from 'lucide-react';
+import { format, getDay, getYear, getMonth, setYear, setMonth, addDays, addMonths, differenceInDays, startOfMonth } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { WEEKDAYS } from '@/lib/constants';
 
@@ -18,6 +18,8 @@ interface PayrollDetails {
     daysWorked: number;
     payableAmount: number;
     perDaySalary: number;
+    payPeriodStart: Date;
+    payPeriodEnd: Date;
 }
 
 export function PayrollManager({ employees }: { employees: Employee[] }) {
@@ -37,40 +39,75 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
         }
 
         const employee = employees.find(e => e.id === selectedEmployeeId);
-        if (!employee || !employee.monthlySalary) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Selected employee does not have a salary configured.' });
+        if (!employee || !employee.monthlySalary || !employee.payStartDate || !employee.payFrequency) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Selected employee is missing salary, pay start date, or frequency configuration.' });
             return;
         }
 
         startTransition(async () => {
             try {
-                const monthDate = setYear(setMonth(new Date(), selectedMonth), selectedYear);
-                const logs = await getAttendanceLogsAction({ employeeName: employee.name, month: monthDate });
+                // Calculate pay period
+                const payStartDate = new Date(employee.payStartDate!);
+                const selectedDate = new Date(selectedYear, selectedMonth, 1);
+                
+                let cycleStart = startOfMonth(payStartDate);
+                 while(cycleStart.getFullYear() < selectedYear || (cycleStart.getFullYear() === selectedYear && cycleStart.getMonth() < selectedMonth)) {
+                    cycleStart = addMonths(cycleStart, 1);
+                }
+                while(cycleStart.getFullYear() > selectedYear || (cycleStart.getFullYear() === selectedYear && cycleStart.getMonth() > selectedMonth)) {
+                     cycleStart = addMonths(cycleStart, -1);
+                }
 
-                const daysInMonth = getDaysInMonth(monthDate);
+                const payPeriodStart = new Date(selectedYear, selectedMonth, payStartDate.getDate());
+                if (payPeriodStart > selectedDate) {
+                    payPeriodStart.setMonth(payPeriodStart.getMonth()-1);
+                }
+
+
+                let payPeriodEnd: Date;
+
+                switch (employee.payFrequency) {
+                    case 'monthly':
+                        payPeriodEnd = addDays(addMonths(payPeriodStart, 1), -1);
+                        break;
+                    case 'bi-weekly':
+                        payPeriodEnd = addDays(payPeriodStart, 13);
+                        break;
+                    case 'weekly':
+                        payPeriodEnd = addDays(payPeriodStart, 6);
+                        break;
+                    default:
+                        payPeriodEnd = addDays(addMonths(payPeriodStart, 1), -1);
+                }
+
+                const logs = await getAttendanceLogsAction({ employeeName: employee.name, month: payPeriodStart, endDate: payPeriodEnd });
+
+                const daysInPeriod = differenceInDays(payPeriodEnd, payPeriodStart) + 1;
                 const weekOffDayIndex = WEEKDAYS.indexOf(employee.weeklyOffDay);
                 
                 let weekOffs = 0;
-                for (let i = 1; i <= daysInMonth; i++) {
-                    const day = getDay(new Date(selectedYear, selectedMonth, i));
-                    if (day === weekOffDayIndex) {
+                for (let i = 0; i < daysInPeriod; i++) {
+                    const currentDay = addDays(payPeriodStart, i);
+                    if (getDay(currentDay) === weekOffDayIndex) {
                         weekOffs++;
                     }
                 }
                 
-                const totalWorkingDays = daysInMonth - weekOffs;
+                const totalWorkingDays = daysInPeriod - weekOffs;
                 const daysWorked = new Set(logs.map(log => format(new Date(log.clockIn), 'yyyy-MM-dd'))).size;
                 
-                const perDaySalary = totalWorkingDays > 0 ? employee.monthlySalary / totalWorkingDays : 0;
+                const perDaySalary = totalWorkingDays > 0 ? employee.monthlySalary! / totalWorkingDays : 0;
                 const payableAmount = perDaySalary * daysWorked;
 
                 setPayrollDetails({
-                    totalDays: daysInMonth,
+                    totalDays: daysInPeriod,
                     weekOffs,
                     totalWorkingDays,
                     daysWorked,
                     payableAmount: parseFloat(payableAmount.toFixed(2)),
                     perDaySalary: parseFloat(perDaySalary.toFixed(2)),
+                    payPeriodStart: payPeriodStart,
+                    payPeriodEnd: payPeriodEnd
                 });
 
             } catch (error) {
@@ -134,7 +171,7 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                         <CardHeader>
                             <CardTitle className="text-lg">Payroll Summary</CardTitle>
                             <CardDescription>
-                                For {employees.find(e => e.id === selectedEmployeeId)?.name} in {format(new Date(selectedYear, selectedMonth), 'MMMM yyyy')}
+                                For {employees.find(e => e.id === selectedEmployeeId)?.name} from {format(payrollDetails.payPeriodStart, 'MMM d, yyyy')} to {format(payrollDetails.payPeriodEnd, 'MMM d, yyyy')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
@@ -156,7 +193,7 @@ export function PayrollManager({ employees }: { employees: Employee[] }) {
                             </div>
                             <div className="p-4 border rounded-lg">
                                 <p className="text-2xl font-bold">{payrollDetails.totalDays}</p>
-                                <p className="text-sm text-muted-foreground">Days in Month</p>
+                                <p className="text-sm text-muted-foreground">Days in Period</p>
                             </div>
                         </CardContent>
                         <CardFooter className="flex-col items-center justify-center p-6 mt-4 bg-muted/50 rounded-b-lg">

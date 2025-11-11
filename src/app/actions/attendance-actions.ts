@@ -94,14 +94,14 @@ export async function clockOutAction(user: User) {
     }
 }
 
-export async function getAttendanceLogsAction({ employeeName, month }: { employeeName?: User | null, month?: Date | null }) {
+export async function getAttendanceLogsAction({ employeeName, month, endDate }: { employeeName?: User | null, month?: Date | null, endDate?: Date | null }) {
     let conditions = [];
     if (employeeName) {
         conditions.push(where('employeeName', '==', employeeName));
     }
     if (month) {
-        const start = startOfMonth(month);
-        const end = endOfMonth(month);
+        const start = month;
+        const end = endDate ? endDate : endOfMonth(month);
         conditions.push(where('clockIn', '>=', start));
         conditions.push(where('clockIn', '<=', end));
     }
