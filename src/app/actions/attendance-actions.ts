@@ -102,6 +102,7 @@ export async function getAttendanceLogsAction({ employeeName, month, endDate }: 
     if (month) {
         const start = month;
         const end = endDate ? endDate : endOfMonth(month);
+        end.setHours(23, 59, 59, 999); // Ensure we get all logs for the end date.
         conditions.push(where('clockIn', '>=', start));
         conditions.push(where('clockIn', '<=', end));
     }
