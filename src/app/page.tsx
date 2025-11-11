@@ -58,7 +58,7 @@ function LeaderboardCard() {
             <Card className="hover:bg-primary/10 hover:border-primary transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-center">
                 <CardHeader className="text-center items-center justify-center p-6">
                     <Trophy className="h-12 w-12 text-primary mb-4" />
-                    <CardTitle className="text-2xl font-semibold font-headline">Leaderboard</CardTitle>
+                    <CardTitle className="text-2xl font-semibold font-headline">Espresso Leaderboard</CardTitle>
                 </CardHeader>
             </Card>
         </Link>

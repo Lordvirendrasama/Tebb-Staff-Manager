@@ -10,7 +10,7 @@ export default function LeaderboardLayout({ children }: { children: ReactNode })
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg">
             <Trophy className="h-6 w-6 text-primary" />
-            <span className="font-headline text-sm md:text-base">The 8 Bit Bistro</span>
+            <span className="font-headline text-sm md:text-base">Espresso Leaderboard</span>
           </Link>
         </div>
       </header>
