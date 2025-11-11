@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -11,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Save, Edit, ArrowUpDown, Filter, Calendar, TrendingUp, TrendingDown, Clock, CalendarDays } from 'lucide-react';
 import { getAttendanceLogs } from '@/services/client/attendance-service';
 import { updateAttendanceLogAction, deleteAttendanceLogAction } from '@/app/actions/attendance-actions';
-import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore, set } from 'date-fns';
+import { format, getMonth, getYear, setMonth, setYear, differenceInMinutes, parse, isBefore, set, startOfMonth } from 'date-fns';
 import type { Employee, User, AttendanceLog } from '@/lib/constants';
 import { formatIST, toIST } from '@/lib/date-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -44,7 +45,7 @@ export function AttendanceManager({ employees }: { employees: Employee[] }) {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const monthDate = setYear(setMonth(new Date(), filters.month), filters.year);
+    const monthDate = startOfMonth(new Date(filters.year, filters.month));
     try {
       const fetchedLogs = await getAttendanceLogs({
         employeeName: filters.employee === 'all' ? null : filters.employee,
