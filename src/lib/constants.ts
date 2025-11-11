@@ -73,3 +73,12 @@ export interface EspressoLog {
   pullDateTime: Date;
   groupHead: 1 | 2;
 }
+
+export interface Payroll {
+    id: string;
+    employeeName: User;
+    payPeriodStart: Date;
+    payPeriodEnd: Date;
+    amount: number;
+    status: 'Pending' | 'Paid' | 'Failed';
+}

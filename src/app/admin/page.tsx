@@ -19,6 +19,7 @@ import { ItemManager } from '@/components/item-manager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AttendanceManager } from '@/components/attendance-manager';
 import { RestoreDataButton } from '@/components/restore-data-button';
+import { PayrollManager } from '@/components/payroll-manager';
 
 export default function AdminPage() {
   const [allowanceData, setAllowanceData] = useState<any[]>([]);
@@ -77,9 +78,10 @@ export default function AdminPage() {
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h2>
         
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="general">General</TabsTrigger>
                     <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                    <TabsTrigger value="payroll">Payroll</TabsTrigger>
                     <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
                 
@@ -133,6 +135,10 @@ export default function AdminPage() {
                 
                 <TabsContent value="attendance" className="mt-6">
                     <AttendanceManager employees={employees} />
+                </TabsContent>
+                
+                <TabsContent value="payroll" className="mt-6">
+                    <PayrollManager employees={employees} />
                 </TabsContent>
 
                 <TabsContent value="settings" className="mt-6">
