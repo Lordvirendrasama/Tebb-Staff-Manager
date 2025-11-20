@@ -82,3 +82,19 @@ export interface Payroll {
     amount: number;
     status: 'Pending' | 'Paid' | 'Failed';
 }
+
+export type LeaveType = 'Paid' | 'Unpaid' | 'Sick';
+export const LEAVE_TYPES: LeaveType[] = ['Paid', 'Unpaid', 'Sick'];
+
+export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected';
+export const LEAVE_STATUSES: LeaveStatus[] = ['Pending', 'Approved', 'Rejected'];
+
+export interface LeaveRequest {
+  id: string;
+  employeeName: User;
+  startDate: Date;
+  endDate: Date;
+  leaveType: LeaveType;
+  status: LeaveStatus;
+  reason?: string;
+}
